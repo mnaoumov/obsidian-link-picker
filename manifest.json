@@ -1,0 +1,10 @@
+{
+  "author": "mnaoumov",
+  "authorUrl": "https://github.com/mnaoumov/",
+  "description": "Pick a note by navigating folders and insert a link to it, from a command or from your own scripts.",
+  "fundingUrl": "https://www.buymeacoffee.com/mnaoumov",
+  "id": "link-picker",
+  "isDesktopOnly": false,
+  "name": "Link Picker",
+  "version": "0.0.0"
+}
