@@ -96,7 +96,10 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     // Choosing a folder navigates into it rather than picking it — the only way to reach a nested note without typing its whole path.
     if (isFolder(item.file)) {
-      this.folderPath = item.file.path;
+      // Normalized because the vault ROOT's path is `/`, and `..` out of a top-level folder lands on it.
+      // Left as `/` it is truthy, so the picker would look for a parent the root does not have and would
+      // Slice two characters off every row's relative path.
+      this.folderPath = normalizeFolderPath(item.file.path);
       this.shouldShowOnlyFolders = false;
       this.open();
       return;
@@ -228,19 +231,26 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }));
   }
 
-  private chooseEmpty(event_: KeyboardEvent | MouseEvent): void {
+  private chooseEmpty(event_: KeyboardEvent | MouseEvent): MaybeReturn<boolean> {
     if (this.shouldShowOnlyFolders) {
       return;
     }
+
     this.selectSuggestion(this.emptyItem, event_);
+
+    // Explicitly consumed, unlike the other hotkeys: this one CLOSES the picker, so without saying so the
+    // Keypress carries on to whatever gains focus next and types the digit into the note being edited.
+    return false;
   }
 
-  private createNew(event_: KeyboardEvent): MaybeReturn<boolean> {
+  private createNew(event_: KeyboardEvent): boolean {
+    // `true` hands the key back to Obsidian, which is what an offer the picker is not making should do.
     if (this.shouldShowOnlyFolders || !this.options.shouldAllowCreate) {
       return true;
     }
 
     invokeAsyncSafely(() => this.createNewAsync(event_));
+    return false;
   }
 
   private async createNewAsync(event_: KeyboardEvent): Promise<void> {
@@ -368,30 +378,36 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return isFile(file) ? String(file.stat.mtime).padStart(EPOCH_DIGITS, '0') : '';
   }
 
-  private toggleIncludeAllFiles(): void {
+  private toggleIncludeAllFiles(): MaybeReturn<boolean> {
     if (this.shouldShowOnlyFolders) {
       return;
     }
+
     this.shouldIncludeAllFiles = !this.shouldIncludeAllFiles;
     this.update();
+    return false;
   }
 
-  private toggleIncludeSubfolders(): void {
+  private toggleIncludeSubfolders(): MaybeReturn<boolean> {
     if (this.shouldShowOnlyFolders) {
       return;
     }
+
     this.includeSubfolders = !this.includeSubfolders;
     this.update();
+    return false;
   }
 
-  private toggleShowOnlyFolders(): void {
+  private toggleShowOnlyFolders(): boolean {
     this.shouldShowOnlyFolders = !this.shouldShowOnlyFolders;
     this.update();
+    return false;
   }
 
-  private toggleSortByUpdatedDate(): void {
+  private toggleSortByUpdatedDate(): boolean {
     this.shouldSortByUpdatedDate = !this.shouldSortByUpdatedDate;
     this.update();
+    return false;
   }
 
   private update(): void {

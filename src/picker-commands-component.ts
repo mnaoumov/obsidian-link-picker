@@ -48,12 +48,17 @@ export class PickerCommandsComponent extends ComponentEx {
   }
 
   public override async onloadAsync(): Promise<void> {
-    registerAsyncEvent(
-      this,
-      this.pluginSettingsComponent.on('saveSettings', async () => {
-        await this.refreshCommandsIfChanged();
-      })
-    );
+    // Both events, because the settings reach this component by two different routes: a save is the
+    // Settings tab writing, and a load is `data.json` changing under Obsidian — a sync client, or the
+    // User editing the file by hand.
+    for (const eventName of ['loadSettings', 'saveSettings'] as const) {
+      registerAsyncEvent(
+        this,
+        this.pluginSettingsComponent.on(eventName, async () => {
+          await this.refreshCommandsIfChanged();
+        })
+      );
+    }
 
     await this.refreshCommands();
   }

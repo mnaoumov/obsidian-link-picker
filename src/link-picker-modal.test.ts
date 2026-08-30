@@ -310,6 +310,29 @@ describe('LinkPickerModal', () => {
       expect(instructionCommands(modal)).not.toContain('Shift + Enter');
     });
 
+    it('should consume the key it acted on, so the digit is not also typed into the search box', () => {
+      const modal = openModal({});
+
+      // Obsidian types the character unless the handler says it took the key. Left unsaid, `Alt + 3`
+      // Also filters the list by `3` — and `Alt + 1`, which closes the picker, types into the note.
+      expect(pressHotkey(modal, 'Alt', '1')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Alt', '2')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Alt', '3')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Alt', '4')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Alt', '5')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Shift', 'Enter')).toBe(false);
+    });
+
+    it('should hand the key back for a toggle it declines while showing only folders', () => {
+      const modal = openModal({});
+
+      pressHotkey(modal, 'Alt', '4');
+
+      expect(pressHotkey(modal, 'Alt', '1')).toBeUndefined();
+      expect(pressHotkey(modal, 'Alt', '2')).toBeUndefined();
+      expect(pressHotkey(modal, 'Alt', '3')).toBeUndefined();
+    });
+
     it('should say what each toggle would do next, not what it did', () => {
       const modal = openModal({});
 
@@ -329,6 +352,17 @@ describe('LinkPickerModal', () => {
 
       expect(resolve).not.toHaveBeenCalled();
       expect(relativePaths(modal.getSuggestions(''))).toContain('Ada.md');
+    });
+
+    it('should list the vault root properly after climbing out of a top-level folder', () => {
+      // The root's path is `/`, not the empty string. Left as it comes, it reads as a folder with a
+      // Parent and two leading characters to strip, which mangles every row on the way back out.
+      const modal = openModal({ folderPath: 'Notes' });
+
+      modal.onChooseSuggestion(itemFor(modal, PARENT_RELATIVE_PATH), mouseEvent());
+
+      expect(relativePaths(modal.getSuggestions(''))).toContain('Root.md');
+      expect(relativePaths(modal.getSuggestions(''))).not.toContain(PARENT_RELATIVE_PATH);
     });
 
     it('should leave folders-only mode when descending, since the point was to get here', () => {
