@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Link Picker is a folder-scoped, deterministically ranked note picker for Obsidian. It ships two faces deliberately:
 
 - an **`Insert link...` editor command**, the user-facing half;
-- a **callable API returning a string**, which is where the plugin came from — it is an extraction of a 568-line script (`LinkSuggester.ts`) in the author's personal vault whose 17 consumers are all Templater templates writing `<field>: <link>` into a note's properties. Tracked as `T648-P44`.
+- a **callable API returning a string**, which is where the plugin came from — it is an extraction of a 568-line script (`LinkSuggester.ts`) in the author's personal vault whose 17 consumers are all Templater templates writing `<field>: <link>` into a note's properties. The extraction is `T648-P44` (closed); the API itself is `T718-P44`.
 
 A command-only plugin would serve none of those consumers, which is why the API is not an afterthought.
 
@@ -50,5 +50,8 @@ The workspace convention is that all plugins share the same architecture; intent
 
 ## Pending
 
+Both of these are `T718-P44`, and both wait on the same thing.
+
 - The API is not published yet. It will go through `T677-P1`'s cross-plugin API registry in `obsidian-dev-utils`, whose consumer surface is `watchPluginApi` returning a live ref (`ref.value` / `await ref.whenAvailable()`) — the earlier `requirePluginApi` was cut from that design. That face is blocked on T677 landing.
-- The vault's own `LinkSuggester.ts` still carries the whole implementation; shrinking it to a shim over the published API is the last phase, and waits on the same thing.
+- The vault's own `LinkSuggester.ts` still carries the whole implementation; shrinking it to a shim over the published API is the last phase.
+- Unreleased at `0.0.0`. Before a release: a manual pass on a phone for the six control-strip behaviors (the harness cannot press keys on Android), and a survey of the wider community-plugin ecosystem for overlap — only this fleet was checked.
