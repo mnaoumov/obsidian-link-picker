@@ -24,7 +24,7 @@ interface FolderNavigationResult {
 describe('Choosing a folder in the picker', () => {
   it('descends into it, and `..` comes back out', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<FolderNavigationResult> {
+      async callback({ app, lib: { waitUntil }, pluginId }): Promise<FolderNavigationResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
@@ -73,7 +73,21 @@ describe('Choosing a folder in the picker', () => {
         await filterTo(folderName);
         const rowsAfterDrillOut = rows();
 
-        pressKey({ key: 'Escape' });
+        // Finished by actually PICKING something, rather than by dismissing the picker. These suites
+        // Share one Obsidian, so a picker left open is the next suite's first `.prompt`; and ending on
+        // The product's own terminal path is a truer close than any synthetic key would be.
+        chooseFirstRow();
+        await waitUntil({
+          message: 'the folder is open again',
+          predicate: () => rows().some((text) => text.includes(innerName)),
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
+        chooseRow(`${innerName}.md`);
+        await waitUntil({
+          message: 'the picker closed on a pick',
+          predicate: () => document.querySelector('.prompt') === null,
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
 
         return { rowsAfterDrillIn, rowsAfterDrillOut, rowsAtRoot };
 

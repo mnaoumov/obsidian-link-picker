@@ -86,25 +86,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   public onChooseSuggestion(item: Item): void {
-    // The empty row is backed by the vault ROOT, which is a folder, so it has to be recognized before the
-    // Folder check below. Testing it second — as the script this was extracted from did — made `Alt + 1`
-    // Navigate to the vault root instead of declining the link, which is the opposite of what it offers.
-    if (item === this.emptyItem) {
-      this.resolve(this.formatResult(item));
-      return;
-    }
-
-    // Choosing a folder navigates into it rather than picking it — the only way to reach a nested note without typing its whole path.
-    if (isFolder(item.file)) {
-      // Normalized because the vault ROOT's path is `/`, and `..` out of a top-level folder lands on it.
-      // Left as `/` it is truthy, so the picker would look for a parent the root does not have and would
-      // Slice two characters off every row's relative path.
-      this.folderPath = normalizeFolderPath(item.file.path);
-      this.shouldShowOnlyFolders = false;
-      this.open();
-      return;
-    }
-
     this.resolve(this.formatResult(item));
   }
 
@@ -167,6 +148,20 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   public override selectSuggestion(value: Item, event_: KeyboardEvent | MouseEvent): void {
+    // Choosing a folder navigates into it rather than picking it — the only way to reach a nested note
+    // Without typing its whole path. Handled HERE rather than in `onChooseSuggestion`, because the base
+    // Class closes the modal around that callback: on mobile the close lands after anything the callback
+    // Does, so reopening from there — inline or on the next tick — simply dismissed the picker. Never
+    // Closing it in the first place is both simpler and free of the ordering question.
+    //
+    // The empty row is excluded by identity, not by type. It is backed by the vault ROOT, which IS a
+    // Folder, so a plain `isFolder` test would send `Alt + 1` navigating to the root instead of
+    // Declining the link.
+    if (value !== this.emptyItem && isFolder(value.file)) {
+      this.navigateTo(value.file.path);
+      return;
+    }
+
     this.isSelected = true;
     super.selectSuggestion(value, event_);
   }
@@ -353,6 +348,23 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }
 
     return resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file.parent })?.path === file.path;
+  }
+
+  /**
+   * Re-roots the picker at a folder, in place.
+   *
+   * The query is cleared: it was typed to FIND this folder, and inside it it means nothing.
+   *
+   * @param folderPath - The folder to root at.
+   */
+  private navigateTo(folderPath: string): void {
+    // Normalized because the vault ROOT's path is `/`, and `..` out of a top-level folder lands on it.
+    // Left as `/` it is truthy, so the picker would look for a parent the root does not have and would
+    // Slice two characters off every row's relative path.
+    this.folderPath = normalizeFolderPath(folderPath);
+    this.shouldShowOnlyFolders = false;
+    this.inputEl.value = '';
+    this.update();
   }
 
   private async readTitle(file: TFile): Promise<string> {

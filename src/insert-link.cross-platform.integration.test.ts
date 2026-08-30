@@ -29,7 +29,7 @@ interface InsertLinkResult {
 describe('The `Insert link...` command', () => {
   it('writes a link to the picked note at the cursor', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, obsidianModule, pluginId }): Promise<InsertLinkResult> {
+      async callback({ app, lib: { waitUntil }, obsidianModule, pluginId }): Promise<InsertLinkResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const OPEN_TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
@@ -44,6 +44,14 @@ describe('The `Insert link...` command', () => {
         await waitUntil({
           message: 'the note being edited is open',
           predicate: () => app.workspace.getActiveFile()?.path === source.path,
+          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
+        });
+
+        // No picker may be open yet: these suites share one Obsidian, and each ends by picking something
+        // Rather than by walking away, so a leftover here means an earlier suite broke that contract.
+        await waitUntil({
+          message: 'no picker left open by an earlier suite',
+          predicate: () => document.querySelector('.prompt') === null,
           timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
         });
 
@@ -68,8 +76,14 @@ describe('The `Insert link...` command', () => {
           predicate: () => [...document.querySelectorAll('.suggestion-item')].some((el) => el.textContent.includes(targetName)),
           timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
         });
-        input.focus();
-        pressKey({ key: 'Enter' });
+        // Clicked rather than typed: the harness drives keys through Electron's input API, which does
+        // Not exist on Android, and this behavior has to be proven on both. Addressed by TEXT rather
+        // Than by position, so a row the vault happens to also match cannot be picked by mistake.
+        const row = [...document.querySelectorAll('.suggestion-item')].find((el) => el.textContent.includes(targetName));
+        if (!(row instanceof HTMLElement)) {
+          throw new TypeError('The picked note was not offered.');
+        }
+        row.click();
 
         await waitUntil({
           message: 'the picker closed',

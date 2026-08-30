@@ -6,36 +6,35 @@ import {
 } from 'vitest';
 
 /*
- * `Alt + 5` against a real Obsidian: with no query typed, the picker leads with what changed most
- * recently, and that ordering can be turned off in favour of a plain alphabetical one.
+ * `Alt + 4` against a real Obsidian: the picker hides everything that is not a folder, so a deep folder
+ * can be navigated to without reading past the notes on the way.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`.
+ * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
+ * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
+ * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
+ * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
  */
 
 const PLUGIN_ID = 'link-picker';
 const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-interface SortByUpdatedDateResult {
+interface ShowOnlyFoldersResult {
   readonly rowsAfterToggle: string[];
   readonly rowsBeforeToggle: string[];
 }
 
-describe('`Alt + 5` in the picker', () => {
-  it('stops leading with the most recently updated note', async () => {
+describe('`Alt + 4` in the picker', () => {
+  it('leaves only the folders, and the way out', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<SortByUpdatedDateResult> {
+      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<ShowOnlyFoldersResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
-        const folderName = `Updated-${stamp}`;
+        const folderName = `OnlyFolders-${stamp}`;
 
         await app.vault.createFolder(folderName);
-
-        // `Alpha` is written first and `Zulu` second, so the two orderings disagree: by date `Zulu`
-        // Leads, alphabetically `Alpha` does.
-        await app.vault.create(`${folderName}/Alpha-${stamp}.md`, '# Alpha\n');
-        await sleep(1100);
-        await app.vault.create(`${folderName}/Zulu-${stamp}.md`, '# Zulu\n');
+        await app.vault.createFolder(`${folderName}/Nested-${stamp}`);
+        await app.vault.create(`${folderName}/Note-${stamp}.md`, '# Note\n');
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);
@@ -57,17 +56,17 @@ describe('`Alt + 5` in the picker', () => {
         chooseFirstRow();
         await waitUntil({
           message: 'the folder is open',
-          predicate: () => rows().some((text) => text.includes('Alpha-')),
+          predicate: () => rows().some((text) => text.includes('Note-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         const rowsBeforeToggle = rows();
 
         focusInput();
-        pressKey({ key: '5', modifiers: ['Alt'] });
+        pressKey({ key: '4', modifiers: ['Alt'] });
         await waitUntil({
-          message: 'the ordering changed',
-          predicate: () => rows().join('\n') !== rowsBeforeToggle.join('\n'),
+          message: 'only the folders are listed',
+          predicate: () => rows().some((text) => text.includes('Nested-')) && rows().every((text) => !text.includes('Note-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
@@ -113,17 +112,9 @@ describe('`Alt + 5` in the picker', () => {
       input: { pluginId: PLUGIN_ID }
     });
 
-    expect(noteRows(result.rowsBeforeToggle)[0]).toContain('Zulu-');
-    expect(noteRows(result.rowsAfterToggle)[0]).toContain('Alpha-');
+    expect(result.rowsBeforeToggle.join('\n')).toContain('Note-');
+    expect(result.rowsAfterToggle.join('\n')).not.toContain('Note-');
+    expect(result.rowsAfterToggle.join('\n')).toContain('Nested-');
+    expect(result.rowsAfterToggle.join('\n')).toContain('..');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
-
-/**
- * Drops the pinned `..` row, which leads either ordering and says nothing about which one is in force.
- *
- * @param rows - The rows the picker showed.
- * @returns The note rows.
- */
-function noteRows(rows: string[]): string[] {
-  return rows.filter((text) => text.trim() !== '..');
-}

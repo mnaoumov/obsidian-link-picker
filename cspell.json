@@ -9,7 +9,9 @@
   "dictionaryDefinitions": [],
   "dictionaries": [],
   "words": [
+    "affordances",
     "asar",
+    "Dataview",
     "dblclick",
     "frontmatter",
     "GHSA",
@@ -22,6 +24,7 @@
     "offref",
     "reimplementation",
     "Seedable",
+    "subfolders",
     "Templater",
     "tsbuildinfo",
     "unvalidated",

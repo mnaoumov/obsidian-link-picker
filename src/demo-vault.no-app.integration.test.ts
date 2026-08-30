@@ -12,8 +12,8 @@ registerDemoVaultCoverageSuite({
   configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/plugin-settings.ts' }],
   interfaces: [],
   nonTrivialGuard: {
-    expectDemoNote: '04 Settings.md',
-    expectMember: 'checkboxSetting',
+    expectDemoNote: '05 Settings.md',
+    expectMember: 'excludedPathPatterns',
     interfaceName: 'PluginSettings',
     sourcePath: 'src/plugin-settings.ts'
   },

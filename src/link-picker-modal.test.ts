@@ -348,7 +348,7 @@ describe('LinkPickerModal', () => {
     it('should descend into a chosen folder rather than picking it', () => {
       const modal = openModal({});
 
-      modal.onChooseSuggestion(itemFor(modal, 'Notes'), mouseEvent());
+      modal.selectSuggestion(itemFor(modal, 'Notes'), mouseEvent());
 
       expect(resolve).not.toHaveBeenCalled();
       expect(relativePaths(modal.getSuggestions(''))).toContain('Ada.md');
@@ -359,7 +359,7 @@ describe('LinkPickerModal', () => {
       // Parent and two leading characters to strip, which mangles every row on the way back out.
       const modal = openModal({ folderPath: 'Notes' });
 
-      modal.onChooseSuggestion(itemFor(modal, PARENT_RELATIVE_PATH), mouseEvent());
+      modal.selectSuggestion(itemFor(modal, PARENT_RELATIVE_PATH), mouseEvent());
 
       expect(relativePaths(modal.getSuggestions(''))).toContain('Root.md');
       expect(relativePaths(modal.getSuggestions(''))).not.toContain(PARENT_RELATIVE_PATH);
@@ -369,7 +369,7 @@ describe('LinkPickerModal', () => {
       const modal = openModal({});
 
       pressHotkey(modal, 'Alt', '4');
-      modal.onChooseSuggestion(itemFor(modal, 'Notes'), mouseEvent());
+      modal.selectSuggestion(itemFor(modal, 'Notes'), mouseEvent());
 
       expect(relativePaths(modal.getSuggestions(''))).toContain('Ada.md');
     });
@@ -457,6 +457,17 @@ describe('LinkPickerModal', () => {
       modal.onClose();
 
       expect(reject).not.toHaveBeenCalled();
+    });
+
+    it('should still reject after navigating, since navigating is not choosing', () => {
+      // Navigation used to go through `selectSuggestion`, which marked the picker as having produced a
+      // Result — so dismissing it after one drill-in left the caller's promise pending forever.
+      const modal = openModal({});
+
+      modal.selectSuggestion(itemFor(modal, 'Notes'), mouseEvent());
+      modal.onClose();
+
+      expect(reject).toHaveBeenCalledOnce();
     });
 
     it('should reject once, however many times it is closed', () => {

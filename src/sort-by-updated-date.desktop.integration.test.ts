@@ -6,33 +6,39 @@ import {
 } from 'vitest';
 
 /*
- * `Alt + 3` against a real Obsidian: the picker lists one folder's own contents until subfolders are
- * asked for, and then it reaches through them.
+ * `Alt + 5` against a real Obsidian: with no query typed, the picker leads with what changed most
+ * recently, and that ordering can be turned off in favour of a plain alphabetical one.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`.
+ * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
+ * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
+ * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
+ * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
  */
 
 const PLUGIN_ID = 'link-picker';
 const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-interface IncludeSubfoldersResult {
+interface SortByUpdatedDateResult {
   readonly rowsAfterToggle: string[];
   readonly rowsBeforeToggle: string[];
 }
 
-describe('`Alt + 3` in the picker', () => {
-  it('reaches into subfolders, which are otherwise left alone', async () => {
+describe('`Alt + 5` in the picker', () => {
+  it('stops leading with the most recently updated note', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<IncludeSubfoldersResult> {
+      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<SortByUpdatedDateResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
-        const folderName = `Subfolders-${stamp}`;
-        const deepName = `Deep-${stamp}`;
+        const folderName = `Updated-${stamp}`;
 
         await app.vault.createFolder(folderName);
-        await app.vault.createFolder(`${folderName}/${deepName}`);
-        await app.vault.create(`${folderName}/${deepName}/Buried-${stamp}.md`, '# Buried\n');
+
+        // `Alpha` is written first and `Zulu` second, so the two orderings disagree: by date `Zulu`
+        // Leads, alphabetically `Alpha` does.
+        await app.vault.create(`${folderName}/Alpha-${stamp}.md`, '# Alpha\n');
+        await sleep(1100);
+        await app.vault.create(`${folderName}/Zulu-${stamp}.md`, '# Zulu\n');
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);
@@ -50,22 +56,21 @@ describe('`Alt + 3` in the picker', () => {
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
 
-        // Into the folder first, so the toggle is exercised where there is a subfolder to reach into.
         await filterTo(folderName);
         chooseFirstRow();
         await waitUntil({
           message: 'the folder is open',
-          predicate: () => rows().some((text) => text.includes(deepName)),
+          predicate: () => rows().some((text) => text.includes('Alpha-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         const rowsBeforeToggle = rows();
 
         focusInput();
-        pressKey({ key: '3', modifiers: ['Alt'] });
+        pressKey({ key: '5', modifiers: ['Alt'] });
         await waitUntil({
-          message: 'the buried note is reached',
-          predicate: () => rows().some((text) => text.includes('Buried-')),
+          message: 'the ordering changed',
+          predicate: () => rows().join('\n') !== rowsBeforeToggle.join('\n'),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
@@ -111,7 +116,17 @@ describe('`Alt + 3` in the picker', () => {
       input: { pluginId: PLUGIN_ID }
     });
 
-    expect(result.rowsBeforeToggle.join('\n')).not.toContain('Buried-');
-    expect(result.rowsAfterToggle.join('\n')).toContain('Buried-');
+    expect(noteRows(result.rowsBeforeToggle)[0]).toContain('Zulu-');
+    expect(noteRows(result.rowsAfterToggle)[0]).toContain('Alpha-');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
+
+/**
+ * Drops the pinned `..` row, which leads either ordering and says nothing about which one is in force.
+ *
+ * @param rows - The rows the picker showed.
+ * @returns The note rows.
+ */
+function noteRows(rows: string[]): string[] {
+  return rows.filter((text) => text.trim() !== '..');
+}

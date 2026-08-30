@@ -12,7 +12,10 @@ import {
  * Regression cover, too: the row is backed by the vault root, which is a folder, so before this was
  * fixed `Alt + 1` navigated to the root instead of resolving empty.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`.
+ * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
+ * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
+ * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
+ * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
  */
 
 const PLUGIN_ID = 'link-picker';

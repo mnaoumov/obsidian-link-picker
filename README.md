@@ -6,6 +6,19 @@ Obsidian's own link autocomplete searches the whole vault and ranks it fuzzily, 
 
 It is also callable. The picker returns a **string**, so a template or a script can ask for a link and drop the answer straight into a property value.
 
+<!-- markdownlint-disable MD033 -->
+
+<a href="https://github.com/mnaoumov/obsidian-link-picker/blob/HEAD/images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Navigate folders instead of guessing names" width="600"></a>
+
+<details>
+<summary>More screenshots</summary>
+
+<a href="https://github.com/mnaoumov/obsidian-link-picker/blob/HEAD/images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="One query, one order — exact match first" width="600"></a>
+
+</details>
+
+<!-- markdownlint-enable MD033 -->
+
 ## Demo vault
 
 **The documentation is a demo vault.** Every feature has a note that explains what it does and how to try it.
@@ -50,14 +63,25 @@ Aliases count as names, so a note with three aliases offers three rows that rank
 
 With no query typed, `..` and the current folder's own folder note hold the top two rows, so navigating out never means scrolling.
 
+## Named pickers
+
+If you link into one folder constantly, navigating there every time is the wrong shape. Add a **picker** in the settings and it becomes its own command, already rooted where you wanted to be — a vault that files people under `People` and courts under `Legal` gets two commands rather than one that asks first.
+
+Each picker carries a name, a folder, whether it starts with subfolders included, an inline field, a placeholder, and whether it offers to create notes. The inline field is emitted before the link, as `<field>: <link>`, which is what makes the result drop straight into a note's property list.
+
+A picker's command is identified by an id minted when the picker is created, not by its name, so renaming a picker keeps whatever hotkey you bound to it.
+
+Anything richer than those fields is code rather than configuration — validating a name, deriving a folder from it, seeding frontmatter. That is what the callable API is for.
+
 ## Folder notes
 
-The picker understands folder notes: choosing a folder in a link position links to that folder's note, and the folder's name becomes the alias rather than the note's own (`Foo/Foo.md` reads as `Foo`).
+The picker understands folder notes. A folder's note is not offered under its own file name — `Foo/Foo.md` says nothing that the `Foo` row did not already say, and choosing the folder is how you reach it. A folder note's aliases are still offered, so `Foo/Foo.md` aliased `The Foo project` is reachable under that name.
 
 Where that note lives is read from the installed [`folder-notes`](https://github.com/LostPaul/obsidian-folder-notes) plugin by default, so a vault that already has folder notes needs no configuration. `Folder note location` in the settings overrides it.
 
 ## Settings
 
+- **Pickers** — the named, preconfigured pickers, each of which becomes its own command.
 - **Folder note location** — `Auto` (read the `folder-notes` plugin), inside the folder, beside the folder, or none.
 - **Folder note name** — what the note is called, when not on `Auto`.
 - **Excluded paths** — substrings; a path containing any of them is hidden. Point this at your attachment folder.
