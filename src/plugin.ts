@@ -6,6 +6,7 @@ import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin
 
 import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
 import { LinkPickerComponent } from './link-picker-component.ts';
+import { PickerCommandsComponent } from './picker-commands-component.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
@@ -39,7 +40,8 @@ export class Plugin extends PluginBase {
     await this.commandHandlerComponent.registerCommandHandlers(() => [
       new InsertLinkEditorCommandHandler({
         app: this.app,
-        linkPickerComponent
+        linkPickerComponent,
+        picker: null
       }),
       new OpenDemoVaultCommandHandler({
         app: this.app,
@@ -48,5 +50,16 @@ export class Plugin extends PluginBase {
         pluginVersion: this.manifest.version
       })
     ]);
+
+    // Registered after the generic command, and separately, because these come and go with the settings
+    // While the generic one is always there.
+    this.addChild(
+      new PickerCommandsComponent({
+        app: this.app,
+        commandHandlerComponent: this.commandHandlerComponent,
+        linkPickerComponent,
+        pluginSettingsComponent
+      })
+    );
   }
 }

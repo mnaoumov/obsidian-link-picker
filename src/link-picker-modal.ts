@@ -24,6 +24,7 @@ import { generateMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
 import { getFrontmatterSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
 import { addPluginCssClasses } from 'obsidian-dev-utils/obsidian/plugin/plugin-context';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 import type { Item } from './item.ts';
 import type { SelectParams } from './select.ts';
@@ -85,6 +86,14 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   public onChooseSuggestion(item: Item): void {
+    // The empty row is backed by the vault ROOT, which is a folder, so it has to be recognized before the
+    // Folder check below. Testing it second — as the script this was extracted from did — made `Alt + 1`
+    // Navigate to the vault root instead of declining the link, which is the opposite of what it offers.
+    if (item === this.emptyItem) {
+      this.resolve(this.formatResult(item));
+      return;
+    }
+
     // Choosing a folder navigates into it rather than picking it — the only way to reach a nested note without typing its whole path.
     if (isFolder(item.file)) {
       this.folderPath = item.file.path;
@@ -165,13 +174,13 @@ export class LinkPickerModal extends SuggestModal<Item> {
     const items = files.flatMap((file) => this.buildItemsForFile(file));
 
     if (this.folderPath) {
-      const parent = getFolder({ app: this.app, pathOrFolder: this.folderPath }).parent;
-      if (parent) {
-        items.unshift({
-          ...createEmptyItem(parent),
-          relativePath: PARENT_RELATIVE_PATH
-        });
-      }
+      // Only the vault root has no parent, and the root's path is empty — so inside this branch the
+      // Parent always exists, and asserting it says so without leaving a branch that can never be taken.
+      const parent = ensureNonNullable(getFolder({ app: this.app, pathOrFolder: this.folderPath }).parent, 'A non-root folder always has a parent');
+      items.unshift({
+        ...createEmptyItem(parent),
+        relativePath: PARENT_RELATIVE_PATH
+      });
     }
 
     for (const item of items) {
@@ -289,22 +298,20 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return this.options.inlineField ? `${this.options.inlineField}: ${link}` : link;
   }
 
+  /**
+   * Builds the link for a picked row.
+   *
+   * Only ever reached with a FILE row. Choosing a folder navigates into it instead of picking it — see
+   * {@link onChooseSuggestion} — so the folder-to-folder-note path the original script carried here could
+   * never run, and neither could the folder-name fallback for a row with no alias: a folder note is only
+   * ever listed under an alias it actually has, so a row without one is never a folder note.
+   */
   private generateLink(item: Item): string {
-    const target = isFile(item.file) ? item.file : this.resolveFolderTarget(item.file);
-
-    if (!target) {
-      return '';
-    }
-
-    // A folder note's own name says nothing (`Foo/Foo.md`, `Foo/index.md`); the folder's name is the label
-    // A reader wants, so supply it when the picked row carried no alias of its own.
-    const alias = item.aliases[0] ?? (this.isFolderNote(target) ? (target.parent?.name ?? '') : '');
-
     return generateMarkdownLink({
-      alias,
+      alias: item.aliases[0] ?? '',
       app: this.app,
       sourcePathOrFile: this.options.sourcePathOrFile,
-      targetPathOrFile: target
+      targetPathOrFile: asFile(item.file)
     });
   }
 
@@ -359,14 +366,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
     // Zero-padded so it still sorts lexicographically alongside the ISO strings a frontmatter property
     // Holds — the comparator does one `localeCompare` and must not care which source a value came from.
     return isFile(file) ? String(file.stat.mtime).padStart(EPOCH_DIGITS, '0') : '';
-  }
-
-  private resolveFolderTarget(file: TAbstractFile): null | TFile {
-    if (!isFolder(file)) {
-      return null;
-    }
-
-    return resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file });
   }
 
   private toggleIncludeAllFiles(): void {
