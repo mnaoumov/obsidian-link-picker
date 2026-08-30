@@ -97,9 +97,11 @@ describe('LinkPickerComponent', () => {
       expect(lastParams().folderPath).toBe('');
       expect(lastParams().includeSubfolders).toBe(false);
       expect(lastParams().initialQuery).toBe('');
-      expect(lastParams().inlineField).toBe('');
       expect(lastParams().placeholder).toBe('');
+      expect(lastParams().prefix).toBe('');
+      expect(lastParams().suffix).toBe('');
       expect(lastParams().shouldAllowCreate).toBe(true);
+      expect(lastParams().shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
     });
 
     it('should write the link into the active file by default', async () => {

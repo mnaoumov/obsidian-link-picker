@@ -21,10 +21,12 @@ const PERSON_PICKER = {
   folderPath: PEOPLE_FOLDER_PATH,
   id: 'demo-person-picker',
   includeSubfolders: false,
-  inlineField: 'Person',
   name: 'Insert person',
   placeholder: 'Who?',
-  shouldAllowCreate: true
+  prefix: 'Person: ',
+  shouldAllowCreate: true,
+  shouldApplyPrefixSuffixWhenNoLinkSelected: false,
+  suffix: ''
 };
 
 interface PickerSettings {
@@ -47,8 +49,9 @@ interface LinkPickerApiSelectParams {
   createNote?(folderPath: string, newNoteTitle: string): Promise<TFile>;
   folderPath?: string;
   includeSubfolders?: boolean;
-  inlineField?: string;
   placeholder?: string;
+  prefix?: string;
+  suffix?: string;
 }
 
 interface PublishedApiRecord {
@@ -69,7 +72,7 @@ interface StateBagWindow {
  * Configures a named picker scoped to the `People` folder, which becomes its own command.
  *
  * Manual equivalent: open **Settings → Link Picker**, press `+` beside **Pickers**, and fill the page
- * in — name `Insert person`, folder `Materials/01 Picking a link/People`, inline field `Person`.
+ * in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `Person: `.
  */
 export async function addPersonPicker(app: App): Promise<void> {
   await editSettings(app, (settings) => {
@@ -103,8 +106,8 @@ export function askApiForALink(app: App): void {
       return await app.vault.create(`${folderPath}/${newNoteTitle}.md`, `# ${newNoteTitle}\n`);
     },
     folderPath: PEOPLE_FOLDER_PATH,
-    inlineField: 'Person',
-    placeholder: 'Who?'
+    placeholder: 'Who?',
+    prefix: 'Person: '
   })
     .then((link: string) => {
       new Notice(`The API returned:\n${link || '(the empty string — you chose "No link")'}`);

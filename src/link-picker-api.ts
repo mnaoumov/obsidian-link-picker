@@ -65,10 +65,12 @@ const selectOptionsSchema = z.looseObject({
   folderPath: z.string().optional(),
   includeSubfolders: z.boolean().optional(),
   initialQuery: z.string().optional(),
-  inlineField: z.string().optional(),
   placeholder: z.string().optional(),
+  prefix: z.string().optional(),
   shouldAllowCreate: z.boolean().optional(),
+  shouldApplyPrefixSuffixWhenNoLinkSelected: z.boolean().optional(),
   sourcePathOrFile: sourcePathOrFileSchema.optional(),
+  suffix: z.string().optional(),
   titlePropertyName: z.string().optional(),
   updatedPropertyName: z.string().optional()
 });

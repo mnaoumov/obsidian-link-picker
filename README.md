@@ -69,7 +69,7 @@ With no query typed, `..` and the current folder's own folder note hold the top 
 
 If you link into one folder constantly, navigating there every time is the wrong shape. Add a **picker** in the settings and it becomes its own command, already rooted where you wanted to be — a vault that files people under `People` and courts under `Legal` gets two commands rather than one that asks first.
 
-Each picker carries a name, a folder, whether it starts with subfolders included, an inline field, a placeholder, and whether it offers to create notes. The inline field is emitted before the link, as `<field>: <link>`, which is what makes the result drop straight into a note's property list.
+Each picker carries a name, a folder, whether it starts with subfolders included, a prefix and suffix, a placeholder, and whether it offers to create notes. The prefix and suffix wrap the link, so a prefix of `"Person: "` is what makes the result drop straight into a note's property list.
 
 A picker's command is identified by an id minted when the picker is created, not by its name, so renaming a picker keeps whatever hotkey you bound to it.
 
@@ -112,7 +112,7 @@ const ref = watchPluginApi<LinkPickerApi>({
 
 // `ref.value` is `null` until the plugin has loaded, and becomes non-null on its own.
 const api = await ref.whenAvailable();
-const link = await api.select({ folderPath: 'People', inlineField: 'Person' });
+const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 // → 'Person: [[Ada Lovelace|Ada]]'
 ```
 
@@ -122,7 +122,8 @@ const link = await api.select({ folderPath: 'People', inlineField: 'Person' });
 - **`folderPath`** — the folder the picker opens rooted at. A starting point, not a fence.
 - **`includeSubfolders`** — whether it starts with subfolder contents included.
 - **`initialQuery`** — seeds the input, so a picker opened over a selection starts filtered by it.
-- **`inlineField`** — emitted before the link, as `<field>: <link>`.
+- **`prefix`** and **`suffix`** — wrap the link. A prefix of `"Person: "` produces `Person: [[Ada]]`; plain strings rather than field names, so `"- "` or `"` work too.
+- **`shouldApplyPrefixSuffixWhenNoLinkSelected`** — whether the prefix and suffix are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
 - **`placeholder`** — the modal's placeholder text.
 - **`shouldAllowCreate`** — whether `Create new` is offered at all.
 - **`sourcePathOrFile`** — the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.

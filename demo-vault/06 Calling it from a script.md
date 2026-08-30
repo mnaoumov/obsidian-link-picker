@@ -5,7 +5,7 @@ Everything so far has been the command: you run it, and a link lands at your cur
 The picker was extracted from a script in the author's own vault whose every caller was a Templater template writing a link into a property value:
 
 ```text
-- <% await select({ folderPath: 'Legal/Суд', inlineField: 'Суд' }) %>
+- <% await select({ folderPath: 'Legal/Суд', prefix: 'Суд: ' }) %>
 ```
 
 Seventeen templates, and not one of them wanted an edit at a cursor. They wanted the **string**. So the plugin publishes its picker as a callable API, and a command-only version of it would have served none of them.

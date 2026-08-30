@@ -10,7 +10,7 @@ import {
  * reaches the picker through the published API and gets a STRING back.
  *
  * This is the half the extraction was for. The 17 Templater templates the picker came from all write
- * `<inlineField>: <link>` into a property value, so a command that edits at a cursor serves none of them.
+ * `<prefix><link><suffix>` into a property value, so a command that edits at a cursor serves none of them.
  *
  * The record is read STRUCTURALLY out of the shared registry rather than through `watchPluginApi`, for two
  * reasons. The weak one: `lib` inside an `evalInObsidian` closure carries only the harness's own base
@@ -54,7 +54,7 @@ describe('The published API', () => {
          */
         interface SelectParamsLike {
           readonly initialQuery?: string;
-          readonly inlineField?: string;
+          readonly prefix?: string;
         }
 
         interface ApiLike {
@@ -106,7 +106,7 @@ describe('The published API', () => {
         // Driving below has to happen while this promise is still pending.
         const linkPromise = record.api.select({
           initialQuery: targetName,
-          inlineField: 'Person'
+          prefix: 'Person: '
         });
 
         await waitUntil({
@@ -157,7 +157,7 @@ describe('The published API', () => {
     expect(result.wasPickerOpened).toBe(true);
     expect(result.apiVersion).toMatch(/^1\./);
 
-    // The inline field prefix is the whole shape the templates depend on: the result drops straight into
+    // The prefix is the whole shape the templates depend on: the result drops straight into
     // A note's property list as `Person: [[Ada]]`.
     expect(result.link).toMatch(/^Person: /);
     expect(result.link).toContain('Ada-');

@@ -57,10 +57,12 @@ describe('LINK_PICKER_API_CONTRACT', () => {
         folderPath: 'People',
         includeSubfolders: true,
         initialQuery: 'Ada',
-        inlineField: 'Person',
         placeholder: 'Who?',
+        prefix: 'Person: ',
         shouldAllowCreate: false,
+        shouldApplyPrefixSuffixWhenNoLinkSelected: true,
         sourcePathOrFile: 'notes/note.md',
+        suffix: ' (done)',
         titlePropertyName: 'title',
         updatedPropertyName: 'updated'
       }]);
@@ -70,6 +72,10 @@ describe('LINK_PICKER_API_CONTRACT', () => {
 
     it('should reject an option at the wrong type', () => {
       expect(validateInput([{ folderPath: 42 }])).not.toEqual([]);
+    });
+
+    it('should reject a non-boolean where the empty-result switch belongs', () => {
+      expect(validateInput([{ shouldApplyPrefixSuffixWhenNoLinkSelected: 'yes' }])).not.toEqual([]);
     });
 
     it('should reject a `createNote` that is not callable, which would otherwise fail deep inside the picker', () => {

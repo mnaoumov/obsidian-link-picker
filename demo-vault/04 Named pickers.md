@@ -11,7 +11,7 @@ caption: Add an "Insert person" picker scoped to the People folder
 await require('/demoSetup.ts').addPersonPicker(app);
 ```
 
-Manual equivalent: open **Settings → Link Picker**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, folder `Materials/01 Picking a link/People`, inline field `Person`.
+Manual equivalent: open **Settings → Link Picker**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `"Person: "`.
 
 ```code-button
 ---
@@ -28,7 +28,7 @@ Now open the Command Palette. Alongside **Link Picker: Insert link...** there is
 Person: [[Ada Lovelace|Ada]]
 ```
 
-That prefix is the `inlineField`, named for Dataview's inline-field syntax. It is what makes the result drop straight into a note's property list rather than into a sentence.
+That prefix is the `prefix` setting — a plain string, not a field name, so `"Person: "` gives you Dataview's inline-field shape while `"- "` or `"` give you something else entirely. A `suffix` closes the pair when you need one.
 
 ## What a picker holds
 
@@ -40,10 +40,14 @@ Each picker is a page under **Pickers** in the settings tab, with the native `+`
   - where it opens. A starting point, not a fence — `..` still navigates out of it.
 - `includeSubfolders`
   - whether it starts with subfolder contents included. `Alt + 3` still toggles it.
-- `inlineField`
-  - emitted before the link, as `<field>: <link>`.
+- `prefix`
+  - emitted immediately before the link. `"Person: "` is what produces the property-list shape above.
+- `suffix`
+  - emitted immediately after the link.
+- `shouldApplyPrefixSuffixWhenNoLinkSelected`
+  - whether the prefix and suffix are still emitted when you press **No link**. Off by default, so declining writes nothing at all rather than a `"Person: "` with nothing after it.
 - `placeholder`
-  - the picker's placeholder text, falling back to the inline field.
+  - the picker's placeholder text.
 - `shouldAllowCreate`
   - whether `Shift + Enter` offers to create a note that does not exist.
 

@@ -58,14 +58,18 @@ export interface SelectOptions {
   readonly initialQuery?: string;
 
   /**
-   * Emitted before the link, as `<inlineField>: <link>`, and used as the placeholder when none is given.
-   */
-  readonly inlineField?: string;
-
-  /**
    * The modal's placeholder text.
    */
   readonly placeholder?: string;
+
+  /**
+   * Emitted immediately before the link.
+   *
+   * A property list wants `Person: `, so that is what this is for — but it is a plain string rather than a
+   * field name, so a caller that wants `- ` or `"` gets those too without the plugin knowing what a
+   * Dataview inline field is.
+   */
+  readonly prefix?: string;
 
   /**
    * Whether "create new" is offered.
@@ -73,10 +77,24 @@ export interface SelectOptions {
   readonly shouldAllowCreate?: boolean;
 
   /**
+   * Whether {@link prefix} and {@link suffix} are still emitted when the user declines a link.
+   *
+   * Off by default, which makes declining return the empty string rather than a `Person: ` with nothing
+   * after it — a dangling property key is worse than an absent one. Turn it on where the surrounding
+   * document needs the key present regardless.
+   */
+  readonly shouldApplyPrefixSuffixWhenNoLinkSelected?: boolean;
+
+  /**
    * The note the generated link is written INTO, which decides whether it comes out relative or absolute.
    * Defaults to the active file.
    */
   readonly sourcePathOrFile?: PathOrFile;
+
+  /**
+   * Emitted immediately after the link.
+   */
+  readonly suffix?: string;
 
   /**
    * Frontmatter property holding a note's display title. Overrides the setting.
@@ -100,10 +118,12 @@ export interface SelectParams {
   readonly folderPath: string;
   readonly includeSubfolders: boolean;
   readonly initialQuery: string;
-  readonly inlineField: string;
   readonly placeholder: string;
+  readonly prefix: string;
   readonly shouldAllowCreate: boolean;
+  readonly shouldApplyPrefixSuffixWhenNoLinkSelected: boolean;
   readonly sourcePathOrFile: PathOrFile;
+  readonly suffix: string;
   readonly titlePropertyName: string;
   readonly updatedPropertyName: string;
 }
@@ -112,7 +132,7 @@ export interface SelectParams {
  * Opens the picker and resolves with the chosen link.
  *
  * The result is a STRING rather than a file, because the picker's oldest and most common caller is a
- * template writing a property value: `<inlineField>: <link>`, or the bare link, or the empty string when
+ * template writing a property value: `<prefix><link><suffix>`, or the bare link, or the empty string when
  * the user deliberately chose nothing.
  *
  * @param options - The fully resolved options.

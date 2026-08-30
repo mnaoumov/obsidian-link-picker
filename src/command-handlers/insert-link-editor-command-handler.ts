@@ -50,10 +50,12 @@ export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
         folderPath: this.picker?.folderPath ?? '',
         includeSubfolders: this.picker?.includeSubfolders ?? false,
         initialQuery: editor.getSelection(),
-        inlineField: this.picker?.inlineField ?? '',
         placeholder: this.picker?.placeholder ?? '',
+        prefix: this.picker?.prefix ?? '',
         shouldAllowCreate: this.picker?.shouldAllowCreate ?? true,
-        sourcePathOrFile: context.file ?? ''
+        shouldApplyPrefixSuffixWhenNoLinkSelected: this.picker?.shouldApplyPrefixSuffixWhenNoLinkSelected ?? false,
+        sourcePathOrFile: context.file ?? '',
+        suffix: this.picker?.suffix ?? ''
       });
     } catch {
       // Dismissing the picker rejects. That is the user declining, not a failure, so it produces neither a notice nor an edit.
