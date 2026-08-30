@@ -8,7 +8,6 @@
     "importHelpers": true,
     "inlineSourceMap": true,
     "inlineSources": true,
-    "jsx": "react-jsx",
     "lib": [
       "DOM",
       "DOM.Iterable",
@@ -23,8 +22,7 @@
     "types": [
       "@obsidian-typings/obsidian-public-latest",
       "@total-typescript/ts-reset",
-      "node",
-      "svelte"
+      "node"
     ],
     "verbatimModuleSyntax": true
   },

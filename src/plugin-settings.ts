@@ -20,6 +20,14 @@ export class Picker {
   public folderPath = '';
 
   /**
+   * The picker's stable identity, minted by {@link createPicker} when it is added.
+   *
+   * The command id is derived from this rather than from {@link name}, so renaming a picker keeps
+   * whatever hotkey the user bound to it.
+   */
+  public id = '';
+
+  /**
    * Whether the picker starts with subfolder contents included. Can be toggled while it is open.
    */
   public includeSubfolders = false;
@@ -87,4 +95,20 @@ export class PluginSettings {
    * Empty falls back to the file's modification time, which every vault has.
    */
   public updatedPropertyName = '';
+}
+
+/**
+ * Builds a picker with a fresh {@link Picker.id}.
+ *
+ * The only supported way to add one: a picker whose id is blank, or which shares an id with another,
+ * fails validation and the whole list falls back to empty rather than registering commands that
+ * collide.
+ *
+ * @returns The new picker.
+ */
+export function createPicker(): Picker {
+  const picker = new Picker();
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.randomUUID is a stable Web API in the Obsidian (Electron) runtime.
+  picker.id = crypto.randomUUID();
+  return picker;
 }

@@ -274,4 +274,44 @@ describe('sortItems', () => {
 
     expect(sortedPaths(items, '')).toEqual(['Court', 'Judge.md']);
   });
+
+  it('should fall back to the path when two notes were updated at the same moment', () => {
+    const items = [
+      buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md', updated: '2020-01-01' }),
+      buildItem('Legal/Judge.md', { relativePath: 'Judge.md', updated: '2020-01-01' })
+    ];
+
+    expect(sortedPaths(items, '', buildSortContext({ shouldSortByUpdatedDate: true }))).toEqual(['Judge.md', 'Judgement.md']);
+  });
+
+  it('should let the query outrank the updated date once the user has typed', () => {
+    // `u e` ties on every ranking tier, so the ordering reaches the file properties — where the newer
+    // Note would win if the date still counted. It does not: what was typed decides.
+    const items = [
+      buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md', updated: '2030-01-01' }),
+      buildItem('Legal/Judge.md', { relativePath: 'Judge.md', updated: '2020-01-01' })
+    ];
+
+    expect(sortedPaths(items, 'u e', buildSortContext({ shouldSortByUpdatedDate: true }))).toEqual(['Judge.md', 'Judgement.md']);
+  });
+
+  it('should put a row with no alias before the same note under one', () => {
+    const items = [
+      buildItem('Legal/Judge.md', { aliases: ['Alpha'], relativePath: 'Judge.md' }),
+      buildItem('Legal/Judge.md', { relativePath: 'Judge.md' })
+    ];
+
+    expect(sortItems(items, '', buildSortContext()).map((item) => item.aliases[0] ?? '')).toEqual(['', 'Alpha']);
+  });
+
+  it('should fall through every tier to the path when two notes match only by containing the terms', () => {
+    // Neither note starts with, equals, or has a path part beginning with `u` or `e`, so all six ranking
+    // Tiers tie and the ordering falls back to the file properties.
+    const items = [
+      buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md' }),
+      buildItem('Legal/Judge.md', { relativePath: 'Judge.md' })
+    ];
+
+    expect(sortedPaths(items, 'u e')).toEqual(['Judge.md', 'Judgement.md']);
+  });
 });

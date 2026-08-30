@@ -21,6 +21,7 @@
     "build:clean": "jiti scripts/build-clean.ts",
     "build:compile": "jiti scripts/build-compile.ts",
     "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
+    "capture:screenshots": "jiti scripts/capture-screenshots.ts",
     "commit": "jiti scripts/commit.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
@@ -44,8 +45,6 @@
     "version": "jiti scripts/version.ts"
   },
   "overrides": {
-    "@codemirror/state": "$@codemirror/state",
-    "@codemirror/view": "$@codemirror/view",
     "@eslint/config-helpers": "^0.7.0",
     "@puppeteer/browsers": "^3.2.1",
     "@vitest/coverage-v8": "$@vitest/coverage-v8",
@@ -58,15 +57,10 @@
     "typescript": "6.0.3"
   },
   "devDependencies": {
-    "@codemirror/language": "6.12.3",
-    "@codemirror/state": "6.5.0",
-    "@codemirror/view": "6.38.6",
     "@obsidian-typings/obsidian-public-latest": "^6.34.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^26.3.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
     "@vitest/coverage-v8": "^4.1.11",
     "better-typescript-lib": "^2.12.0",
     "brace-expansion-upstream": "npm:brace-expansion@^5.0.9",
@@ -77,12 +71,10 @@
     "jsdom": "^30.0.1",
     "nano-staged": "^1.0.2",
     "obsidian": "^1.13.1",
-    "obsidian-dev-utils": "^96.0.1",
-    "obsidian-integration-testing": "^10.3.2",
+    "obsidian-dev-utils": "^96.3.1",
+    "obsidian-integration-testing": "^10.4.0",
     "obsidian-test-mocks": "^4.2.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "svelte": "^5.56.10",
+    "sharp": "^0.35.3",
     "vitest": "^4.1.11"
   }
 }

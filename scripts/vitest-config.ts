@@ -12,6 +12,16 @@ import { defineObsidianPluginVitestConfig } from 'obsidian-dev-utils/script-util
 const DEMO_VAULT_TEST_FILES = 'src/**/*.demo-vault.integration.test.ts';
 
 /**
+ * The screenshot-capture suite that writes `images/screenshots/screenshot-desktop-*.png`.
+ *
+ * Named `*.desktop-capture.` rather than `*.desktop.` so it matches NONE of the standard project
+ * globs. That keeps it out of `npm run test:integration` entirely — capturing is an explicit operation
+ * (`npm run capture:screenshots`), not something every test run does, and folding it in would rewrite
+ * the PNGs on every run and dirty the tree mid-release.
+ */
+const DESKTOP_CAPTURE_TEST_FILES = 'src/**/*.desktop-capture.integration.test.ts';
+
+/**
  * One `it` per note runs every button in that note, and each button re-opens the note, walks the
  * preview to find itself and then waits up to 15s for a result. A note with a dozen buttons therefore
  * blows well past the desktop project's 30s default — which fails the whole note with a bare vitest
@@ -22,6 +32,13 @@ const DEMO_VAULT_TIMEOUT_IN_MILLISECONDS = 600_000;
 export const config = defineObsidianPluginVitestConfig({
   customProjects(context: ObsidianPluginVitestConfigContext): TestProjectConfiguration[] {
     return [
+      {
+        test: {
+          ...context.desktop,
+          include: [DESKTOP_CAPTURE_TEST_FILES],
+          name: 'capture-screenshots:desktop'
+        }
+      },
       {
         test: {
           ...context.desktop,

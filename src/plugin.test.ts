@@ -1,0 +1,114 @@
+import type {
+  App,
+  PluginManifest
+} from 'obsidian';
+
+import { castTo } from 'obsidian-dev-utils/object-utils';
+import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
+import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
+import { App as AppCls } from 'obsidian-test-mocks/obsidian';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+interface ComponentModuleActual {
+  Component: new () => object;
+}
+
+interface PluginsLike {
+  getPlugin: ReturnType<typeof vi.fn>;
+}
+
+interface PluginsMock {
+  plugins: PluginsLike;
+}
+
+vi.mock('./plugin-settings-tab.ts', () => ({
+  PluginSettingsTab: vi.fn()
+}));
+
+vi.mock('./link-picker-component.ts', async () => {
+  const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
+  class LinkPickerComponent extends Component {}
+  return { LinkPickerComponent };
+});
+
+vi.mock('./picker-commands-component.ts', async () => {
+  const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
+  class PickerCommandsComponent extends Component {}
+  return { PickerCommandsComponent };
+});
+
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { LinkPickerComponent } from './link-picker-component.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { PickerCommandsComponent } from './picker-commands-component.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { Plugin } from './plugin.ts';
+
+const PLUGIN_MANIFEST: PluginManifest = {
+  author: 'mnaoumov',
+  description: 'test',
+  id: 'link-picker',
+  minAppVersion: '1.0.0',
+  name: 'Link Picker',
+  version: '1.0.0'
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('Plugin', () => {
+  it('should add the settings component, the settings tab and the picker', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const addChildSpy = vi.spyOn(plugin, 'addChild');
+
+    await plugin.onload();
+
+    const addedChildren = addChildSpy.mock.calls.map((call) => call[0]);
+    expect(addedChildren.some((child) => child instanceof PluginSettingsComponent)).toBe(true);
+    expect(addedChildren.some((child) => child instanceof PluginSettingsTabComponent)).toBe(true);
+    expect(addedChildren.some((child) => child instanceof LinkPickerComponent)).toBe(true);
+    plugin.unload();
+  });
+
+  it('should own the per-picker commands through their own component, so they can come and go', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const addChildSpy = vi.spyOn(plugin, 'addChild');
+
+    await plugin.onload();
+
+    expect(addChildSpy.mock.calls.map((call) => call[0]).some((child) => child instanceof PickerCommandsComponent)).toBe(true);
+    plugin.unload();
+  });
+
+  it('should register the generic insert command and the demo-vault command itself', async () => {
+    const registerCommandHandlers = vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers');
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+
+    await plugin.onload();
+
+    // The base class registers its own commands first, so the plugin's own batch is the last one.
+    const factory = registerCommandHandlers.mock.calls.at(-1)?.[0];
+    expect(factory?.().map((handler) => handler.buildCommand().id)).toEqual(['insert-link', 'open-demo-vault']);
+    plugin.unload();
+  });
+});
+
+function createConfiguredApp(): App {
+  const appMock = AppCls.createConfigured__();
+  appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
+    callback();
+  });
+  // The strict App mock throws on an unmocked member, and the library's layout-ready wiring reaches for
+  // `plugins` to look for Notebook Navigator, so it is assigned wholesale before use.
+  castTo<PluginsMock>(appMock).plugins = { getPlugin: vi.fn().mockReturnValue(null) };
+  return appMock.asOriginalType__();
+}
