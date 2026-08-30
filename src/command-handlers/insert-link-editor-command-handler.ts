@@ -1,5 +1,4 @@
 import type {
-  App,
   Editor,
   MarkdownFileInfo
 } from 'obsidian';
@@ -10,7 +9,6 @@ import type { LinkPickerComponent } from '../link-picker-component.ts';
 import type { Picker } from '../plugin-settings.ts';
 
 interface InsertLinkEditorCommandHandlerConstructorParams {
-  readonly app: App;
   readonly linkPickerComponent: LinkPickerComponent;
 
   /**
@@ -30,7 +28,6 @@ interface InsertLinkEditorCommandHandlerConstructorParams {
  * picker keeps whatever hotkey the user bound to it.
  */
 export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
-  private readonly app: App;
   private readonly linkPickerComponent: LinkPickerComponent;
   private readonly picker: null | Picker;
 
@@ -41,7 +38,6 @@ export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
       name: params.picker?.name ?? 'Insert link...'
     });
 
-    this.app = params.app;
     this.linkPickerComponent = params.linkPickerComponent;
     this.picker = params.picker;
   }
@@ -51,7 +47,6 @@ export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
 
     try {
       link = await this.linkPickerComponent.select({
-        app: this.app,
         folderPath: this.picker?.folderPath ?? '',
         includeSubfolders: this.picker?.includeSubfolders ?? false,
         initialQuery: editor.getSelection(),

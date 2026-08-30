@@ -10,12 +10,14 @@ import { LinkPickerModal } from './link-picker-modal.ts';
 /**
  * What a caller passes to {@link select}.
  *
- * Everything except {@link SelectOptions.app} is optional: the plugin's settings supply the defaults, and
- * anything given here overrides them for this one call.
+ * Every member is optional: the plugin's settings supply the defaults, and anything given here overrides
+ * them for this one call.
+ *
+ * There is deliberately no `app` here. This is the shape the plugin's published API takes, and a consumer
+ * reaching that API across the plugin boundary must not have to hand the provider back the very
+ * {@link App} the provider already holds.
  */
 export interface SelectOptions {
-  readonly app: App;
-
   /**
    * Creates the note when the user picks "create new".
    *

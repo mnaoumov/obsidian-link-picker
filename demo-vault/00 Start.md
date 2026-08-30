@@ -35,6 +35,7 @@ That is the whole idea. The notes below take it apart.
 | [03 Ranking](<./03 Ranking.md>) | why the same query always puts the same note first |
 | [04 Named pickers](<./04 Named pickers.md>) | one preconfigured command per folder you link into |
 | [05 Settings](<./05 Settings.md>) | every setting, by the key it is stored under |
+| [06 Calling it from a script](<./06 Calling it from a script.md>) | the published API, and the `createNote` hook it exists for |
 
 ## Materials
 

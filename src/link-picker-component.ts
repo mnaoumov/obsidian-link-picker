@@ -96,7 +96,7 @@ export class LinkPickerComponent extends ComponentEx {
     const settings = this.pluginSettingsComponent.settings;
 
     return {
-      app: params.app,
+      app: this.app,
       createNote: params.createNote ?? (async (folderPath: string, newNoteTitle: string): Promise<TFile> => await this.createNote(folderPath, newNoteTitle)),
       excludedPathPatterns: params.excludedPathPatterns ?? settings.excludedPathPatterns,
       folderNoteConfig: params.folderNoteConfig ?? this.resolveFolderNoteConfig(),

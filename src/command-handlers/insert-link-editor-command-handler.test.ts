@@ -1,5 +1,4 @@
 import type {
-  App,
   Editor,
   MarkdownFileInfo,
   TFile
@@ -136,7 +135,6 @@ function createEditor(selection: string): Editor {
 function createHandler(picker: null | ReturnType<typeof createPicker>, select = vi.fn(() => Promise.resolve(''))): TestableHandler {
   return castTo<TestableHandler>(
     new InsertLinkEditorCommandHandler({
-      app: strictProxy<App>({}),
       linkPickerComponent: strictProxy<LinkPickerComponent>({ select }),
       picker
     })

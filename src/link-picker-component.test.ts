@@ -72,7 +72,7 @@ describe('LinkPickerComponent', () => {
       settings.titlePropertyName = 'title';
       settings.updatedPropertyName = 'updated';
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(lastParams().excludedPathPatterns).toEqual(['/attachments']);
       expect(lastParams().titlePropertyName).toBe('title');
@@ -83,7 +83,6 @@ describe('LinkPickerComponent', () => {
       settings.excludedPathPatterns = ['/attachments'];
 
       await createComponent().select({
-        app: createApp(),
         excludedPathPatterns: [],
         titlePropertyName: 'name'
       });
@@ -93,7 +92,7 @@ describe('LinkPickerComponent', () => {
     });
 
     it('should default to the whole vault with nothing preselected', async () => {
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(lastParams().folderPath).toBe('');
       expect(lastParams().includeSubfolders).toBe(false);
@@ -106,13 +105,13 @@ describe('LinkPickerComponent', () => {
     it('should write the link into the active file by default', async () => {
       activeFile = fileAt('notes/note.md');
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(lastParams().sourcePathOrFile).toBe(activeFile);
     });
 
     it('should fall back to the vault root when nothing is open', async () => {
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(lastParams().sourcePathOrFile).toBe('');
     });
@@ -121,7 +120,6 @@ describe('LinkPickerComponent', () => {
       activeFile = fileAt('notes/note.md');
 
       await createComponent().select({
-        app: createApp(),
         sourcePathOrFile: ''
       });
 
@@ -129,13 +127,13 @@ describe('LinkPickerComponent', () => {
     });
 
     it('should return whatever the picker resolved with', async () => {
-      expect(await createComponent().select({ app: createApp() })).toBe('[[Ada]]');
+      expect(await createComponent().select({})).toBe('[[Ada]]');
     });
   });
 
   describe('folder notes', () => {
     it('should read the folder-notes plugin\'s own configuration by default', async () => {
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(resolveFolderNoteConfig.mock.calls[0]?.[0]).not.toHaveProperty('location');
     });
@@ -143,7 +141,7 @@ describe('LinkPickerComponent', () => {
     it('should use the configured location once the vault says where folder notes live', async () => {
       settings.folderNoteLocation = FolderNoteLocation.InsideFolder;
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(resolveFolderNoteConfig.mock.calls[0]?.[0]).toHaveProperty('location', FolderNoteLocation.InsideFolder);
     });
@@ -151,7 +149,7 @@ describe('LinkPickerComponent', () => {
     it('should name the folder note after its folder when no name is configured', async () => {
       settings.folderNoteLocation = FolderNoteLocation.InsideFolder;
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(resolveName()(strictProxy<TFolder>({ name: 'People' }))).toBe('People');
     });
@@ -160,7 +158,7 @@ describe('LinkPickerComponent', () => {
       settings.folderNoteLocation = FolderNoteLocation.InsideFolder;
       settings.folderNoteName = 'index';
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(resolveName()(strictProxy<TFolder>({ name: 'People' }))).toBe('index');
     });
@@ -169,7 +167,6 @@ describe('LinkPickerComponent', () => {
       const folderNoteConfig = strictProxy<FolderNoteConfig>({});
 
       await createComponent().select({
-        app: createApp(),
         folderNoteConfig
       });
 
@@ -183,14 +180,14 @@ describe('LinkPickerComponent', () => {
       const existing = fileAt('People/Ada.md');
       getFileOrNull.mockReturnValue(existing);
 
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       expect(await lastParams().createNote('People', 'Ada')).toBe(existing);
       expect(create).not.toHaveBeenCalled();
     });
 
     it('should create the note empty, since templates are vault policy', async () => {
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       await lastParams().createNote('People', 'Ada');
 
@@ -199,7 +196,7 @@ describe('LinkPickerComponent', () => {
 
     it('should create the folder first when it is not there yet', async () => {
       exists.mockResolvedValue(false);
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       await lastParams().createNote('People', 'Ada');
 
@@ -208,7 +205,7 @@ describe('LinkPickerComponent', () => {
 
     it('should not try to create the vault root', async () => {
       exists.mockResolvedValue(false);
-      await createComponent().select({ app: createApp() });
+      await createComponent().select({});
 
       await lastParams().createNote('', 'Ada');
 
@@ -221,7 +218,6 @@ describe('LinkPickerComponent', () => {
       const createNote = vi.fn(() => Promise.resolve(created));
 
       await createComponent().select({
-        app: createApp(),
         createNote
       });
 

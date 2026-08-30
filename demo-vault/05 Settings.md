@@ -25,3 +25,7 @@ Every setting the plugin stores, named by the key it appears under in `data.json
 
 - `pickers`
   - the configured pickers, each of which becomes its own command. See [04 Named pickers](<./04 Named pickers.md>) for what one holds and how it is edited.
+
+## Where next
+
+- [06 Calling it from a script](<./06 Calling it from a script.md>) — the published API, and the `createNote` hook that is the reason none of the above tries to express a vault's own conventions.

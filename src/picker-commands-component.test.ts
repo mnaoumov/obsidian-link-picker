@@ -1,4 +1,3 @@
-import type { App } from 'obsidian';
 import type { DisposableEx } from 'obsidian-dev-utils/disposable';
 import type { CommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler';
 import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
@@ -121,7 +120,6 @@ function builtCommandNames(): string[] {
 
 async function createLoadedComponent(): Promise<PickerCommandsComponent> {
   const component = new PickerCommandsComponent({
-    app: strictProxy<App>({}),
     commandHandlerComponent: strictProxy<CommandHandlerComponent>({ registerCommandHandlers: castTo<CommandHandlerComponent['registerCommandHandlers']>(registerCommandHandlers) }),
     linkPickerComponent: strictProxy<LinkPickerComponent>({ select: vi.fn(() => Promise.resolve('')) }),
     pluginSettingsComponent: strictProxy<PluginSettingsComponentBase<PluginSettings>>({
