@@ -6,13 +6,13 @@ import {
 } from 'vitest';
 
 /*
- * `Shift + Enter` against a real Obsidian: the note you meant to link to does not have to exist yet.
+ * The `Create new` control against a real Obsidian: the note you meant to link to does not have to exist yet.
  * It is created in the folder the picker is currently rooted at, and linked in one gesture.
  *
- * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
- * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
- * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
- * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
+ * Driven by CLICKING the control rather than by pressing its hotkey, which is what makes this suite
+ * cross-platform (G47): the manifest declares `isDesktopOnly: false`, a phone has no `Alt` key, and the
+ * harness cannot send keys to Android anyway. The keyboard route is covered separately, on desktop, by
+ * `hotkeys.desktop.integration.test.ts`.
  */
 
 const PLUGIN_ID = 'link-picker';
@@ -23,10 +23,10 @@ interface CreateNewNoteResult {
   readonly editorText: string;
 }
 
-describe('`Shift + Enter` in the picker', () => {
+describe('The `Create new` control', () => {
   it('creates the note the typed name asks for and links to it', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, obsidianModule, pluginId }): Promise<CreateNewNoteResult> {
+      async callback({ app, lib: { waitUntil }, obsidianModule, pluginId }): Promise<CreateNewNoteResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
@@ -59,7 +59,7 @@ describe('`Shift + Enter` in the picker', () => {
         input.dispatchEvent(new Event('input', { bubbles: true }));
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         input.focus();
-        pressKey({ key: 'Enter', modifiers: ['Shift'] });
+        clickControl('Create new');
 
         await waitUntil({
           message: 'the note exists',
@@ -77,6 +77,15 @@ describe('`Shift + Enter` in the picker', () => {
           createdPath: app.vault.getAbstractFileByPath(`${newName}.md`)?.path ?? null,
           editorText: app.workspace.getActiveViewOfType(obsidianModule.MarkdownView)?.editor.getValue() ?? ''
         };
+
+        function clickControl(label: string): void {
+          const buttonEl = [...document.querySelectorAll('.link-picker-control')]
+            .find((el) => el.querySelector('span')?.textContent === label);
+          if (!(buttonEl instanceof HTMLElement)) {
+            throw new TypeError(`No control labelled ${label}.`);
+          }
+          buttonEl.click();
+        }
       },
       input: { pluginId: PLUGIN_ID }
     });

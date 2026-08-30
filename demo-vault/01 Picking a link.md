@@ -31,13 +31,15 @@ Person: [[Ada Lovelace|Ada]]
 
 ## Selecting a note that does not exist yet
 
-Type a name nothing matches and press `Shift + Enter`. The note is created in the folder the picker is currently rooted at, and linked in the same gesture.
+Type a name nothing matches, then press **Create new** in the strip along the bottom — or `Shift + Enter`, which the control shows as its hotkey. The note is created in the folder the picker is currently rooted at, and linked in the same gesture.
 
 The note is created **empty**. Templates, frontmatter and naming conventions are vault policy, not this plugin's — a caller that has such conventions supplies them through the API rather than settling for a blank note.
 
 ## Declining a link
 
-`Alt + 1` closes the picker and inserts nothing. That is different from pressing `Escape`, which dismisses the picker as a mistake — declining is a real answer, and a template that asks for an optional link needs it.
+**No link** (`Alt + 1`) closes the picker and inserts nothing. That is different from pressing `Escape`, which dismisses the picker as a mistake — declining is a real answer, and a template that asks for an optional link needs it.
+
+Every control in that strip has a hotkey beside it on desktop and works by tap on a phone, where there is no `Alt` key to press at all. [02 Navigating folders](<./02 Navigating folders.md>) covers the other four.
 
 ## Where next
 

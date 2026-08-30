@@ -25,18 +25,22 @@ The `..` row is pinned to the top and is not something you can type your way to 
 
 ## The four view toggles
 
-The instruction bar along the bottom of the picker lists them, and each says what it would do next rather than what it just did.
+The strip along the bottom of the picker holds six controls. Click one, or press the hotkey shown on it — they are two ways into the same thing. On a phone the controls are the only way in, since there is no `Alt` key to press, which is why they are there rather than a list of keystrokes.
 
-- `Alt + 2`
+A toggle that is on is filled in, so the strip always says what the picker is currently doing.
+
+- **All files** (`Alt + 2`)
   - shows files that are not notes. Hidden by default, because a PDF is not something you link to by name.
-- `Alt + 3`
+- **Subfolders** (`Alt + 3`)
   - reaches into subfolders. With it on, `Legal` offers `Courts/Supreme Court.md` without your navigating in.
-- `Alt + 4`
+- **Folders only** (`Alt + 4`)
   - hides everything that is not a folder, so a deep folder can be reached without reading past the notes on the way. The `..` row survives it — a mode you cannot leave would be a trap.
-- `Alt + 5`
-  - stops leading with the most recently updated note, falling back to a plain path ordering.
+- **By date** (`Alt + 5`)
+  - on by default. Leads with the most recently updated note; turn it off for a plain path ordering.
 
-`Alt + 2` and `Alt + 3` are ignored while `Alt + 4` is on, because between them they would empty the list.
+**All files** and **Subfolders** grey out while **Folders only** is on, because between them they would empty the list. They are greyed rather than removed so the strip does not move under your finger.
+
+The other two controls are actions rather than state: **No link** and **Create new**, both covered in [01 Picking a link](<./01 Picking a link.md>).
 
 ## Folder notes
 

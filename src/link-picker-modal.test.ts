@@ -10,6 +10,7 @@ import { castTo } from 'obsidian-dev-utils/object-utils';
 import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
 import {
   App,
+  Platform,
   Scope,
   Vault
 } from 'obsidian-test-mocks/obsidian';
@@ -34,7 +35,13 @@ const {
   prompt: vi.fn()
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-context', () => ({ addPluginCssClasses: vi.fn() }));
+// Stubbed to skip the plugin-context initialization, but it still ADDS the classes: the control strip is
+// Addressed by them, so a no-op mock would make every assertion about it vacuous.
+vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-context', () => ({
+  addPluginCssClasses: (el: HTMLElement, cssClasses?: string | string[]): void => {
+    el.addClass(...(typeof cssClasses === 'string' ? [cssClasses] : cssClasses ?? []));
+  }
+}));
 vi.mock('obsidian-dev-utils/obsidian/link', () => ({ generateMarkdownLink }));
 vi.mock('obsidian-dev-utils/obsidian/modals/prompt', () => ({ prompt }));
 vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
@@ -46,6 +53,11 @@ vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => 
 import { PARENT_RELATIVE_PATH } from './item.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { LinkPickerModal } from './link-picker-modal.ts';
+
+/**
+ * The two actions plus the four toggles.
+ */
+const CONTROL_COUNT = 6;
 
 /**
  * The layout every folder-note plugin supports, and the one the picker is most often pointed at.
@@ -69,11 +81,6 @@ interface HotkeyRegistration {
   scope: unknown;
 }
 
-interface InstructionLike {
-  command: string;
-  purpose: string;
-}
-
 type LinkPickerModalReject = (this: void, reason: unknown) => void;
 
 type LinkPickerModalResolve = (this: void, value: string) => void;
@@ -89,7 +96,7 @@ interface RecentFileTrackerMock {
 interface TestableModal {
   getSuggestions(query: string): Item[];
   readonly inputEl: HTMLInputElement;
-  readonly instructions__: InstructionLike[];
+  readonly modalEl: HTMLElement;
   onChooseSuggestion(item: Item, event: KeyboardEvent | MouseEvent): void;
   onClose(): void;
   onOpen(): void;
@@ -296,18 +303,12 @@ describe('LinkPickerModal', () => {
       expect(relativePaths(modal.getSuggestions(''))).toEqual([PARENT_RELATIVE_PATH, 'Deep']);
     });
 
-    it('should offer only the folder-mode instructions while showing only folders', () => {
+    it('should disable the toggles it ignores while showing only folders, rather than silently doing nothing', () => {
       const modal = openModal({ folderPath: 'Notes' });
 
       pressHotkey(modal, 'Alt', '4');
 
-      expect(instructionCommands(modal)).toEqual(['Alt + 4', 'Alt + 5']);
-    });
-
-    it('should not offer creation when the caller turned it off', () => {
-      const modal = openModal({ shouldAllowCreate: false });
-
-      expect(instructionCommands(modal)).not.toContain('Shift + Enter');
+      expect(disabledControlLabels(modal)).toEqual(['No link', 'Create new', 'All files', 'Subfolders']);
     });
 
     it('should consume the key it acted on, so the digit is not also typed into the search box', () => {
@@ -332,15 +333,142 @@ describe('LinkPickerModal', () => {
       expect(pressHotkey(modal, 'Alt', '2')).toBeUndefined();
       expect(pressHotkey(modal, 'Alt', '3')).toBeUndefined();
     });
+  });
 
-    it('should say what each toggle would do next, not what it did', () => {
+  describe('the control strip', () => {
+    it('should offer every hotkey as a control, since a phone has no `Alt` key to press', () => {
+      expect(controlLabels(openModal({}))).toEqual([
+        'No link',
+        'Create new',
+        'All files',
+        'Subfolders',
+        'Folders only',
+        'By date'
+      ]);
+    });
+
+    it('should name the setting rather than what pressing would do next', () => {
+      // The instruction bar this replaced had to flip its wording — `Include subfolders` became
+      // `Exclude subfolders` once it was on. A control carries its state instead, so the label holds
+      // Still and only the pressed look changes.
       const modal = openModal({});
 
-      expect(instructionPurposes(modal)).toContain('Include subfolders');
+      clickControl(modal, 'Subfolders');
 
-      pressHotkey(modal, 'Alt', '3');
+      expect(controlLabels(modal)).toContain('Subfolders');
+      expect(activeControlLabels(modal)).toContain('Subfolders');
+    });
 
-      expect(instructionPurposes(modal)).toContain('Exclude subfolders');
+    it('should show which toggles are on', () => {
+      const modal = openModal({ includeSubfolders: true });
+
+      expect(activeControlLabels(modal)).toEqual(['Subfolders', 'By date']);
+    });
+
+    it('should never mark an action as on, since an action carries no state', () => {
+      const modal = openModal({});
+
+      expect(activeControlLabels(modal)).not.toContain('No link');
+      expect(activeControlLabels(modal)).not.toContain('Create new');
+    });
+
+    it('should do by click exactly what the hotkey does', () => {
+      const clicked = openModal({ folderPath: 'Notes' });
+      const pressed = openModal({ folderPath: 'Notes' });
+
+      clickControl(clicked, 'Subfolders');
+      pressHotkey(pressed, 'Alt', '3');
+
+      expect(relativePaths(clicked.getSuggestions(''))).toEqual(relativePaths(pressed.getSuggestions('')));
+    });
+
+    it('should decline the link when the `No link` control is clicked', () => {
+      const modal = openModal({ folderPath: 'Notes' });
+
+      clickControl(modal, 'No link');
+
+      expect(resolve).toHaveBeenCalledWith('');
+    });
+
+    it('should create a note when the `Create new` control is clicked', async () => {
+      const createNote = vi.fn(() => Promise.resolve(createdFile('Notes/New.md')));
+      const modal = openModal({
+        createNote,
+        folderPath: 'Notes'
+      });
+      modal.inputEl.value = 'New';
+
+      clickControl(modal, 'Create new');
+      await vi.waitFor(() => {
+        expect(resolve).toHaveBeenCalled();
+      });
+
+      expect(createNote).toHaveBeenCalledWith('Notes', 'New');
+    });
+
+    it('should show files that are not notes when `All files` is clicked', () => {
+      const modal = openModal({ folderPath: 'Notes' });
+
+      clickControl(modal, 'All files');
+
+      expect(relativePaths(modal.getSuggestions(''))).toContain('image.png');
+    });
+
+    it('should leave only the folders when `Folders only` is clicked', () => {
+      const modal = openModal({ folderPath: 'Notes' });
+
+      clickControl(modal, 'Folders only');
+
+      expect(relativePaths(modal.getSuggestions(''))).toEqual([PARENT_RELATIVE_PATH, 'Deep']);
+    });
+
+    it('should stop ordering by date when `By date` is clicked', () => {
+      appMock.metadataCache.setCache__('Notes/Ada.md', { frontmatter: { updated: '2020-01-01' } });
+      appMock.metadataCache.setCache__('Notes/Bob.md', { frontmatter: { updated: '2030-01-01' } });
+      const modal = openModal({
+        folderPath: 'Notes',
+        updatedPropertyName: 'updated'
+      });
+
+      clickControl(modal, 'By date');
+
+      expect(relativePaths(modal.getSuggestions('')).indexOf('Ada.md')).toBeLessThan(relativePaths(modal.getSuggestions('')).indexOf('Bob.md'));
+    });
+
+    it('should disable creation the caller turned off, rather than hiding it', () => {
+      const modal = openModal({ shouldAllowCreate: false });
+
+      expect(controlLabels(modal)).toContain('Create new');
+      expect(disabledControlLabels(modal)).toEqual(['Create new']);
+    });
+
+    it('should show each control\'s hotkey where there is a keyboard to press it on', () => {
+      expect(controlHotkeys(openModal({}))).toEqual([
+        'Alt + 1',
+        'Shift + Enter',
+        'Alt + 2',
+        'Alt + 3',
+        'Alt + 4',
+        'Alt + 5'
+      ]);
+    });
+
+    it('should not offer a hotkey on a phone, where none can be pressed', () => {
+      vi.spyOn(Platform, 'isMobile', 'get').mockReturnValue(true);
+
+      const modal = openModal({});
+
+      expect(controlHotkeys(modal)).toEqual([]);
+      expect(controlLabels(modal)).toHaveLength(CONTROL_COUNT);
+    });
+
+    it('should keep the input focused, so a click does not end a search mid-word', () => {
+      const modal = openModal({});
+      const event_ = new MouseEvent('mousedown', { cancelable: true });
+
+      controlButton(modal, 'Subfolders').dispatchEvent(event_);
+
+      expect(event_.defaultPrevented).toBe(true);
     });
   });
 
@@ -683,6 +811,10 @@ describe('LinkPickerModal', () => {
   });
 });
 
+function activeControlLabels(modal: TestableModal): string[] {
+  return controlElements(modal).filter((buttonEl) => buttonEl.hasClass('is-active')).map((buttonEl) => readControlLabel(buttonEl));
+}
+
 function aliasesOf(items: Item[], relativePath: string): string[][] {
   return items.filter((item) => item.relativePath === relativePath).map((item) => item.aliases);
 }
@@ -716,6 +848,39 @@ function buildVault(): void {
   appMock.vault.createSync__('Root.md', '');
 }
 
+function clickControl(modal: TestableModal, label: string): void {
+  controlButton(modal, label).click();
+}
+
+/**
+ * Finds one control by the label a reader would click on.
+ *
+ * @param modal - The picker.
+ * @param label - The control's label.
+ * @returns The button.
+ */
+function controlButton(modal: TestableModal, label: string): HTMLButtonElement {
+  const buttonEl = controlElements(modal).find((candidate) => readControlLabel(candidate) === label);
+
+  if (!buttonEl) {
+    throw new Error(`No control labelled ${label}.`);
+  }
+
+  return buttonEl;
+}
+
+function controlElements(modal: TestableModal): HTMLButtonElement[] {
+  return [...modal.modalEl.querySelectorAll('.link-picker-control')].filter((el) => el.instanceOf(HTMLButtonElement));
+}
+
+function controlHotkeys(modal: TestableModal): string[] {
+  return controlElements(modal).flatMap((buttonEl) => [...buttonEl.querySelectorAll('.link-picker-control-hotkey')].map((el) => el.textContent));
+}
+
+function controlLabels(modal: TestableModal): string[] {
+  return controlElements(modal).map((buttonEl) => readControlLabel(buttonEl));
+}
+
 function createdFile(path: string): TFile {
   return castTo<TFile>(appMock.vault.createSync__(path, '').asOriginalType__());
 }
@@ -745,12 +910,8 @@ function createModal(options: Partial<SelectParams>): TestableModal {
   );
 }
 
-function instructionCommands(modal: TestableModal): string[] {
-  return modal.instructions__.map((instruction) => instruction.command);
-}
-
-function instructionPurposes(modal: TestableModal): string[] {
-  return modal.instructions__.map((instruction) => instruction.purpose);
+function disabledControlLabels(modal: TestableModal): string[] {
+  return controlElements(modal).filter((buttonEl) => buttonEl.disabled).map((buttonEl) => readControlLabel(buttonEl));
 }
 
 function itemFor(modal: TestableModal, relativePath: string): Item {
@@ -799,6 +960,16 @@ function pressHotkey(modal: TestableModal, modifier: string, key: string): unkno
   }
 
   return registration.listener(new KeyboardEvent('keydown'), castTo<never>({}));
+}
+
+/**
+ * Reads a control's label, which is its first span — the second, where there is one, is the hotkey.
+ *
+ * @param buttonEl - The control.
+ * @returns The label.
+ */
+function readControlLabel(buttonEl: HTMLButtonElement): string {
+  return buttonEl.querySelector('span')?.textContent ?? '';
 }
 
 function relativePaths(items: Item[]): string[] {

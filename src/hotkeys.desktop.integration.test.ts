@@ -6,41 +6,51 @@ import {
 } from 'vitest';
 
 /*
- * `Alt + 2` against a real Obsidian: the picker offers notes, because a note is what you link to by
- * name, until everything is asked for.
+ * The keyboard route, against a real Obsidian. Every behavior it reaches is also covered by clicking its
+ * control, cross-platform — what only a key press can prove is that the key is CONSUMED.
  *
- * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
- * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
- * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
- * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
+ * That is the regression this suite exists for: unconsumed, Obsidian typed the character as well as
+ * running the handler, so `Alt + 1` closed the picker and then wrote `1` into the note being edited. A
+ * click can never show that, and no unit test with a mocked scope can either.
+ *
+ * Desktop only, and deliberately: the harness drives keys through Electron's input API, which Android
+ * has not got. The behaviors themselves are not desktop-only — their controls are tapped on a phone,
+ * which is why the six suites that cover them are cross-platform (G97, G47).
  */
 
 const PLUGIN_ID = 'link-picker';
 const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-interface IncludeAllFilesResult {
+interface HotkeyResult {
+  readonly editorText: string;
   readonly rowsAfterToggle: string[];
-  readonly rowsBeforeToggle: string[];
+  readonly wasPickerClosed: boolean;
 }
 
-describe('`Alt + 2` in the picker', () => {
-  it('offers files that are not notes, which are otherwise hidden', async () => {
+describe('A picker hotkey', () => {
+  it('runs its handler and consumes the key, rather than also typing the digit', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<IncludeAllFilesResult> {
+      async callback({ app, lib: { pressKey, waitUntil }, obsidianModule, pluginId }): Promise<HotkeyResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
-        const folderName = `AllFiles-${stamp}`;
+        const folderName = `Hotkeys-${stamp}`;
 
         await app.vault.createFolder(folderName);
         await app.vault.create(`${folderName}/Note-${stamp}.md`, '# Note\n');
         await app.vault.create(`${folderName}/Data-${stamp}.txt`, 'plain text');
-        const source = await app.vault.create(`Source-${stamp}.md`, '');
+        const source = await app.vault.create(`Source-${stamp}.md`, 'body');
 
         await app.workspace.getLeaf(true).openFile(source);
         await waitUntil({
           message: 'the note being edited is open',
           predicate: () => app.workspace.getActiveFile()?.path === source.path,
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
+
+        await waitUntil({
+          message: 'no picker left open by an earlier suite',
+          predicate: () => document.querySelector('.prompt') === null,
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
 
@@ -52,16 +62,22 @@ describe('`Alt + 2` in the picker', () => {
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
 
+        // Into the folder, so a toggle has something to change.
         await filterTo(folderName);
-        chooseFirstRow();
+        const folderRow = document.querySelector('.suggestion-item');
+        if (!(folderRow instanceof HTMLElement)) {
+          throw new TypeError('The folder was not offered.');
+        }
+        folderRow.click();
         await waitUntil({
           message: 'the folder is open',
           predicate: () => rows().some((text) => text.includes('Note-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
-        const rowsBeforeToggle = rows();
 
+        // `Alt + 2` shows the plain file. If the key were not consumed, `2` would ALSO reach the search
+        // Box and filter the list down to whatever happens to contain a `2`.
         focusInput();
         pressKey({ key: '2', modifiers: ['Alt'] });
         await waitUntil({
@@ -72,17 +88,22 @@ describe('`Alt + 2` in the picker', () => {
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         const rowsAfterToggle = rows();
 
-        pressKey({ key: 'Escape' });
+        // `Alt + 1` closes the picker. An unconsumed key then carries on to the editor that regains
+        // Focus, and types `1` into the note.
+        focusInput();
+        pressKey({ key: '1', modifiers: ['Alt'] });
+        await waitUntil({
+          message: 'the picker closed',
+          predicate: () => document.querySelector('.prompt') === null,
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
+        await sleep(RENDER_DELAY_IN_MILLISECONDS);
 
-        return { rowsAfterToggle, rowsBeforeToggle };
-
-        function chooseFirstRow(): void {
-          const row = document.querySelector('.suggestion-item');
-          if (!(row instanceof HTMLElement)) {
-            throw new TypeError('The picker offered nothing to choose.');
-          }
-          row.click();
-        }
+        return {
+          editorText: app.workspace.getActiveViewOfType(obsidianModule.MarkdownView)?.editor.getValue() ?? '',
+          rowsAfterToggle,
+          wasPickerClosed: document.querySelector('.prompt') === null
+        };
 
         async function filterTo(query: string): Promise<void> {
           const input = focusInput();
@@ -112,7 +133,13 @@ describe('`Alt + 2` in the picker', () => {
       input: { pluginId: PLUGIN_ID }
     });
 
-    expect(result.rowsBeforeToggle.join('\n')).not.toContain('Data-');
+    // The toggle ran, and the list was not additionally filtered by the digit.
     expect(result.rowsAfterToggle.join('\n')).toContain('Data-');
+    expect(result.rowsAfterToggle.join('\n')).toContain('Note-');
+
+    expect(result.wasPickerClosed).toBe(true);
+
+    // The note is untouched: no link, and no stray `1`.
+    expect(result.editorText).toBe('body');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });

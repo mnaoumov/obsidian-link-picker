@@ -35,18 +35,20 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 Run **Link Picker: Insert link...** in an editor. Any selected text seeds the query and is replaced by the link you choose.
 
-Inside the picker:
+Inside the picker, `Enter` on a folder descends into it and `Enter` on `..` goes back up.
 
-| Key | What it does |
-| --- | --- |
-| `Enter` on a folder | Descend into that folder |
-| `Enter` on `..` | Go back up |
-| `Alt + 1` | Choose nothing, and insert an empty link |
-| `Alt + 2` | Show all files, not only markdown |
-| `Alt + 3` | Include or exclude subfolder contents |
-| `Alt + 4` | Show only folders |
-| `Alt + 5` | Sort by updated date, or not |
-| `Shift + Enter` | Create a note with the name you typed, and link to it |
+Everything else lives in the strip along the bottom, as a control you click and a hotkey you can press instead. Both routes run the same thing, and the controls are what make the picker usable on a phone, where there is no `Alt` key at all.
+
+| Control | Key | What it does |
+| --- | --- | --- |
+| **No link** | `Alt + 1` | Choose nothing, and insert an empty link |
+| **Create new** | `Shift + Enter` | Create a note with the name you typed, and link to it |
+| **All files** | `Alt + 2` | Show all files, not only markdown |
+| **Subfolders** | `Alt + 3` | Include subfolder contents |
+| **Folders only** | `Alt + 4` | Show only folders |
+| **By date** | `Alt + 5` | Lead with the most recently updated note (on by default) |
+
+A toggle that is on is filled in, so the strip says what the picker is currently doing. **All files** and **Subfolders** grey out while **Folders only** is on, since between them they would empty the list.
 
 ## Ranking
 

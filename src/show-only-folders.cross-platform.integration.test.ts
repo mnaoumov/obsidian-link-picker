@@ -6,36 +6,35 @@ import {
 } from 'vitest';
 
 /*
- * `Alt + 3` against a real Obsidian: the picker lists one folder's own contents until subfolders are
- * asked for, and then it reaches through them.
+ * The `Folders only` control against a real Obsidian: the picker hides everything that is not a folder, so a deep folder
+ * can be navigated to without reading past the notes on the way.
  *
- * Desktop only, and NOT because the behavior is (the manifest declares `isDesktopOnly: false`). The
- * harness drives keys through Electron's input API, which does not exist on Android, so a hotkey cannot
- * be pressed there at all — the wall is the harness's, not the plugin's. Recorded here and in T648-P44
- * per G97; on a phone the same toggles are reachable from the picker's instruction bar.
+ * Driven by CLICKING the control rather than by pressing its hotkey, which is what makes this suite
+ * cross-platform (G47): the manifest declares `isDesktopOnly: false`, a phone has no `Alt` key, and the
+ * harness cannot send keys to Android anyway. The keyboard route is covered separately, on desktop, by
+ * `hotkeys.desktop.integration.test.ts`.
  */
 
 const PLUGIN_ID = 'link-picker';
 const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-interface IncludeSubfoldersResult {
+interface ShowOnlyFoldersResult {
   readonly rowsAfterToggle: string[];
   readonly rowsBeforeToggle: string[];
 }
 
-describe('`Alt + 3` in the picker', () => {
-  it('reaches into subfolders, which are otherwise left alone', async () => {
+describe('The `Folders only` control', () => {
+  it('leaves only the folders, and the way out', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { pressKey, waitUntil }, pluginId }): Promise<IncludeSubfoldersResult> {
+      async callback({ app, lib: { waitUntil }, pluginId }): Promise<ShowOnlyFoldersResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
         const TIMEOUT_IN_MILLISECONDS = 10_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
-        const folderName = `Subfolders-${stamp}`;
-        const deepName = `Deep-${stamp}`;
+        const folderName = `OnlyFolders-${stamp}`;
 
         await app.vault.createFolder(folderName);
-        await app.vault.createFolder(`${folderName}/${deepName}`);
-        await app.vault.create(`${folderName}/${deepName}/Buried-${stamp}.md`, '# Buried\n');
+        await app.vault.createFolder(`${folderName}/Nested-${stamp}`);
+        await app.vault.create(`${folderName}/Note-${stamp}.md`, '# Note\n');
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);
@@ -53,31 +52,57 @@ describe('`Alt + 3` in the picker', () => {
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
 
-        // Into the folder first, so the toggle is exercised where there is a subfolder to reach into.
         await filterTo(folderName);
         chooseFirstRow();
         await waitUntil({
           message: 'the folder is open',
-          predicate: () => rows().some((text) => text.includes(deepName)),
+          predicate: () => rows().some((text) => text.includes('Note-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         const rowsBeforeToggle = rows();
 
         focusInput();
-        pressKey({ key: '3', modifiers: ['Alt'] });
+        clickControl('Folders only');
         await waitUntil({
-          message: 'the buried note is reached',
-          predicate: () => rows().some((text) => text.includes('Buried-')),
+          message: 'only the folders are listed',
+          predicate: () => rows().some((text) => text.includes('Nested-')) && rows().every((text) => !text.includes('Note-')),
           timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
         });
         await sleep(RENDER_DELAY_IN_MILLISECONDS);
         const rowsAfterToggle = rows();
 
-        pressKey({ key: 'Escape' });
+        clickControl('Folders only');
+        await waitUntil({
+          message: 'the notes are back',
+          predicate: () => rows().some((text) => text.includes('Note-')),
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
+        chooseRow('Note-');
+        await waitUntil({
+          message: 'the picker closed on a pick',
+          predicate: () => document.querySelector('.prompt') === null,
+          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+        });
 
         return { rowsAfterToggle, rowsBeforeToggle };
 
+        function chooseRow(text: string): void {
+          const row = [...document.querySelectorAll('.suggestion-item')].find((el) => el.textContent.includes(text));
+          if (!(row instanceof HTMLElement)) {
+            throw new TypeError(`No row containing ${text}.`);
+          }
+          row.click();
+        }
+
+        function clickControl(label: string): void {
+          const buttonEl = [...document.querySelectorAll('.link-picker-control')]
+            .find((el) => el.querySelector('span')?.textContent === label);
+          if (!(buttonEl instanceof HTMLElement)) {
+            throw new TypeError(`No control labelled ${label}.`);
+          }
+          buttonEl.click();
+        }
         function chooseFirstRow(): void {
           const row = document.querySelector('.suggestion-item');
           if (!(row instanceof HTMLElement)) {
@@ -114,7 +139,9 @@ describe('`Alt + 3` in the picker', () => {
       input: { pluginId: PLUGIN_ID }
     });
 
-    expect(result.rowsBeforeToggle.join('\n')).not.toContain('Buried-');
-    expect(result.rowsAfterToggle.join('\n')).toContain('Buried-');
+    expect(result.rowsBeforeToggle.join('\n')).toContain('Note-');
+    expect(result.rowsAfterToggle.join('\n')).not.toContain('Note-');
+    expect(result.rowsAfterToggle.join('\n')).toContain('Nested-');
+    expect(result.rowsAfterToggle.join('\n')).toContain('..');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });

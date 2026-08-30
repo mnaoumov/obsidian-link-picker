@@ -21,7 +21,7 @@ The four notes come back in three groups:
 2. [Court of Appeal](<./Materials/03 Ranking/Court of Appeal.md>) and [Courtyard](<./Materials/03 Ranking/Courtyard.md>) — the title starts with it.
 3. [District court records](<./Materials/03 Ranking/District court records.md>) — the title merely contains it.
 
-The groups never trade places. Which of the two middle notes leads depends on the tie-breakers below — by default the one changed more recently — and `Alt + 5` swaps that for a plain path ordering, which puts `Court of Appeal` first.
+The groups never trade places. Which of the two middle notes leads depends on the tie-breakers below — by default the one changed more recently — and turning **By date** off swaps that for a plain path ordering, which puts `Court of Appeal` first.
 
 ## The tiers
 
@@ -46,7 +46,7 @@ Within a tier, folders lead — a folder is a place to go rather than a leaf, so
 
 When two rows land in the same tier, the order is decided in turn by: the folder note of the folder you are in, then how recently each note was opened, then the updated date, then how deep the path is, then the path itself, then the alias.
 
-The updated date is read from a frontmatter property when the vault has one — see `updatedPropertyName` in [05 Settings](<./05 Settings.md>) — and falls back to the file's modification time, which every vault has. `Alt + 5` turns that ordering off.
+The updated date is read from a frontmatter property when the vault has one — see `updatedPropertyName` in [05 Settings](<./05 Settings.md>) — and falls back to the file's modification time, which every vault has. The **By date** control turns that ordering off.
 
 ## Where next
 
