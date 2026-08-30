@@ -56,4 +56,4 @@ The workspace convention is that all plugins share the same architecture; intent
 
 ## Pending
 
-- Unreleased at `0.0.0`. Before a release: a manual pass on a phone for the six control-strip behaviors (the harness cannot press keys on Android), and a survey of the wider community-plugin ecosystem for overlap — only this fleet was checked. Both are `T718-P44`.
+- Unreleased at `0.0.0`. Before a release: a manual pass on a phone for the six control-strip behaviors (the harness cannot press keys on Android), and a survey of the wider community-plugin ecosystem for overlap — only this fleet was checked. Both are `T756-P44`, along with one live-vault recheck of the shim's `inlineField` → `prefix` mapping that the automated suites already cover.
