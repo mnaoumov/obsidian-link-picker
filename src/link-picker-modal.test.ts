@@ -140,12 +140,12 @@ beforeEach(() => {
 
 describe('LinkPickerModal', () => {
   describe('the placeholder', () => {
-    it('should name the inline field, which is what the result is being written into', () => {
-      expect(createModal({ inlineField: 'Person' }).inputEl.placeholder).toBe('Person');
+    it('should use the placeholder the caller gave', () => {
+      expect(createModal({ placeholder: 'Who?' }).inputEl.placeholder).toBe('Who?');
     });
 
-    it('should use an explicit placeholder when there is no inline field', () => {
-      expect(createModal({ placeholder: 'Who?' }).inputEl.placeholder).toBe('Who?');
+    it('should not fall back to the prefix, which is output formatting rather than a label', () => {
+      expect(createModal({ prefix: 'Person: ' }).inputEl.placeholder).toBe('Select note file to link');
     });
 
     it('should fall back to a generic prompt', () => {
@@ -510,15 +510,27 @@ describe('LinkPickerModal', () => {
       expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md]]');
     });
 
-    it('should prefix the inline field, so the result drops into a property list', () => {
+    it('should wrap the link in the prefix and the suffix', () => {
       const modal = openModal({
         folderPath: 'Notes',
-        inlineField: 'Person'
+        prefix: 'Person: ',
+        suffix: ' (done)'
       });
 
       modal.onChooseSuggestion(itemFor(modal, 'Ada.md'), mouseEvent());
 
-      expect(resolve).toHaveBeenCalledWith('Person: [[Notes/Ada.md]]');
+      expect(resolve).toHaveBeenCalledWith('Person: [[Notes/Ada.md]] (done)');
+    });
+
+    it('should take a prefix that is not a property key, since it is a plain string', () => {
+      const modal = openModal({
+        folderPath: 'Notes',
+        prefix: '- '
+      });
+
+      modal.onChooseSuggestion(itemFor(modal, 'Ada.md'), mouseEvent());
+
+      expect(resolve).toHaveBeenCalledWith('- [[Notes/Ada.md]]');
     });
 
     it('should carry the picked alias into the link', () => {
@@ -548,15 +560,29 @@ describe('LinkPickerModal', () => {
       expect(resolve).toHaveBeenCalledWith('');
     });
 
-    it('should still emit the inline field when the empty row is chosen, so the property is written blank', () => {
+    it('should drop the prefix and suffix when the empty row is chosen, rather than leaving a dangling key', () => {
       const modal = openModal({
         folderPath: 'Notes',
-        inlineField: 'Person'
+        prefix: 'Person: ',
+        suffix: ' (done)'
       });
 
       pressHotkey(modal, 'Alt', '1');
 
-      expect(resolve).toHaveBeenCalledWith('Person: ');
+      expect(resolve).toHaveBeenCalledWith('');
+    });
+
+    it('should still emit them when asked to, for a document that needs the key present regardless', () => {
+      const modal = openModal({
+        folderPath: 'Notes',
+        prefix: 'Person: ',
+        shouldApplyPrefixSuffixWhenNoLinkSelected: true,
+        suffix: ' (done)'
+      });
+
+      pressHotkey(modal, 'Alt', '1');
+
+      expect(resolve).toHaveBeenCalledWith('Person:  (done)');
     });
 
     it('should not offer the empty row while showing only folders', () => {
@@ -896,10 +922,12 @@ function createModal(options: Partial<SelectParams>): TestableModal {
         folderPath: '',
         includeSubfolders: false,
         initialQuery: '',
-        inlineField: '',
         placeholder: '',
+        prefix: '',
         shouldAllowCreate: true,
+        shouldApplyPrefixSuffixWhenNoLinkSelected: false,
         sourcePathOrFile: '',
+        suffix: '',
         titlePropertyName: '',
         updatedPropertyName: '',
         ...options

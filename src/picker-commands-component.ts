@@ -1,4 +1,3 @@
-import type { App } from 'obsidian';
 import type { DisposableEx } from 'obsidian-dev-utils/disposable';
 import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
 import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
@@ -16,7 +15,6 @@ import type {
 import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
 
 interface PickerCommandsComponentConstructorParams {
-  readonly app: App;
   readonly commandHandlerComponent: CommandHandlerComponent;
   readonly linkPickerComponent: LinkPickerComponent;
   readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
@@ -32,7 +30,6 @@ interface PickerCommandsComponentConstructorParams {
  * reload of the plugin.
  */
 export class PickerCommandsComponent extends ComponentEx {
-  private readonly app: App;
   private readonly commandHandlerComponent: CommandHandlerComponent;
   private readonly linkPickerComponent: LinkPickerComponent;
   private readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
@@ -41,7 +38,6 @@ export class PickerCommandsComponent extends ComponentEx {
 
   public constructor(params: PickerCommandsComponentConstructorParams) {
     super();
-    this.app = params.app;
     this.commandHandlerComponent = params.commandHandlerComponent;
     this.linkPickerComponent = params.linkPickerComponent;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
@@ -74,7 +70,6 @@ export class PickerCommandsComponent extends ComponentEx {
     this.registration = await this.commandHandlerComponent.registerCommandHandlers(() =>
       pickers.map((picker) =>
         new InsertLinkEditorCommandHandler({
-          app: this.app,
           linkPickerComponent: this.linkPickerComponent,
           picker
         })

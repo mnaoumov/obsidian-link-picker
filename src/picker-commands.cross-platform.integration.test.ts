@@ -52,9 +52,9 @@ describe('A configured picker', () => {
           folderPath: folderName,
           id: pickerId,
           includeSubfolders: false,
-          inlineField: 'Person',
           name: pickerName,
           placeholder: '',
+          prefix: 'Person: ',
           shouldAllowCreate: true
         }]);
         await settingsComponent.saveToFile();

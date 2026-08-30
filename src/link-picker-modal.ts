@@ -116,7 +116,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
     this.emptyItem = createEmptyItem(this.app.vault.getRoot());
 
     addPluginCssClasses(this.containerEl, 'link-picker-modal');
-    this.setPlaceholder(this.options.inlineField || this.options.placeholder || 'Select note file to link');
+    this.setPlaceholder(this.options.placeholder || 'Select note file to link');
 
     this.renderControls();
   }
@@ -361,7 +361,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
   private async createNewAsync(event_: KeyboardEvent | MouseEvent): Promise<void> {
     const newNoteTitle = this.inputEl.value || (await prompt({
       app: this.app,
-      placeholder: this.options.inlineField || this.options.placeholder || '',
+      placeholder: this.options.placeholder,
       title: 'Create new note'
     }));
 
@@ -408,9 +408,20 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return files;
   }
 
+  /**
+   * Wraps the picked link in the caller's prefix and suffix.
+   *
+   * Declining a link returns the EMPTY string rather than a prefix with nothing after it, because a
+   * dangling `Person: ` in a property list is worse than an absent key. A caller whose document needs the
+   * key present regardless asks for it with
+   * {@link SelectOptions.shouldApplyPrefixSuffixWhenNoLinkSelected}.
+   */
   private formatResult(item: Item): string {
-    const link = item === this.emptyItem ? '' : this.generateLink(item);
-    return this.options.inlineField ? `${this.options.inlineField}: ${link}` : link;
+    if (item === this.emptyItem) {
+      return this.options.shouldApplyPrefixSuffixWhenNoLinkSelected ? `${this.options.prefix}${this.options.suffix}` : '';
+    }
+
+    return `${this.options.prefix}${this.generateLink(item)}${this.options.suffix}`;
   }
 
   /**

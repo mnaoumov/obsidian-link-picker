@@ -33,27 +33,40 @@ export class Picker {
   public includeSubfolders = false;
 
   /**
-   * Emitted before the picked link, as `<inlineField>: <link>`. Empty means the link alone.
-   *
-   * Named for Dataview's inline-field syntax, which is what the shape is for: the picker's result drops
-   * straight into a note's property list.
-   */
-  public inlineField = '';
-
-  /**
    * The command name, and the picker's identity in settings.
    */
   public name = '';
 
   /**
-   * The modal's placeholder text. Empty falls back to {@link inlineField}, then to a generic prompt.
+   * The modal's placeholder text. Empty falls back to a generic prompt.
    */
   public placeholder = '';
+
+  /**
+   * Emitted immediately before the picked link. Empty means the link alone.
+   *
+   * A plain string rather than a field name, so `Person: ` covers Dataview's inline-field shape without
+   * the plugin having to know what one is, and `- ` or `"` work just as well.
+   */
+  public prefix = '';
 
   /**
    * Whether the picker offers to create a note that does not exist yet.
    */
   public shouldAllowCreate = true;
+
+  /**
+   * Whether {@link prefix} and {@link suffix} are still emitted when the user declines a link.
+   *
+   * Off by default: declining then returns the empty string rather than a `Person: ` with nothing after
+   * it, and a dangling property key is worse than an absent one.
+   */
+  public shouldApplyPrefixSuffixWhenNoLinkSelected = false;
+
+  /**
+   * Emitted immediately after the picked link. Empty means the link alone.
+   */
+  public suffix = '';
 }
 
 export class PluginSettings {

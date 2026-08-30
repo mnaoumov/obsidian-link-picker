@@ -176,7 +176,9 @@ describe('PluginSettingsTab', () => {
         'Name',
         'Folder',
         'Include subfolders',
-        'Inline field',
+        'Prefix',
+        'Suffix',
+        'Apply prefix and suffix when no link is selected',
         'Placeholder',
         'Allow creating notes'
       ]);
@@ -208,7 +210,7 @@ describe('PluginSettingsTab', () => {
     it('should leave the edited picker\'s other fields alone', () => {
       const picker = namedPicker('People');
       picker.folderPath = 'People';
-      picker.inlineField = 'Person';
+      picker.prefix = 'Person: ';
       inputValues.pickers = [picker];
       const tab = createTab();
 
@@ -216,7 +218,7 @@ describe('PluginSettingsTab', () => {
       const written = writePickerBinding(0, 'name', 'Humans');
 
       expect(written[0]?.folderPath).toBe('People');
-      expect(written[0]?.inlineField).toBe('Person');
+      expect(written[0]?.prefix).toBe('Person: ');
       expect(written[0]?.id).toBe(picker.id);
     });
 
@@ -402,7 +404,9 @@ const PICKER_ROW_ORDER: (keyof Picker)[] = [
   'name',
   'folderPath',
   'includeSubfolders',
-  'inlineField',
+  'prefix',
+  'suffix',
+  'shouldApplyPrefixSuffixWhenNoLinkSelected',
   'placeholder',
   'shouldAllowCreate'
 ];

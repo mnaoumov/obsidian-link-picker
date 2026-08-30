@@ -96,20 +96,22 @@ export class LinkPickerComponent extends ComponentEx {
     const settings = this.pluginSettingsComponent.settings;
 
     return {
-      app: params.app,
+      app: this.app,
       createNote: params.createNote ?? (async (folderPath: string, newNoteTitle: string): Promise<TFile> => await this.createNote(folderPath, newNoteTitle)),
       excludedPathPatterns: params.excludedPathPatterns ?? settings.excludedPathPatterns,
       folderNoteConfig: params.folderNoteConfig ?? this.resolveFolderNoteConfig(),
       folderPath: params.folderPath ?? '',
       includeSubfolders: params.includeSubfolders ?? false,
       initialQuery: params.initialQuery ?? '',
-      inlineField: params.inlineField ?? '',
       placeholder: params.placeholder ?? '',
+      prefix: params.prefix ?? '',
       shouldAllowCreate: params.shouldAllowCreate ?? true,
+      shouldApplyPrefixSuffixWhenNoLinkSelected: params.shouldApplyPrefixSuffixWhenNoLinkSelected ?? false,
 
       // An empty string is a legitimate source path (the vault root), so the active file is only consulted when the caller said nothing at all.
       sourcePathOrFile: params.sourcePathOrFile ?? this.app.workspace.getActiveFile() ?? '',
 
+      suffix: params.suffix ?? '',
       titlePropertyName: params.titlePropertyName ?? settings.titlePropertyName,
       updatedPropertyName: params.updatedPropertyName ?? settings.updatedPropertyName
     };

@@ -12,16 +12,18 @@ import {
 } from './plugin-settings.ts';
 
 describe('Picker', () => {
-  it('should default to the whole vault, no inline field and creation allowed', () => {
+  it('should default to the whole vault, no prefix or suffix and creation allowed', () => {
     const picker = new Picker();
 
     expect(picker.folderPath).toBe('');
     expect(picker.id).toBe('');
     expect(picker.includeSubfolders).toBe(false);
-    expect(picker.inlineField).toBe('');
     expect(picker.name).toBe('');
     expect(picker.placeholder).toBe('');
+    expect(picker.prefix).toBe('');
     expect(picker.shouldAllowCreate).toBe(true);
+    expect(picker.shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
+    expect(picker.suffix).toBe('');
   });
 });
 
@@ -39,10 +41,12 @@ describe('createPicker', () => {
 
     expect(picker.folderPath).toBe('');
     expect(picker.includeSubfolders).toBe(false);
-    expect(picker.inlineField).toBe('');
     expect(picker.name).toBe('');
     expect(picker.placeholder).toBe('');
+    expect(picker.prefix).toBe('');
     expect(picker.shouldAllowCreate).toBe(true);
+    expect(picker.shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
+    expect(picker.suffix).toBe('');
   });
 });
 

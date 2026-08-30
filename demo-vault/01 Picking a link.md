@@ -23,7 +23,7 @@ Now run **Link Picker: Insert link...** from the Command Palette, type `Ada`, an
 
 [Grace Hopper](<./Materials/01 Picking a link/People/Grace Hopper.md>) has one alias and is therefore offered twice; [Alan Turing](<./Materials/01 Picking a link/People/Alan Turing.md>) has none and is offered once.
 
-The result is a **string**, and where it goes is up to whoever asked for it. The command puts it at the cursor. A picker configured with an inline field (see [04 Named pickers](<./04 Named pickers.md>)) prefixes it, so it drops straight into a note's property list instead:
+The result is a **string**, and where it goes is up to whoever asked for it. The command puts it at the cursor. A picker configured with a prefix (see [04 Named pickers](<./04 Named pickers.md>)) wraps it, so it drops straight into a note's property list instead:
 
 ```markdown
 Person: [[Ada Lovelace|Ada]]

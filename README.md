@@ -69,7 +69,7 @@ With no query typed, `..` and the current folder's own folder note hold the top 
 
 If you link into one folder constantly, navigating there every time is the wrong shape. Add a **picker** in the settings and it becomes its own command, already rooted where you wanted to be — a vault that files people under `People` and courts under `Legal` gets two commands rather than one that asks first.
 
-Each picker carries a name, a folder, whether it starts with subfolders included, an inline field, a placeholder, and whether it offers to create notes. The inline field is emitted before the link, as `<field>: <link>`, which is what makes the result drop straight into a note's property list.
+Each picker carries a name, a folder, whether it starts with subfolders included, a prefix and suffix, a placeholder, and whether it offers to create notes. The prefix and suffix wrap the link, so a prefix of `"Person: "` is what makes the result drop straight into a note's property list.
 
 A picker's command is identified by an id minted when the picker is created, not by its name, so renaming a picker keeps whatever hotkey you bound to it.
 
@@ -89,6 +89,47 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 - **Excluded paths** — substrings; a path containing any of them is hidden. Point this at your attachment folder.
 - **Updated property** — the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time.
 - **Title property** — the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
+
+## API
+
+The picker is callable, and that is where the plugin came from: it is an extraction of a script whose every consumer was a Templater template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
+
+It is published through [`obsidian-dev-utils`' cross-plugin API registry](https://mnaoumov.github.io/obsidian-dev-utils/guides/cross-plugin-apis/), keyed by the plugin id, version-negotiated, and revoked automatically if the plugin is disabled. The contract version is **`1.0.0`**, and it is independent of the plugin's own version.
+
+```typescript
+import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+
+interface LinkPickerApi {
+  select(params: LinkPickerApiSelectParams): Promise<string>;
+}
+
+const ref = watchPluginApi<LinkPickerApi>({
+  apiVersionRange: '^1',
+  app: this.app,
+  component: this,
+  pluginId: 'link-picker'
+});
+
+// `ref.value` is `null` until the plugin has loaded, and becomes non-null on its own.
+const api = await ref.whenAvailable();
+const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
+// → 'Person: [[Ada Lovelace|Ada]]'
+```
+
+`select` resolves with the link text and **rejects** when the picker is dismissed — dismissing is the caller's cue that the user backed out, which is different from the empty string that `No link` returns. Every option is optional; anything omitted falls back to the settings above.
+
+- **`createNote`** — called when the user picks `Create new`, and given the folder the picker is currently rooted at plus what they typed. This is the hook the whole API exists for: validating a name, deriving a subfolder from it, seeding frontmatter and applying a template are vault conventions, and none of them are expressible in settings. Without it the plugin creates an empty note.
+- **`folderPath`** — the folder the picker opens rooted at. A starting point, not a fence.
+- **`includeSubfolders`** — whether it starts with subfolder contents included.
+- **`initialQuery`** — seeds the input, so a picker opened over a selection starts filtered by it.
+- **`prefix`** and **`suffix`** — wrap the link. A prefix of `"Person: "` produces `Person: [[Ada]]`; plain strings rather than field names, so `"- "` or `"` work too.
+- **`shouldApplyPrefixSuffixWhenNoLinkSelected`** — whether the prefix and suffix are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
+- **`placeholder`** — the modal's placeholder text.
+- **`shouldAllowCreate`** — whether `Create new` is offered at all.
+- **`sourcePathOrFile`** — the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.
+- **`excludedPathPatterns`**, **`folderNoteConfig`**, **`titlePropertyName`**, **`updatedPropertyName`** — per-call overrides of the matching settings.
+
+[06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>) in the demo vault has a runnable version of the above.
 
 ## Installation
 

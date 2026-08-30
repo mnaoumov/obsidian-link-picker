@@ -236,13 +236,13 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           }
         }),
         this.settingEx({
-          desc: 'Emitted before the link, as `<field>: <link>`, so the result drops straight into a note\'s property list. Leave empty for the link alone.',
-          name: 'Inline field',
+          desc: 'Emitted immediately before the link. `Person: ` makes the result drop straight into a note\'s property list. Leave empty for the link alone.',
+          name: 'Prefix',
           render: (setting) => {
             setting.addText((text) => {
               this.bindPickerProperty({
                 index,
-                pickerPropertyName: 'inlineField',
+                pickerPropertyName: 'prefix',
                 valueComponent: text
               });
               text.setPlaceholder('The link alone');
@@ -250,7 +250,34 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           }
         }),
         this.settingEx({
-          desc: 'The picker\'s placeholder text. Leave empty to fall back to the inline field, then to a generic prompt.',
+          desc: 'Emitted immediately after the link. Leave empty for the link alone.',
+          name: 'Suffix',
+          render: (setting) => {
+            setting.addText((text) => {
+              this.bindPickerProperty({
+                index,
+                pickerPropertyName: 'suffix',
+                valueComponent: text
+              });
+              text.setPlaceholder('The link alone');
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'Whether the prefix and suffix are still emitted when you press `No link`. Off means declining returns nothing at all, rather than a `Person: ` with nothing after it.',
+          name: 'Apply prefix and suffix when no link is selected',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bindPickerProperty({
+                index,
+                pickerPropertyName: 'shouldApplyPrefixSuffixWhenNoLinkSelected',
+                valueComponent: toggle
+              });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'The picker\'s placeholder text. Leave empty to fall back to a generic prompt.',
           name: 'Placeholder',
           render: (setting) => {
             setting.addText((text) => {
@@ -259,7 +286,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
                 pickerPropertyName: 'placeholder',
                 valueComponent: text
               });
-              text.setPlaceholder('The inline field');
+              text.setPlaceholder('A generic prompt');
             });
           }
         }),

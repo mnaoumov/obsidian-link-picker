@@ -1,5 +1,4 @@
 import type {
-  App,
   Editor,
   MarkdownFileInfo,
   TFile
@@ -44,9 +43,11 @@ describe('InsertLinkEditorCommandHandler', () => {
 
       expect(lastOptions(select).folderPath).toBe('');
       expect(lastOptions(select).includeSubfolders).toBe(false);
-      expect(lastOptions(select).inlineField).toBe('');
       expect(lastOptions(select).placeholder).toBe('');
+      expect(lastOptions(select).prefix).toBe('');
+      expect(lastOptions(select).suffix).toBe('');
       expect(lastOptions(select).shouldAllowCreate).toBe(true);
+      expect(lastOptions(select).shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
     });
   });
 
@@ -65,18 +66,22 @@ describe('InsertLinkEditorCommandHandler', () => {
       const picker = createPicker();
       picker.folderPath = 'People';
       picker.includeSubfolders = true;
-      picker.inlineField = 'Person';
       picker.placeholder = 'Who?';
+      picker.prefix = 'Person: ';
       picker.shouldAllowCreate = false;
+      picker.shouldApplyPrefixSuffixWhenNoLinkSelected = true;
+      picker.suffix = ' (done)';
       const select = vi.fn(() => Promise.resolve('Person: [[Ada]]'));
 
       await createHandler(picker, select).executeEditor(createEditor(''), createContext());
 
       expect(lastOptions(select).folderPath).toBe('People');
       expect(lastOptions(select).includeSubfolders).toBe(true);
-      expect(lastOptions(select).inlineField).toBe('Person');
       expect(lastOptions(select).placeholder).toBe('Who?');
+      expect(lastOptions(select).prefix).toBe('Person: ');
+      expect(lastOptions(select).suffix).toBe(' (done)');
       expect(lastOptions(select).shouldAllowCreate).toBe(false);
+      expect(lastOptions(select).shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(true);
     });
   });
 
@@ -136,7 +141,6 @@ function createEditor(selection: string): Editor {
 function createHandler(picker: null | ReturnType<typeof createPicker>, select = vi.fn(() => Promise.resolve(''))): TestableHandler {
   return castTo<TestableHandler>(
     new InsertLinkEditorCommandHandler({
-      app: strictProxy<App>({}),
       linkPickerComponent: strictProxy<LinkPickerComponent>({ select }),
       picker
     })
