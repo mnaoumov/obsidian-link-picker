@@ -15,12 +15,18 @@
  * case where going outside the page is the only way to test what the page does.
  *
  * Excluded from `npm run test:integration` by its file name — `*.android-capture.` matches none of the
- * standard project globs, exactly as `*.desktop-capture.` does for the screenshot suite. Capturing is an
+ * standard project globs, exactly as `*.desktop-capture.` does for the screenshot suites. Capturing is an
  * explicit operation (`npm run capture:control-strip`), not something every run does: it needs an emulator,
  * it writes PNGs, and it takes minutes.
  *
- * The frames are evidence for the release gate, NOT listing material — `scripts/capture-screenshots.ts`
- * decided the community-store screenshots stay desktop-only. They land in `dist/`, which is gitignored.
+ * `screenshots.android-capture.integration.test.ts` shares that suffix, so the two are told apart by the
+ * FILE half of their vitest `include` globs rather than by the suffix — see `scripts/vitest-config.ts`.
+ * They also want different devices: this pass drives the shared `obsidian_test` AVD, the listing shots the
+ * 900x1600 `obsidian_screenshots` one.
+ *
+ * The frames here are evidence for the release gate, NOT listing material: they are full-screen device
+ * captures of intermediate states, several of which exist to show a control DISABLED. They land in
+ * `dist/`, which is gitignored. The listing's own mobile frames are the other suite's job.
  */
 
 import { execFileSync } from 'node:child_process';
