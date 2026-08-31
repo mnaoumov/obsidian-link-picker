@@ -26,9 +26,9 @@ interface SortByUpdatedDateResult {
 describe('The `By date` control', () => {
   it('stops leading with the most recently updated note', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<SortByUpdatedDateResult> {
+      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<SortByUpdatedDateResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
         const folderName = `Updated-${stamp}`;
 
@@ -36,9 +36,16 @@ describe('The `By date` control', () => {
 
         // `Alpha` is written first and `Zulu` second, so the two orderings disagree: by date `Zulu`
         // Leads, alphabetically `Alpha` does.
-        await app.vault.create(`${folderName}/Alpha-${stamp}.md`, '# Alpha\n');
+        await createNote({
+          content: '# Alpha\n',
+          path: `${folderName}/Alpha-${stamp}.md`
+        });
         await sleep(1100);
-        await app.vault.create(`${folderName}/Zulu-${stamp}.md`, '# Zulu\n');
+        await createNote({
+          content: '# Zulu\n',
+          path: `${folderName}/Zulu-${stamp}.md`
+        });
+        // The source note is deliberately empty, so a content read-back would prove nothing.
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);

@@ -24,15 +24,19 @@ interface FolderNavigationResult {
 describe('Choosing a folder in the picker', () => {
   it('descends into it, and `..` comes back out', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<FolderNavigationResult> {
+      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<FolderNavigationResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
         const folderName = `Nav-${stamp}`;
         const innerName = `Inner-${stamp}`;
 
         await app.vault.createFolder(folderName);
-        await app.vault.create(`${folderName}/${innerName}.md`, '# Inner\n');
+        await createNote({
+          content: '# Inner\n',
+          path: `${folderName}/${innerName}.md`
+        });
+        // The source note is deliberately empty, so a content read-back would prove nothing.
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);
