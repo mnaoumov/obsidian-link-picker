@@ -13,7 +13,11 @@ It is also callable. The picker returns a **string**, so a template or a script 
 <details>
 <summary>More screenshots</summary>
 
+<div>
 <a href="https://github.com/mnaoumov/obsidian-link-picker/blob/HEAD/images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="One query, one order — exact match first" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-link-picker/blob/HEAD/images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Navigate folders with a tap — no hotkeys needed" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-link-picker/blob/HEAD/images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="Exact match first, then prefix, then the rest" width="270"></a>
+</div>
 
 </details>
 

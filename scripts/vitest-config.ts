@@ -12,14 +12,16 @@ import { defineObsidianPluginVitestConfig } from 'obsidian-dev-utils/script-util
 const DEMO_VAULT_TEST_FILES = 'src/**/*.demo-vault.integration.test.ts';
 
 /**
- * The screenshot-capture suite that writes `images/screenshots/screenshot-desktop-*.png`.
+ * The two halves of the listing set, which write `images/screenshots/screenshot-desktop-*.png` and
+ * `images/screenshots/screenshot-mobile-*.png`.
  *
- * Named `*.desktop-capture.` rather than `*.desktop.` so it matches NONE of the standard project
- * globs. That keeps it out of `npm run test:integration` entirely — capturing is an explicit operation
- * (`npm run capture:screenshots`), not something every test run does, and folding it in would rewrite
- * the PNGs on every run and dirty the tree mid-release.
+ * Named `*.desktop-capture.` / `*.android-capture.` rather than `*.desktop.` / `*.android.` so they match
+ * NONE of the standard project globs. That keeps them out of `npm run test:integration` entirely —
+ * capturing is an explicit operation (`npm run capture:screenshots`), not something every test run does,
+ * and folding them in would rewrite the PNGs on every run and dirty the tree mid-release.
  */
 const DESKTOP_CAPTURE_TEST_FILES = 'src/**/*.desktop-capture.integration.test.ts';
+const SCREENSHOTS_CAPTURE_ANDROID_TEST_FILES = 'src/**/screenshots.android-capture.integration.test.ts';
 
 /**
  * The control-strip pass on Android, which drives the picker with real `adb` touches and writes its frames
@@ -29,8 +31,34 @@ const DESKTOP_CAPTURE_TEST_FILES = 'src/**/*.desktop-capture.integration.test.ts
  * including the Android project's own `*.android.` — so `npm run test:integration:android` never picks it
  * up. It needs an emulator, it shells out to `adb`, and it takes minutes; running it is an explicit
  * operation (`npm run capture:control-strip`).
+ *
+ * Both Android capture suites share that one suffix on purpose: it is the file name ODU's shared ESLint
+ * config exempts from `no-untrusted-input-events` (the trusted-input helpers are built on
+ * `window.electron`, which Android does not have), and it is the name the rest of the fleet's screenshot
+ * suites already carry. This repo is the only one with TWO Android capture projects, so the two globs name
+ * the FILE rather than the bare suffix — routing both projects off `*.android-capture.` would hand each
+ * suite to the other's project, running the control-strip pass on the 900x1600 screenshots AVD and taking
+ * the listing shots on the 1344x2992 shared one, where they fail their own size assertion.
  */
-const ANDROID_CAPTURE_TEST_FILES = 'src/**/*.android-capture.integration.test.ts';
+const CONTROL_STRIP_CAPTURE_TEST_FILES = 'src/**/control-strip.android-capture.integration.test.ts';
+
+/**
+ * The AVD the mobile shots are taken on: 900x1600 at density 320, which is exactly the size the community
+ * store asks for, so the capture needs no crop, no rescale and no letterbox.
+ *
+ * The shared `obsidian_test` AVD the control-strip pass drives is a Pixel 10 Pro XL at 1344x2992 (~9:20)
+ * and cannot produce it. Resizing that one at runtime is not an option either: the display change recreates
+ * the activity, and with it the WebView the Appium session is attached to.
+ */
+const SCREENSHOT_AVD_NAME = 'obsidian_screenshots';
+
+const APPIUM_URL = 'http://localhost:4723';
+
+/**
+ * The screenshots AVD is cold-booted and rarely used, so Obsidian's first layout on it is far slower than
+ * on the well-warmed shared one; the 90s default expires while it is still starting up.
+ */
+const LAYOUT_READY_TIMEOUT_IN_MILLISECONDS = 240_000;
 
 /**
  * One `it` per note runs every button in that note, and each button re-opens the note, walks the
@@ -53,7 +81,7 @@ export const config = defineObsidianPluginVitestConfig({
       {
         test: {
           ...context.android,
-          include: [ANDROID_CAPTURE_TEST_FILES],
+          include: [CONTROL_STRIP_CAPTURE_TEST_FILES],
           name: 'capture-control-strip:android',
           testTimeout: CONTROL_STRIP_TIMEOUT_IN_MILLISECONDS
         }
@@ -63,6 +91,21 @@ export const config = defineObsidianPluginVitestConfig({
           ...context.desktop,
           include: [DESKTOP_CAPTURE_TEST_FILES],
           name: 'capture-screenshots:desktop'
+        }
+      },
+      {
+        test: {
+          ...context.android,
+          environmentOptions: {
+            obsidianTransport: {
+              appiumUrl: APPIUM_URL,
+              avdName: SCREENSHOT_AVD_NAME,
+              layoutReadyTimeoutInMilliseconds: LAYOUT_READY_TIMEOUT_IN_MILLISECONDS,
+              type: 'obsidian-android-appium'
+            }
+          },
+          include: [SCREENSHOTS_CAPTURE_ANDROID_TEST_FILES],
+          name: 'capture-screenshots:android'
         }
       },
       {
