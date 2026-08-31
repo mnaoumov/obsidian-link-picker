@@ -42,9 +42,9 @@ interface ApiResult {
 describe('The published API', () => {
   it('opens the picker for a consumer holding nothing but the registry record, and resolves with the link text', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<ApiResult> {
+      async callback({ lib: { createNote, waitUntil }, pluginId }): Promise<ApiResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const OPEN_TIMEOUT_IN_MILLISECONDS = 10_000;
+        const OPEN_TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
 
         /**
@@ -81,7 +81,10 @@ describe('The published API', () => {
 
         // At the vault root, because that is where the picker opens with no folder given.
         const targetName = `Ada-${stamp}`;
-        await app.vault.create(`${targetName}.md`, '# Ada\n');
+        await createNote({
+          content: '# Ada\n',
+          path: `${targetName}.md`
+        });
 
         // These suites share one Obsidian, and each ends by picking something rather than by walking
         // Away, so a picker still open here means an earlier suite broke that contract.

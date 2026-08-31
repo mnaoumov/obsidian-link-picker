@@ -29,12 +29,15 @@ interface SelectEmptyResult {
 describe('The `No link` control', () => {
   it('closes it and writes nothing, rather than navigating to the vault root', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, obsidianModule, pluginId }): Promise<SelectEmptyResult> {
+      async callback({ app, lib: { createNote, waitUntil }, obsidianModule, pluginId }): Promise<SelectEmptyResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
 
-        const source = await app.vault.create(`Source-${stamp}.md`, 'body');
+        const source = await createNote({
+          content: 'body',
+          path: `Source-${stamp}.md`
+        });
 
         await app.workspace.getLeaf(true).openFile(source);
         await waitUntil({

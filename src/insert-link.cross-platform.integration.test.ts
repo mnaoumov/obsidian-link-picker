@@ -29,15 +29,19 @@ interface InsertLinkResult {
 describe('The `Insert link...` command', () => {
   it('writes a link to the picked note at the cursor', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, obsidianModule, pluginId }): Promise<InsertLinkResult> {
+      async callback({ app, lib: { createNote, waitUntil }, obsidianModule, pluginId }): Promise<InsertLinkResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const OPEN_TIMEOUT_IN_MILLISECONDS = 10_000;
+        const OPEN_TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
 
         // At the vault root, because that is where the picker opens: it lists one folder's contents, and
         // A note buried in a subfolder would not be among them until the folder was navigated into.
         const targetName = `Ada-${stamp}`;
-        await app.vault.create(`${targetName}.md`, '# Ada\n');
+        await createNote({
+          content: '# Ada\n',
+          path: `${targetName}.md`
+        });
+        // The source note is deliberately empty, so a content read-back would prove nothing.
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);

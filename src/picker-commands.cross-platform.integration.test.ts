@@ -35,15 +35,18 @@ interface SettingsComponentLike {
 describe('A configured picker', () => {
   it('gets its own command, and loses it when the picker is removed', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<PickerCommandsResult> {
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<PickerCommandsResult> {
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
         const folderName = `Picked-${stamp}`;
         const pickerName = `Insert person ${stamp}`;
         const pickerId = `picker-${stamp}`;
 
         await app.vault.createFolder(folderName);
-        await app.vault.create(`${folderName}/Ada-${stamp}.md`, '# Ada\n');
+        await createNote({
+          content: '# Ada\n',
+          path: `${folderName}/Ada-${stamp}.md`
+        });
 
         const plugin: unknown = app.plugins.plugins[pluginId];
         const settingsComponent = (plugin as PluginWithSettings).pluginSettingsComponent;

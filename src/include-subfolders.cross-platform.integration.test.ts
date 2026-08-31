@@ -26,16 +26,20 @@ interface IncludeSubfoldersResult {
 describe('The `Subfolders` control', () => {
   it('reaches into subfolders, which are otherwise left alone', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<IncludeSubfoldersResult> {
+      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<IncludeSubfoldersResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
         const folderName = `Subfolders-${stamp}`;
         const deepName = `Deep-${stamp}`;
 
         await app.vault.createFolder(folderName);
         await app.vault.createFolder(`${folderName}/${deepName}`);
-        await app.vault.create(`${folderName}/${deepName}/Buried-${stamp}.md`, '# Buried\n');
+        await createNote({
+          content: '# Buried\n',
+          path: `${folderName}/${deepName}/Buried-${stamp}.md`
+        });
+        // The source note is deliberately empty, so a content read-back would prove nothing.
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);

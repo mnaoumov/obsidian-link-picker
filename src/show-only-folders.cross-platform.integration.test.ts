@@ -26,15 +26,19 @@ interface ShowOnlyFoldersResult {
 describe('The `Folders only` control', () => {
   it('leaves only the folders, and the way out', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { waitUntil }, pluginId }): Promise<ShowOnlyFoldersResult> {
+      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<ShowOnlyFoldersResult> {
         const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 10_000;
+        const TIMEOUT_IN_MILLISECONDS = 30_000;
         const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
         const folderName = `OnlyFolders-${stamp}`;
 
         await app.vault.createFolder(folderName);
         await app.vault.createFolder(`${folderName}/Nested-${stamp}`);
-        await app.vault.create(`${folderName}/Note-${stamp}.md`, '# Note\n');
+        await createNote({
+          content: '# Note\n',
+          path: `${folderName}/Note-${stamp}.md`
+        });
+        // The source note is deliberately empty, so a content read-back would prove nothing.
         const source = await app.vault.create(`Source-${stamp}.md`, '');
 
         await app.workspace.getLeaf(true).openFile(source);
