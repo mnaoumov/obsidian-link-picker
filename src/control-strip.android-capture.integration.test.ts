@@ -278,7 +278,7 @@ async function calibrate(deviceId: string, snapshot: StripSnapshot): Promise<num
 
   throw new Error(
     `Could not map the page onto the touchscreen. Tried offsets ${candidates.join(', ')} against `
-    + `devicePixelRatio=${devicePixelRatio.toString()}, innerHeight=${snapshot.viewport.innerHeight.toString()}, screenY=${screenY.toString()}.`
+      + `devicePixelRatio=${devicePixelRatio.toString()}, innerHeight=${snapshot.viewport.innerHeight.toString()}, screenY=${screenY.toString()}.`
   );
 }
 
