@@ -1,15 +1,13 @@
 import type {
   FrontMatterCache,
-  KeymapEventHandler,
   TAbstractFile,
   TFile
 } from 'obsidian';
-import type { MaybeReturn } from 'obsidian-dev-utils/type';
+import type { ModalCommands } from 'obsidian-dev-utils/obsidian/modals/modal-command-builder';
 
 import {
   getIcon,
   parseFrontMatterAliases,
-  Platform,
   SuggestModal,
   Vault
 } from 'obsidian';
@@ -23,6 +21,10 @@ import {
 import { resolveFolderNote } from 'obsidian-dev-utils/obsidian/folder-note';
 import { generateMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
 import { getFrontmatterSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
+import {
+  ModalCommandBuilder,
+  ModalCommandsRenderMode
+} from 'obsidian-dev-utils/obsidian/modals/modal-command-builder';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
 import { addPluginCssClasses } from 'obsidian-dev-utils/obsidian/plugin/plugin-context';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
@@ -48,46 +50,6 @@ interface LinkPickerModalConstructorParams {
   resolve(this: void, value: string): void;
 }
 
-/**
- * One button in the strip along the bottom of the picker.
- *
- * The same six things the hotkeys do, reachable by pointer — which on a phone is the ONLY way to reach
- * them, since there is no `Alt` key to press. The hotkey remains the faster route where a keyboard
- * exists, so the two are two ways into one handler rather than two behaviors.
- */
-interface PickerControl {
-  /**
-   * Runs the control. The event is the click, so a control that picks something has one to hand on.
-   */
-  activate(this: void, event_: MouseEvent): void;
-
-  /**
-   * Whether the control can be used right now. An unavailable one is disabled rather than removed, so
-   * the strip does not reflow under the pointer as modes change.
-   */
-  checkIsAvailable(this: void): boolean;
-
-  /**
-   * Whether a TOGGLE is currently on. Absent on the two controls that are actions rather than state.
-   */
-  checkIsOn?(this: void): boolean;
-
-  /**
-   * The hotkey that does the same thing, shown only where one can be pressed.
-   */
-  readonly hotkey: string;
-
-  readonly label: string;
-}
-
-/**
- * A control paired with the button that runs it, so refreshing state needs no lookup.
- */
-interface RenderedControl {
-  readonly buttonEl: HTMLButtonElement;
-  readonly control: PickerControl;
-}
-
 export class LinkPickerModal extends SuggestModal<Item> {
   private readonly emptyItem: Item;
   private folderPath: string;
@@ -95,11 +57,10 @@ export class LinkPickerModal extends SuggestModal<Item> {
   private isClosed = false;
   private isSelected = false;
   private items: Item[] = [];
-  private keymapEventHandlers: KeymapEventHandler[] = [];
   private readonly lastOpenFileIndexMap = new Map<string, number>();
+  private readonly modalCommands: ModalCommands;
   private readonly options: SelectParams;
   private readonly reject: (this: void, reason: unknown) => void;
-  private readonly renderedControls: RenderedControl[] = [];
   private readonly resolve: (this: void, value: string) => void;
   private shouldIncludeAllFiles = false;
   private shouldShowOnlyFolders = false;
@@ -118,7 +79,8 @@ export class LinkPickerModal extends SuggestModal<Item> {
     addPluginCssClasses(this.containerEl, 'link-picker-modal');
     this.setPlaceholder(this.options.placeholder || 'Select note file to link');
 
-    this.renderControls();
+    // Last, because `build` states every control immediately and the state it reads is the fields above.
+    this.modalCommands = this.buildModalCommands();
   }
 
   public getSuggestions(query: string): Item[] {
@@ -140,10 +102,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     this.isClosed = true;
 
-    for (const keymapEventHandler of this.keymapEventHandlers) {
-      this.scope.unregister(keymapEventHandler);
-    }
-
     if (!this.isSelected) {
       this.reject(new Error('No link selected'));
     }
@@ -160,15 +118,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }
 
     this.update();
-
-    this.keymapEventHandlers = [
-      this.scope.register(['Alt'], '1', this.chooseEmpty.bind(this)),
-      this.scope.register(['Alt'], '2', this.toggleIncludeAllFiles.bind(this)),
-      this.scope.register(['Alt'], '3', this.toggleIncludeSubfolders.bind(this)),
-      this.scope.register(['Alt'], '4', this.toggleShowOnlyFolders.bind(this)),
-      this.scope.register(['Alt'], '5', this.toggleSortByUpdatedDate.bind(this)),
-      this.scope.register(['Shift'], 'Enter', this.createNew.bind(this))
-    ];
   }
 
   public renderSuggestion(item: Item, el: HTMLElement): void {
@@ -208,72 +157,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     this.isSelected = true;
     super.selectSuggestion(value, event_);
-  }
-
-  /**
-   * Declares the six controls, in the order they appear: the two actions, then the four toggles.
-   *
-   * The labels name the SETTING rather than what pressing would do next — `Include subfolders` reads
-   * correctly on a control whose pressed state says whether it is on, where the instruction bar this
-   * replaced had to say `Exclude subfolders` once it was.
-   *
-   * @returns The controls.
-   */
-  private buildControls(): PickerControl[] {
-    return [
-      {
-        activate: (event_: MouseEvent): void => {
-          this.chooseEmpty(event_);
-        },
-        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
-        hotkey: 'Alt + 1',
-        label: 'No link'
-      },
-      {
-        activate: (event_: MouseEvent): void => {
-          this.createNew(event_);
-        },
-        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders && this.options.shouldAllowCreate,
-        hotkey: 'Shift + Enter',
-        label: 'Create new'
-      },
-      {
-        activate: (): void => {
-          this.toggleIncludeAllFiles();
-        },
-        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
-        checkIsOn: (): boolean => this.shouldIncludeAllFiles,
-        hotkey: 'Alt + 2',
-        label: 'All files'
-      },
-      {
-        activate: (): void => {
-          this.toggleIncludeSubfolders();
-        },
-        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
-        checkIsOn: (): boolean => this.includeSubfolders,
-        hotkey: 'Alt + 3',
-        label: 'Subfolders'
-      },
-      {
-        activate: (): void => {
-          this.toggleShowOnlyFolders();
-        },
-        checkIsAvailable: (): boolean => true,
-        checkIsOn: (): boolean => this.shouldShowOnlyFolders,
-        hotkey: 'Alt + 4',
-        label: 'Folders only'
-      },
-      {
-        activate: (): void => {
-          this.toggleSortByUpdatedDate();
-        },
-        checkIsAvailable: (): boolean => true,
-        checkIsOn: (): boolean => this.shouldSortByUpdatedDate,
-        hotkey: 'Alt + 5',
-        label: 'By date'
-      }
-    ];
   }
 
   private buildItems(): Item[] {
@@ -336,9 +219,92 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }));
   }
 
-  private chooseEmpty(event_: KeyboardEvent | MouseEvent): MaybeReturn<boolean> {
+  /**
+   * Declares the six controls, in the order they appear: the two actions, then the four toggles.
+   *
+   * The purposes name the SETTING rather than what pressing would do next — `Subfolders` reads correctly
+   * on a control whose pressed state says whether it is on, where the instruction bar this replaced had to
+   * say `Exclude subfolders` once it was.
+   *
+   * Every control declares both routes into its handler: `onKey` for the hotkey and `onActivate` for the
+   * pointer, which on a phone is the only one there is. Two ways into one handler rather than two
+   * behaviors.
+   *
+   * @returns The handle whose `refresh` re-states the strip.
+   */
+  private buildModalCommands(): ModalCommands {
+    return new ModalCommandBuilder()
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
+        key: '1',
+        modifiers: ['Alt'],
+        onActivate: (event_: MouseEvent): void => {
+          this.chooseEmpty(event_);
+        },
+        onKey: (event_: KeyboardEvent): boolean => this.chooseEmpty(event_),
+        purpose: 'No link'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders && this.options.shouldAllowCreate,
+        key: 'Enter',
+        modifiers: ['Shift'],
+        onActivate: (event_: MouseEvent): void => {
+          this.createNew(event_);
+        },
+        onKey: (event_: KeyboardEvent): boolean => this.createNew(event_),
+        purpose: 'Create new'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
+        checkIsOn: (): boolean => this.shouldIncludeAllFiles,
+        key: '2',
+        modifiers: ['Alt'],
+        onActivate: (): void => {
+          this.toggleIncludeAllFiles();
+        },
+        onKey: (): boolean => this.toggleIncludeAllFiles(),
+        purpose: 'All files'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => !this.shouldShowOnlyFolders,
+        checkIsOn: (): boolean => this.includeSubfolders,
+        key: '3',
+        modifiers: ['Alt'],
+        onActivate: (): void => {
+          this.toggleIncludeSubfolders();
+        },
+        onKey: (): boolean => this.toggleIncludeSubfolders(),
+        purpose: 'Subfolders'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => true,
+        checkIsOn: (): boolean => this.shouldShowOnlyFolders,
+        key: '4',
+        modifiers: ['Alt'],
+        onActivate: (): void => {
+          this.toggleShowOnlyFolders();
+        },
+        onKey: (): boolean => this.toggleShowOnlyFolders(),
+        purpose: 'Folders only'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => true,
+        checkIsOn: (): boolean => this.shouldSortByUpdatedDate,
+        key: '5',
+        modifiers: ['Alt'],
+        onActivate: (): void => {
+          this.toggleSortByUpdatedDate();
+        },
+        onKey: (): boolean => this.toggleSortByUpdatedDate(),
+        purpose: 'By date'
+      })
+      .build(this, { renderMode: ModalCommandsRenderMode.Buttons });
+  }
+
+  private chooseEmpty(event_: KeyboardEvent | MouseEvent): boolean {
+    // `true` hands the key back to Obsidian, which is what an offer the picker is not making should do.
     if (this.shouldShowOnlyFolders) {
-      return;
+      return true;
     }
 
     this.selectSuggestion(this.emptyItem, event_);
@@ -511,62 +477,9 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return isFile(file) ? String(file.stat.mtime).padStart(EPOCH_DIGITS, '0') : '';
   }
 
-  /**
-   * Brings each control's pressed and disabled state up to date with the picker's.
-   *
-   * Disabled rather than hidden: a strip that loses buttons as modes change reflows under the pointer,
-   * and on a phone that means a mis-tap.
-   */
-  private refreshControls(): void {
-    for (const { buttonEl, control } of this.renderedControls) {
-      const isOn = control.checkIsOn?.() ?? false;
-      buttonEl.disabled = !control.checkIsAvailable();
-      buttonEl.toggleClass('is-active', isOn);
-      buttonEl.setAttribute('aria-pressed', String(isOn));
-    }
-  }
-
-  /**
-   * Builds the strip once, at construction.
-   *
-   * Built once and only re-STATED afterwards, because rebuilding it on every keystroke would replace the
-   * element under a pointer that may be about to click it.
-   */
-  private renderControls(): void {
-    const controlsEl = this.modalEl.createDiv();
-    addPluginCssClasses(controlsEl, 'link-picker-controls');
-
-    for (const control of this.buildControls()) {
-      const buttonEl = controlsEl.createEl('button', { type: 'button' });
-      addPluginCssClasses(buttonEl, 'link-picker-control');
-      buttonEl.createSpan({ text: control.label });
-
-      // The hotkey is shown only where one can be pressed. On a phone there is no `Alt` to offer, and
-      // The control IS the only way in — which is why the strip exists.
-      if (!Platform.isMobile) {
-        const hotkeyEl = buttonEl.createSpan({ text: control.hotkey });
-        addPluginCssClasses(hotkeyEl, 'link-picker-control-hotkey');
-      }
-
-      // The input keeps focus: the picker filters as you type, and a click that stole focus would end
-      // That mid-search.
-      buttonEl.addEventListener('mousedown', (event_) => {
-        event_.preventDefault();
-      });
-
-      buttonEl.addEventListener('click', (event_) => {
-        control.activate(event_);
-      });
-
-      this.renderedControls.push({ buttonEl, control });
-    }
-
-    this.refreshControls();
-  }
-
-  private toggleIncludeAllFiles(): MaybeReturn<boolean> {
+  private toggleIncludeAllFiles(): boolean {
     if (this.shouldShowOnlyFolders) {
-      return;
+      return true;
     }
 
     this.shouldIncludeAllFiles = !this.shouldIncludeAllFiles;
@@ -574,9 +487,9 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return false;
   }
 
-  private toggleIncludeSubfolders(): MaybeReturn<boolean> {
+  private toggleIncludeSubfolders(): boolean {
     if (this.shouldShowOnlyFolders) {
-      return;
+      return true;
     }
 
     this.includeSubfolders = !this.includeSubfolders;
@@ -597,7 +510,9 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   private update(): void {
-    this.refreshControls();
+    // Re-STATED, never rebuilt: replacing the strip on every keystroke would replace an element the
+    // Pointer may be about to click.
+    this.modalCommands.refresh();
     this.items = this.buildItems();
 
     // Re-runs `getSuggestions` against the unchanged query, which is how a toggle repaints the list.

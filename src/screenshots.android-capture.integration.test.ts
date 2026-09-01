@@ -132,7 +132,7 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
       // Each shot leaves its picker on screen — that is the point of the shot — so the next one has to
       // Put it away before opening its own.
       if (document.querySelector('.prompt')) {
-        const declineControl = [...document.querySelectorAll('.link-picker-control')]
+        const declineControl = [...document.querySelectorAll('.modal-command')]
           .find((el) => el.querySelector('span')?.textContent === declineControlLabel);
         if (!(declineControl instanceof HTMLElement)) {
           throw new TypeError(`The previous picker has no ${declineControlLabel} control to close it with.`);

@@ -329,9 +329,11 @@ describe('LinkPickerModal', () => {
 
       pressHotkey(modal, 'Alt', '4');
 
-      expect(pressHotkey(modal, 'Alt', '1')).toBeUndefined();
-      expect(pressHotkey(modal, 'Alt', '2')).toBeUndefined();
-      expect(pressHotkey(modal, 'Alt', '3')).toBeUndefined();
+      // `true`, the same way `createNew` declines — Obsidian consumes on `false` and hands the key back on
+      // Anything else, so all six say so the one way.
+      expect(pressHotkey(modal, 'Alt', '1')).toBe(true);
+      expect(pressHotkey(modal, 'Alt', '2')).toBe(true);
+      expect(pressHotkey(modal, 'Alt', '3')).toBe(true);
     });
   });
 
@@ -443,13 +445,15 @@ describe('LinkPickerModal', () => {
     });
 
     it('should show each control\'s hotkey where there is a keyboard to press it on', () => {
+      // The library's format, not one of ours: `ModalCommandBuilder` renders the hint, and every picker in
+      // The fleet shows it this way.
       expect(controlHotkeys(openModal({}))).toEqual([
-        'Alt + 1',
-        'Shift + Enter',
-        'Alt + 2',
-        'Alt + 3',
-        'Alt + 4',
-        'Alt + 5'
+        'alt 1',
+        'shift ↵',
+        'alt 2',
+        'alt 3',
+        'alt 4',
+        'alt 5'
       ]);
     });
 
@@ -896,11 +900,11 @@ function controlButton(modal: TestableModal, label: string): HTMLButtonElement {
 }
 
 function controlElements(modal: TestableModal): HTMLButtonElement[] {
-  return [...modal.modalEl.querySelectorAll('.link-picker-control')].filter((el) => el.instanceOf(HTMLButtonElement));
+  return [...modal.modalEl.querySelectorAll('.modal-command')].filter((el) => el.instanceOf(HTMLButtonElement));
 }
 
 function controlHotkeys(modal: TestableModal): string[] {
-  return controlElements(modal).flatMap((buttonEl) => [...buttonEl.querySelectorAll('.link-picker-control-hotkey')].map((el) => el.textContent));
+  return controlElements(modal).flatMap((buttonEl) => [...buttonEl.querySelectorAll('.modal-command-hotkey')].map((el) => el.textContent));
 }
 
 function controlLabels(modal: TestableModal): string[] {

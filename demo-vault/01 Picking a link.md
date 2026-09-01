@@ -31,7 +31,7 @@ Person: [[Ada Lovelace|Ada]]
 
 ## Selecting a note that does not exist yet
 
-Type a name nothing matches, then press **Create new** in the strip along the bottom — or `Shift + Enter`, which the control shows as its hotkey. The note is created in the folder the picker is currently rooted at, and linked in the same gesture.
+Type a name nothing matches, then press **Create new** in the strip along the bottom — or `Shift + Enter`, the hotkey the control names beside its label. The note is created in the folder the picker is currently rooted at, and linked in the same gesture.
 
 The note is created **empty**. Templates, frontmatter and naming conventions are vault policy, not this plugin's — a caller that has such conventions supplies them through the API rather than settling for a blank note.
 
