@@ -74,7 +74,7 @@ describe('The `No link` control', () => {
         };
 
         function clickControl(label: string): void {
-          const buttonEl = [...document.querySelectorAll('.link-picker-control')]
+          const buttonEl = [...document.querySelectorAll('.modal-command')]
             .find((el) => el.querySelector('span')?.textContent === label);
           if (!(buttonEl instanceof HTMLElement)) {
             throw new TypeError(`No control labelled ${label}.`);

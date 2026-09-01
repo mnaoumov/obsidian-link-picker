@@ -382,12 +382,12 @@ async function readStrip(): Promise<StripSnapshot> {
       const inputEl = document.querySelector('.prompt-input');
 
       return {
-        controls: [...document.querySelectorAll('.link-picker-control')].map((el) => {
+        controls: [...document.querySelectorAll('.modal-command')].map((el) => {
           const buttonEl = el as HTMLButtonElement;
           const rect = buttonEl.getBoundingClientRect();
 
           return {
-            hasHotkeyHint: buttonEl.querySelector('.link-picker-control-hotkey') !== null,
+            hasHotkeyHint: buttonEl.querySelector('.modal-command-hotkey') !== null,
             isDisabled: buttonEl.disabled,
             isPressed: buttonEl.getAttribute('aria-pressed') === 'true',
             label: buttonEl.querySelector('span')?.textContent ?? '',
