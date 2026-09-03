@@ -14,6 +14,11 @@ Every setting the plugin stores, named by the key it appears under in `data.json
 - `excludedPathPatterns`
   - paths containing any of these are hidden from the picker. Substrings, not patterns — the case this exists for is a vault-wide attachment folder, and a substring says that in one line without a pattern language to learn.
 
+## Matching
+
+- `segmentMatchMode`
+  - how one term of your query is tested against one part of a path. `Substring` — the default — needs the typed text to appear inside the part as one unbroken run, which is the only rule the picker had before this setting existed. `Fuzzy` needs the typed characters to appear inside it in order, the way Obsidian's own search works: `Brv` then finds `Bravo`. It changes what is *found*, never the order — a scattered hit lands in a tier below every contiguous one. See [03 Ranking](<./03 Ranking.md>).
+
 ## Ordering and labels
 
 - `updatedPropertyName`

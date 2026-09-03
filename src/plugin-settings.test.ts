@@ -5,6 +5,7 @@ import {
   it
 } from 'vitest';
 
+import { SegmentMatchMode } from './item.ts';
 import {
   createPicker,
   Picker,
@@ -53,6 +54,10 @@ describe('createPicker', () => {
 describe('PluginSettings', () => {
   it('should default to reading the folder-note plugin\'s own configuration', () => {
     expect(new PluginSettings().folderNoteLocation).toBe(FolderNoteLocation.Auto);
+  });
+
+  it('should default to the substring rule, which is the one the picker has always used', () => {
+    expect(new PluginSettings().segmentMatchMode).toBe(SegmentMatchMode.Substring);
   });
 
   it('should default to no pickers, no exclusions and no property overrides', () => {

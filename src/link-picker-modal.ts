@@ -87,6 +87,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return sortItems(this.items, query, {
       folderNoteRelativePath: this.getCurrentFolderNoteRelativePath(),
       lastOpenFileIndexMap: this.lastOpenFileIndexMap,
+      segmentMatchMode: this.options.segmentMatchMode,
       shouldSortByUpdatedDate: this.shouldSortByUpdatedDate
     });
   }

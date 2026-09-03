@@ -1,6 +1,27 @@
 import type { TAbstractFile } from 'obsidian';
 
 /**
+ * How one term of the query is tested against one part of a path.
+ *
+ * The two disagree about something real rather than cosmetic: whether `Brv` should find `Bravo`. A vault
+ * whose names are long and typed in a hurry wants it to; one that relies on the picker's determinism does
+ * not, which is why {@link SegmentMatchMode.Substring} is the default.
+ */
+export enum SegmentMatchMode {
+  /**
+   * The term's characters appear inside the path part in order, but need not be contiguous — the way
+   * Obsidian's own search works. Finds more, including things you did not mean.
+   */
+  Fuzzy = 'Fuzzy',
+
+  /**
+   * The term appears inside the path part as one unbroken run. The default, and the only rule the picker
+   * had before the setting existed.
+   */
+  Substring = 'Substring'
+}
+
+/**
  * The relative path of the synthetic item that navigates out of the current folder.
  */
 export const PARENT_RELATIVE_PATH = '..';
@@ -11,6 +32,26 @@ export const PARENT_RELATIVE_PATH = '..';
  * comparator inconsistent rather than merely last.
  */
 const NEVER_OPENED_INDEX = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Params for {@link applyQuery}.
+ */
+export interface ApplyQueryParams {
+  /**
+   * The item to test.
+   */
+  readonly item: Item;
+
+  /**
+   * How one query term is tested against one path part.
+   */
+  readonly mode: SegmentMatchMode;
+
+  /**
+   * The raw query, lower-cased here rather than by the caller.
+   */
+  readonly query: string;
+}
 
 /**
  * One row in the picker.
@@ -57,7 +98,7 @@ export interface Item {
 /**
  * An {@link Item} with one query's match facts already computed.
  *
- * The six booleans are the ranking tiers, in the order {@link QUERY_RANK_TIERS} applies them. They are
+ * The seven booleans are the ranking tiers, in the order {@link QUERY_RANK_TIERS} applies them. They are
  * deliberately independent rather than a single score: a template author wants to know that typing a
  * note's exact name puts it first, and a fuzzy score cannot promise that.
  */
@@ -69,6 +110,12 @@ export interface QueryItem {
   isPathInclude: boolean;
   isStartFrom: boolean;
   isStartFromEveryTerm: boolean;
+
+  /**
+   * Only ever true under {@link SegmentMatchMode.Fuzzy}, where it is the weakest tier of all.
+   */
+  isSubsequenceEveryTerm: boolean;
+
   item: Item;
 }
 
@@ -88,6 +135,11 @@ export interface SortContext {
   readonly lastOpenFileIndexMap: ReadonlyMap<string, number>;
 
   /**
+   * How one query term is tested against one path part.
+   */
+  readonly segmentMatchMode: SegmentMatchMode;
+
+  /**
    * Whether the updated-date ordering is on. When off, folders lead instead.
    */
   readonly shouldSortByUpdatedDate: boolean;
@@ -99,6 +151,13 @@ export interface SortContext {
  * Order is the whole contract: an exact title match beats a prefix match, which beats a path match, which
  * beats the three all-terms-match tiers. Within a tier, folders lead — a folder is a place to navigate to
  * rather than a leaf, so offering it first costs a keystroke and saves a wrong pick.
+ *
+ * The last rung is reachable only under {@link SegmentMatchMode.Fuzzy}, and it is what keeps a scattered
+ * hit from ever outranking a contiguous one: everything above it rests on equality, `startsWith` or
+ * `includes`, all of which are strictly stronger than a subsequence and none of which the mode touches.
+ * It also has to exist rather than merely widen the match test, because a shown item that satisfies no
+ * tier would break the rule that an item ranks exactly when it is shown — and it would silently lose the
+ * folders-lead tiebreak every other tier applies.
  */
 const QUERY_RANK_TIERS: readonly ((queryItem: QueryItem) => boolean)[] = [
   (queryItem): boolean => queryItem.isExactMatch,
@@ -106,22 +165,28 @@ const QUERY_RANK_TIERS: readonly ((queryItem: QueryItem) => boolean)[] = [
   (queryItem): boolean => queryItem.isPathInclude,
   (queryItem): boolean => queryItem.isEqualToEveryTerm,
   (queryItem): boolean => queryItem.isStartFromEveryTerm,
-  (queryItem): boolean => queryItem.isIncludeEveryTerm
+  (queryItem): boolean => queryItem.isIncludeEveryTerm,
+  (queryItem): boolean => queryItem.isSubsequenceEveryTerm
 ];
 
 /**
  * Computes one item's match facts against a query, ahead of ranking.
  *
- * @param query - The raw query, lower-cased here rather than by the caller.
- * @param item - The item to test.
- * @returns The item with its six match facts.
+ * @param params - The item, the raw query, and the per-term match rule.
+ * @returns The item with its seven match facts.
  */
-export function applyQuery(query: string, item: Item): QueryItem {
-  const lowerCaseQuery = query.toLowerCase();
+export function applyQuery(params: ApplyQueryParams): QueryItem {
+  const item = params.item;
+  const lowerCaseQuery = params.query.toLowerCase();
   const queryWithExtension = item.lowerCaseExtension ? `${lowerCaseQuery}.${item.lowerCaseExtension}` : lowerCaseQuery;
   const queryTerms = lowerCaseQuery.split(/[ /]/);
 
   const isIncludeEveryTerm = queryTerms.every((queryTerm) => item.lowerCasePathParts.some((pathPart) => pathPart.includes(queryTerm)));
+
+  // A substring is also a subsequence, so under `Fuzzy` this holds for everything the tier above it holds for.
+  // That is deliberate: the tier is what an otherwise unranked scattered hit lands in, not a way of separating the two.
+  const isSubsequenceEveryTerm = params.mode === SegmentMatchMode.Fuzzy
+    && queryTerms.every((queryTerm) => item.lowerCasePathParts.some((pathPart) => checkIsSubsequence(queryTerm, pathPart)));
 
   return {
     isEqualToEveryTerm: queryTerms.every((queryTerm) => item.lowerCasePathParts.includes(queryTerm)),
@@ -129,11 +194,12 @@ export function applyQuery(query: string, item: Item): QueryItem {
     isIncludeEveryTerm,
 
     // Matching and the weakest ranking tier are the same test — an item ranks at all exactly when it is shown at all. Computed once and shared so the two can never drift apart.
-    isMatch: isIncludeEveryTerm,
+    isMatch: isIncludeEveryTerm || isSubsequenceEveryTerm,
 
     isPathInclude: lowerCaseQuery.includes('/') && item.lowerCaseRelativePath.includes(lowerCaseQuery),
     isStartFrom: item.lowerCaseTitles.some((title) => title.startsWith(lowerCaseQuery)),
     isStartFromEveryTerm: queryTerms.every((queryTerm) => item.lowerCasePathParts.some((pathPart) => pathPart.startsWith(queryTerm))),
+    isSubsequenceEveryTerm,
     item
   };
 }
@@ -175,10 +241,33 @@ export function fillLowerCaseFields(item: Item, isFolderNote: boolean): void {
  */
 export function sortItems(items: readonly Item[], query: string, sortContext: SortContext): Item[] {
   return items
-    .map((item) => applyQuery(query, item))
+    .map((item) => applyQuery({ item, mode: sortContext.segmentMatchMode, query }))
     .filter((queryItem) => queryItem.isMatch)
     .sort((a, b) => compareQueryItems(a, b, query, sortContext))
     .map((queryItem) => queryItem.item);
+}
+
+/**
+ * Whether a term's characters appear inside a path part in order, contiguously or not.
+ *
+ * @param term - The query term, already lower-cased.
+ * @param pathPart - The path part, already lower-cased.
+ * @returns `true` when every character was found, each after the one before it.
+ */
+function checkIsSubsequence(term: string, pathPart: string): boolean {
+  let searchFromIndex = 0;
+
+  for (const character of term) {
+    const foundIndex = pathPart.indexOf(character, searchFromIndex);
+
+    if (foundIndex === -1) {
+      return false;
+    }
+
+    searchFromIndex = foundIndex + 1;
+  }
+
+  return true;
 }
 
 function compareByFileProperties(a: QueryItem, b: QueryItem, query: string, sortContext: SortContext): number {

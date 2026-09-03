@@ -50,7 +50,10 @@ vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => 
 }));
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { PARENT_RELATIVE_PATH } from './item.ts';
+import {
+  PARENT_RELATIVE_PATH,
+  SegmentMatchMode
+} from './item.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { LinkPickerModal } from './link-picker-modal.ts';
 
@@ -928,6 +931,7 @@ function createModal(options: Partial<SelectParams>): TestableModal {
         initialQuery: '',
         placeholder: '',
         prefix: '',
+        segmentMatchMode: SegmentMatchMode.Substring,
         shouldAllowCreate: true,
         shouldApplyPrefixSuffixWhenNoLinkSelected: false,
         sourcePathOrFile: '',
