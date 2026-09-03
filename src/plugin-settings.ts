@@ -1,5 +1,7 @@
 import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
 
+import { SegmentMatchMode } from './item.ts';
+
 /**
  * A named, preconfigured picker.
  *
@@ -96,6 +98,14 @@ export class PluginSettings {
    * The configured pickers. Each becomes a command.
    */
   public pickers: readonly Picker[] = [];
+
+  /**
+   * How one term of the query is tested against one part of a path.
+   *
+   * {@link SegmentMatchMode.Substring} — the default — is the rule the picker has always used, and the
+   * one that makes the same query put the same note first today and next month.
+   */
+  public segmentMatchMode: SegmentMatchMode = SegmentMatchMode.Substring;
 
   /**
    * Frontmatter property holding a note's display title, used as the alias of a note the picker creates.

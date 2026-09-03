@@ -20,6 +20,7 @@ import {
 
 import type { SelectParams } from './select.ts';
 
+import { SegmentMatchMode } from './item.ts';
 import { LinkPickerComponent } from './link-picker-component.ts';
 import { PluginSettings } from './plugin-settings.ts';
 
@@ -69,25 +70,30 @@ describe('LinkPickerComponent', () => {
   describe('resolving options', () => {
     it('should fill every gap from the settings', async () => {
       settings.excludedPathPatterns = ['/attachments'];
+      settings.segmentMatchMode = SegmentMatchMode.Fuzzy;
       settings.titlePropertyName = 'title';
       settings.updatedPropertyName = 'updated';
 
       await createComponent().select({});
 
       expect(lastParams().excludedPathPatterns).toEqual(['/attachments']);
+      expect(lastParams().segmentMatchMode).toBe(SegmentMatchMode.Fuzzy);
       expect(lastParams().titlePropertyName).toBe('title');
       expect(lastParams().updatedPropertyName).toBe('updated');
     });
 
     it('should let a caller override a setting for one call', async () => {
       settings.excludedPathPatterns = ['/attachments'];
+      settings.segmentMatchMode = SegmentMatchMode.Fuzzy;
 
       await createComponent().select({
         excludedPathPatterns: [],
+        segmentMatchMode: SegmentMatchMode.Substring,
         titlePropertyName: 'name'
       });
 
       expect(lastParams().excludedPathPatterns).toEqual([]);
+      expect(lastParams().segmentMatchMode).toBe(SegmentMatchMode.Substring);
       expect(lastParams().titlePropertyName).toBe('name');
     });
 

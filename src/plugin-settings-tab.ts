@@ -8,10 +8,12 @@ import type { ValueComponentWithChangeTracking } from 'obsidian-dev-utils/obsidi
 
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
+import { appendCodeBlock } from 'obsidian-dev-utils/obsidian/html-element';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
 import type { PluginSettings } from './plugin-settings.ts';
 
+import { SegmentMatchMode } from './item.ts';
 import {
   createPicker,
   Picker
@@ -122,6 +124,29 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           setting.addText((text) => {
             this.bind({ propertyName: 'updatedPropertyName', valueComponent: text })
               .setPlaceholder('The file\'s modification time');
+          });
+        }
+      }),
+      this.settingEx({
+        desc: createFragment((f) => {
+          f.appendText('How one term of your query is tested against one part of a path.');
+          f.createEl('br');
+          appendCodeBlock(f, 'Substring');
+          f.appendText(' - the typed text must appear inside the part as one unbroken run.');
+          f.createEl('br');
+          appendCodeBlock(f, 'Fuzzy');
+          f.appendText(' - the typed characters must appear inside the part in order, the way Obsidian\'s own search works. Finds more, including things you did not mean; a scattered hit is always ranked below a contiguous one.');
+        }),
+        name: 'Segment matching',
+        render: (setting) => {
+          setting.addDropdown((dropdown) => {
+            dropdown.addOptions({
+              /* eslint-disable perfectionist/sort-objects -- Need to keep order. */
+              [SegmentMatchMode.Substring]: 'Substring',
+              [SegmentMatchMode.Fuzzy]: 'Fuzzy'
+              /* eslint-enable perfectionist/sort-objects -- Need to keep order. */
+            });
+            this.bind({ propertyName: 'segmentMatchMode', valueComponent: dropdown });
           });
         }
       }),

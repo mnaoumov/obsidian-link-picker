@@ -10,6 +10,7 @@ import {
 
 import type {
   Item,
+  QueryItem,
   SortContext
 } from './item.ts';
 
@@ -17,6 +18,7 @@ import {
   applyQuery,
   fillLowerCaseFields,
   PARENT_RELATIVE_PATH,
+  SegmentMatchMode,
   sortItems
 } from './item.ts';
 
@@ -27,7 +29,11 @@ const VAULT_FILES: Record<string, string> = {
   'Legal/Court/Supreme Court.md': 'body',
   'Legal/Judge.md': 'body',
   'Legal/Judgement.md': 'body',
-  'Legal/Judge Smith.md': 'body'
+  'Legal/Judge Smith.md': 'body',
+
+  // `ur` is inside this one only as a subsequence (`Ultra`), and inside `Court.md` as a contiguous run —
+  // The one query the two match modes disagree about.
+  'Legal/Ultra brief.md': 'body'
 };
 
 const app: AppOriginal = App.createConfigured__({ files: VAULT_FILES }).asOriginalType__();
@@ -61,9 +67,18 @@ function buildSortContext(overrides: Partial<SortContext> = {}): SortContext {
   return {
     folderNoteRelativePath: '',
     lastOpenFileIndexMap: new Map<string, number>(),
+    segmentMatchMode: SegmentMatchMode.Substring,
     shouldSortByUpdatedDate: false,
     ...overrides
   };
+}
+
+/**
+ * Calls {@link applyQuery} under the substring rule unless a test asks otherwise, so the mode appears only
+ * in the tests that are actually about it.
+ */
+function runQuery(query: string, item: Item, mode: SegmentMatchMode = SegmentMatchMode.Substring): QueryItem {
+  return applyQuery({ item, mode, query });
 }
 
 function sortedPaths(items: readonly Item[], query: string, sortContext: SortContext = buildSortContext()): string[] {
@@ -108,7 +123,7 @@ describe('fillLowerCaseFields', () => {
 
 describe('applyQuery', () => {
   it('should treat a bare basename as an exact match, supplying the extension', () => {
-    const queryItem = applyQuery('judge', buildItem('Legal/Judge.md'));
+    const queryItem = runQuery('judge', buildItem('Legal/Judge.md'));
 
     expect(queryItem.isExactMatch).toBe(true);
     expect(queryItem.isStartFrom).toBe(true);
@@ -116,20 +131,20 @@ describe('applyQuery', () => {
   });
 
   it('should not call a prefix an exact match', () => {
-    const queryItem = applyQuery('judge', buildItem('Legal/Judgement.md'));
+    const queryItem = runQuery('judge', buildItem('Legal/Judgement.md'));
 
     expect(queryItem.isExactMatch).toBe(false);
     expect(queryItem.isStartFrom).toBe(true);
   });
 
   it('should match an alias exactly', () => {
-    const queryItem = applyQuery('the judge', buildItem('Legal/Judge.md', { aliases: ['The Judge'] }));
+    const queryItem = runQuery('the judge', buildItem('Legal/Judge.md', { aliases: ['The Judge'] }));
 
     expect(queryItem.isExactMatch).toBe(true);
   });
 
   it('should be case insensitive', () => {
-    const queryItem = applyQuery('JUDGE', buildItem('Legal/Judge.md'));
+    const queryItem = runQuery('JUDGE', buildItem('Legal/Judge.md'));
 
     expect(queryItem.isExactMatch).toBe(true);
   });
@@ -137,35 +152,58 @@ describe('applyQuery', () => {
   it('should split a query on spaces and slashes and require every term', () => {
     const item = buildItem('Legal/Court/Supreme Court.md', { relativePath: 'Court/Supreme Court.md' });
 
-    expect(applyQuery('court supreme', item).isIncludeEveryTerm).toBe(true);
-    expect(applyQuery('court/supreme', item).isIncludeEveryTerm).toBe(true);
-    expect(applyQuery('court missing', item).isIncludeEveryTerm).toBe(false);
+    expect(runQuery('court supreme', item).isIncludeEveryTerm).toBe(true);
+    expect(runQuery('court/supreme', item).isIncludeEveryTerm).toBe(true);
+    expect(runQuery('court missing', item).isIncludeEveryTerm).toBe(false);
   });
 
   it('should report a path match only when the query itself carries a slash', () => {
     const item = buildItem('Legal/Court/Supreme Court.md', { relativePath: 'Court/Supreme Court.md' });
 
-    expect(applyQuery('court/supreme', item).isPathInclude).toBe(true);
-    expect(applyQuery('court', item).isPathInclude).toBe(false);
+    expect(runQuery('court/supreme', item).isPathInclude).toBe(true);
+    expect(runQuery('court', item).isPathInclude).toBe(false);
   });
 
   it('should distinguish a whole-part match from a substring one', () => {
     const item = buildItem('Legal/Judgement.md');
 
-    expect(applyQuery('judgement.md', item).isEqualToEveryTerm).toBe(true);
-    expect(applyQuery('judge', item).isEqualToEveryTerm).toBe(false);
-    expect(applyQuery('judge', item).isStartFromEveryTerm).toBe(true);
+    expect(runQuery('judgement.md', item).isEqualToEveryTerm).toBe(true);
+    expect(runQuery('judge', item).isEqualToEveryTerm).toBe(false);
+    expect(runQuery('judge', item).isStartFromEveryTerm).toBe(true);
   });
 
   it('should show exactly the items it ranks', () => {
     const item = buildItem('Legal/Judge.md');
 
-    expect(applyQuery('judge', item).isMatch).toBe(applyQuery('judge', item).isIncludeEveryTerm);
-    expect(applyQuery('absent', item).isMatch).toBe(false);
+    expect(runQuery('judge', item).isMatch).toBe(runQuery('judge', item).isIncludeEveryTerm);
+    expect(runQuery('absent', item).isMatch).toBe(false);
   });
 
   it('should match everything on an empty query', () => {
-    expect(applyQuery('', buildItem('Legal/Judge.md')).isMatch).toBe(true);
+    expect(runQuery('', buildItem('Legal/Judge.md')).isMatch).toBe(true);
+  });
+
+  it('should not find a broken-up term under substring matching', () => {
+    const queryItem = runQuery('jdg', buildItem('Legal/Judge.md'));
+
+    expect(queryItem.isMatch).toBe(false);
+    expect(queryItem.isSubsequenceEveryTerm).toBe(false);
+  });
+
+  it('should find a broken-up term under fuzzy matching, in the weakest tier', () => {
+    const queryItem = runQuery('jdg', buildItem('Legal/Judge.md'), SegmentMatchMode.Fuzzy);
+
+    expect(queryItem.isMatch).toBe(true);
+    expect(queryItem.isSubsequenceEveryTerm).toBe(true);
+    expect(queryItem.isIncludeEveryTerm).toBe(false);
+  });
+
+  it('should still require the characters to be in order under fuzzy matching', () => {
+    expect(runQuery('gdj', buildItem('Legal/Judge.md'), SegmentMatchMode.Fuzzy).isMatch).toBe(false);
+  });
+
+  it('should require every term to be found under fuzzy matching', () => {
+    expect(runQuery('jdg zzz', buildItem('Legal/Judge.md'), SegmentMatchMode.Fuzzy).isMatch).toBe(false);
   });
 });
 
@@ -305,7 +343,7 @@ describe('sortItems', () => {
   });
 
   it('should fall through every tier to the path when two notes match only by containing the terms', () => {
-    // Neither note starts with, equals, or has a path part beginning with `u` or `e`, so all six ranking
+    // Neither note starts with, equals, or has a path part beginning with `u` or `e`, so all seven ranking
     // Tiers tie and the ordering falls back to the file properties.
     const items = [
       buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md' }),
@@ -313,5 +351,16 @@ describe('sortItems', () => {
     ];
 
     expect(sortedPaths(items, 'u e')).toEqual(['Judge.md', 'Judgement.md']);
+  });
+
+  it('should show a scattered hit only under fuzzy matching, and rank it below a contiguous one', () => {
+    const items = [
+      buildItem('Legal/Ultra brief.md', { relativePath: 'Ultra brief.md' }),
+      buildItem('Legal/Court.md', { relativePath: 'Court.md' })
+    ];
+
+    expect(sortedPaths(items, 'ur')).toEqual(['Court.md']);
+    expect(sortedPaths(items, 'ur', buildSortContext({ segmentMatchMode: SegmentMatchMode.Fuzzy })))
+      .toEqual(['Court.md', 'Ultra brief.md']);
   });
 });

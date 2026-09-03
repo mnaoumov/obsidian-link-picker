@@ -64,8 +64,11 @@ With a query typed, items are ranked in tiers, and only within a tier does anyth
 4. Every query term equals some part of the path
 5. Every query term starts some part of the path
 6. Every query term appears somewhere in the path
+7. Every query term's characters appear somewhere in the path in order — only when `Segment matching` is `Fuzzy`
 
 Aliases count as names, so a note with three aliases offers three rows that rank separately. Inside a tier, folders come first; then recently opened files, then updated date, then shallower paths, then alphabetical.
+
+The seventh tier is what `Segment matching` adds, and it is deliberately the weakest: turning it on changes what the picker **finds**, never the order it finds it in. `Brv` reaches `Bravo` without displacing anything you spelled out.
 
 With no query typed, `..` and the current folder's own folder note hold the top two rows, so navigating out never means scrolling.
 
@@ -91,6 +94,7 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 - **Folder note location** — `Auto` (read the `folder-notes` plugin), inside the folder, beside the folder, or none.
 - **Folder note name** — what the note is called, when not on `Auto`.
 - **Excluded paths** — substrings; a path containing any of them is hidden. Point this at your attachment folder.
+- **Segment matching** — `Substring` (the default: a query term must appear inside a path part as one unbroken run) or `Fuzzy` (its characters need only appear in order, so `Brv` finds `Bravo`). Finding more, never reordering.
 - **Updated property** — the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time.
 - **Title property** — the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
 
@@ -98,7 +102,7 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 
 The picker is callable, and that is where the plugin came from: it is an extraction of a script whose every consumer was a Templater template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
 
-It is published through [`obsidian-dev-utils`' cross-plugin API registry](https://mnaoumov.github.io/obsidian-dev-utils/guides/cross-plugin-apis/), keyed by the plugin id, version-negotiated, and revoked automatically if the plugin is disabled. The contract version is **`1.0.0`**, and it is independent of the plugin's own version.
+It is published through [`obsidian-dev-utils`' cross-plugin API registry](https://mnaoumov.github.io/obsidian-dev-utils/guides/cross-plugin-apis/), keyed by the plugin id, version-negotiated, and revoked automatically if the plugin is disabled. The contract version is **`1.1.0`**, and it is independent of the plugin's own version.
 
 ```typescript
 import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
@@ -131,7 +135,7 @@ const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 - **`placeholder`** — the modal's placeholder text.
 - **`shouldAllowCreate`** — whether `Create new` is offered at all.
 - **`sourcePathOrFile`** — the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.
-- **`excludedPathPatterns`**, **`folderNoteConfig`**, **`titlePropertyName`**, **`updatedPropertyName`** — per-call overrides of the matching settings.
+- **`excludedPathPatterns`**, **`folderNoteConfig`**, **`segmentMatchMode`**, **`titlePropertyName`**, **`updatedPropertyName`** — per-call overrides of the matching settings.
 
 [06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>) in the demo vault has a runnable version of the above.
 

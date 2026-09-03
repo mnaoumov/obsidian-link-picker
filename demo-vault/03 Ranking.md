@@ -39,6 +39,8 @@ A row is shown exactly when it ranks at all, and it is ranked by the first of th
   - each term starts one.
 - every term appears
   - each term is contained somewhere.
+- every term appears scattered
+  - each term's characters are contained somewhere in order, but not necessarily side by side. Reachable only when `segmentMatchMode` is `Fuzzy` — see [05 Settings](<./05 Settings.md>). That setting changes what the picker *finds*, never how it orders: a scattered hit sits below every tier above, so `Brv` reaching `Bravo` never displaces anything you spelled out.
 
 Within a tier, folders lead — a folder is a place to go rather than a leaf, so offering it first costs a keystroke and saves a wrong pick.
 

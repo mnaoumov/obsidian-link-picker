@@ -30,6 +30,7 @@ import {
 
 import type { Picker } from './plugin-settings.ts';
 
+import { SegmentMatchMode } from './item.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import {
   createPicker,
@@ -54,6 +55,7 @@ const EXPECTED_TOP_LEVEL_PROPERTY_NAMES = [
   'folderNoteName',
   'excludedPathPatterns',
   'updatedPropertyName',
+  'segmentMatchMode',
   'titlePropertyName'
 ];
 
@@ -89,6 +91,14 @@ describe('PluginSettingsTab', () => {
     inputValues.folderNoteLocation = FolderNoteLocation.InsideFolder;
 
     expect(isRowVisible(findRow(createTab(), 'Folder note name'))).toBe(true);
+  });
+
+  it('should offer both match modes, leading with the rule the picker has always used', () => {
+    const setting = renderRow(createTab(), 'Segment matching');
+    const optionEls = [...setting.controlEl.querySelectorAll('option')];
+
+    expect(optionEls.map((optionEl) => optionEl.value)).toEqual([SegmentMatchMode.Substring, SegmentMatchMode.Fuzzy]);
+    expect(optionEls.map((optionEl) => optionEl.textContent)).toEqual(['Substring', 'Fuzzy']);
   });
 
   describe('pickers list', () => {
@@ -375,6 +385,26 @@ function pickersList(tab: PluginSettingsTab): SettingDefinitionList {
 
 function readPickerBinding(index: number, pickerPropertyName: keyof Picker): unknown {
   return pickerBindingOptions(index, pickerPropertyName).pluginSettingsToComponentValueConverter?.(castTo<never>(null));
+}
+
+/**
+ * Renders ONE declared row, so what it built can be read back without every other row's markup landing
+ * in the same container.
+ *
+ * @param tab - The settings tab.
+ * @param name - The row's name.
+ * @returns The setting the row rendered into.
+ */
+function renderRow(tab: PluginSettingsTab, name: string): SettingEx {
+  const row = findRow(tab, name);
+
+  if (!('render' in row)) {
+    throw new Error(`The row named ${name} renders nothing.`);
+  }
+
+  const setting = new SettingEx(tab.containerEl);
+  row.render(setting, castTo<SettingGroup>(null));
+  return setting;
 }
 
 /**

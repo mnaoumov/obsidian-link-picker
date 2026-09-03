@@ -5,6 +5,8 @@ import type {
 import type { PathOrFile } from 'obsidian-dev-utils/obsidian/file-system';
 import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
+import type { SegmentMatchMode } from './item.ts';
+
 import { LinkPickerModal } from './link-picker-modal.ts';
 
 /**
@@ -72,6 +74,11 @@ export interface SelectOptions {
   readonly prefix?: string;
 
   /**
+   * How one term of the query is tested against one part of a path. Overrides the setting.
+   */
+  readonly segmentMatchMode?: SegmentMatchMode;
+
+  /**
    * Whether "create new" is offered.
    */
   readonly shouldAllowCreate?: boolean;
@@ -120,6 +127,7 @@ export interface SelectParams {
   readonly initialQuery: string;
   readonly placeholder: string;
   readonly prefix: string;
+  readonly segmentMatchMode: SegmentMatchMode;
   readonly shouldAllowCreate: boolean;
   readonly shouldApplyPrefixSuffixWhenNoLinkSelected: boolean;
   readonly sourcePathOrFile: PathOrFile;

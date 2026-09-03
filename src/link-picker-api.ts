@@ -8,6 +8,8 @@ import { z } from 'zod';
 import type { LinkPickerComponent } from './link-picker-component.ts';
 import type { SelectOptions } from './select.ts';
 
+import { SegmentMatchMode } from './item.ts';
+
 /**
  * The version of the API {@link LINK_PICKER_API_CONTRACT} describes.
  *
@@ -15,7 +17,7 @@ import type { SelectOptions } from './select.ts';
  * may reach `2.0.0` while still exposing this API unchanged, and this may reach `2.0.0` while the plugin
  * does not. Consumers pin a range against this one, not against the plugin.
  */
-export const LINK_PICKER_API_VERSION = '1.0.0';
+export const LINK_PICKER_API_VERSION = '1.1.0';
 
 /**
  * What {@link LinkPickerApi.select} accepts — the plugin's public picker options.
@@ -67,6 +69,7 @@ const selectOptionsSchema = z.looseObject({
   initialQuery: z.string().optional(),
   placeholder: z.string().optional(),
   prefix: z.string().optional(),
+  segmentMatchMode: z.enum(SegmentMatchMode).optional(),
   shouldAllowCreate: z.boolean().optional(),
   shouldApplyPrefixSuffixWhenNoLinkSelected: z.boolean().optional(),
   sourcePathOrFile: sourcePathOrFileSchema.optional(),

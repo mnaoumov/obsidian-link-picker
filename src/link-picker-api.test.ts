@@ -18,6 +18,7 @@ import {
 import type { LinkPickerApiSelectParams } from './link-picker-api.ts';
 import type { LinkPickerComponent } from './link-picker-component.ts';
 
+import { SegmentMatchMode } from './item.ts';
 import {
   LINK_PICKER_API_CONTRACT,
   LINK_PICKER_API_VERSION,
@@ -59,6 +60,7 @@ describe('LINK_PICKER_API_CONTRACT', () => {
         initialQuery: 'Ada',
         placeholder: 'Who?',
         prefix: 'Person: ',
+        segmentMatchMode: SegmentMatchMode.Fuzzy,
         shouldAllowCreate: false,
         shouldApplyPrefixSuffixWhenNoLinkSelected: true,
         sourcePathOrFile: 'notes/note.md',
@@ -76,6 +78,10 @@ describe('LINK_PICKER_API_CONTRACT', () => {
 
     it('should reject a non-boolean where the empty-result switch belongs', () => {
       expect(validateInput([{ shouldApplyPrefixSuffixWhenNoLinkSelected: 'yes' }])).not.toEqual([]);
+    });
+
+    it('should reject a match mode outside the enum, which a plain string check would let through', () => {
+      expect(validateInput([{ segmentMatchMode: 'Substringish' }])).not.toEqual([]);
     });
 
     it('should reject a `createNote` that is not callable, which would otherwise fail deep inside the picker', () => {

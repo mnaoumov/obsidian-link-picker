@@ -105,6 +105,7 @@ export class LinkPickerComponent extends ComponentEx {
       initialQuery: params.initialQuery ?? '',
       placeholder: params.placeholder ?? '',
       prefix: params.prefix ?? '',
+      segmentMatchMode: params.segmentMatchMode ?? settings.segmentMatchMode,
       shouldAllowCreate: params.shouldAllowCreate ?? true,
       shouldApplyPrefixSuffixWhenNoLinkSelected: params.shouldApplyPrefixSuffixWhenNoLinkSelected ?? false,
 
