@@ -79,7 +79,7 @@ describe('A picker hotkey', () => {
         // `Alt + 2` shows the plain file. If the key were not consumed, `2` would ALSO reach the search
         // Box and filter the list down to whatever happens to contain a `2`.
         focusInput();
-        pressKey({ key: '2', modifiers: ['Alt'] });
+        await pressKey({ key: '2', modifiers: ['Alt'] });
         await waitUntil({
           message: 'the plain file is offered',
           predicate: () => rows().some((text) => text.includes('Data-')),
@@ -91,7 +91,7 @@ describe('A picker hotkey', () => {
         // `Alt + 1` closes the picker. An unconsumed key then carries on to the editor that regains
         // Focus, and types `1` into the note.
         focusInput();
-        pressKey({ key: '1', modifiers: ['Alt'] });
+        await pressKey({ key: '1', modifiers: ['Alt'] });
         await waitUntil({
           message: 'the picker closed',
           predicate: () => document.querySelector('.prompt') === null,

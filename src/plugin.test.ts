@@ -4,7 +4,6 @@ import type {
 } from 'obsidian';
 
 import { Component as ComponentCls } from 'obsidian';
-import { castTo } from 'obsidian-dev-utils/object-utils';
 import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
@@ -19,14 +18,6 @@ import {
 
 interface ComponentModuleActual {
   Component: new () => object;
-}
-
-interface PluginsLike {
-  getPlugin: ReturnType<typeof vi.fn>;
-}
-
-interface PluginsMock {
-  plugins: PluginsLike;
 }
 
 vi.mock('./plugin-settings-tab.ts', () => ({
@@ -146,8 +137,5 @@ function createConfiguredApp(): App {
   appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
     callback();
   });
-  // The strict App mock throws on an unmocked member, and the library's layout-ready wiring reaches for
-  // `plugins` to look for Notebook Navigator, so it is assigned wholesale before use.
-  castTo<PluginsMock>(appMock).plugins = { getPlugin: vi.fn().mockReturnValue(null) };
   return appMock.asOriginalType__();
 }
