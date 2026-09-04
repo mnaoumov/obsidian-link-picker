@@ -116,7 +116,7 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
       // Each shot leaves its picker on screen — that is the point of the shot — so the next one has to
       // Put it away before opening its own.
       if (document.querySelector('.prompt')) {
-        pressKey({ key: 'Escape' });
+        await pressKey({ key: 'Escape' });
         await waitUntil({
           message: 'the previous picker to close',
           predicate: () => document.querySelector('.prompt') === null,
