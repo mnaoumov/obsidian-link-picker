@@ -32,7 +32,7 @@ It is also callable. The picker returns a **string**, so a template or a script 
 A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Link Picker: Open demo vault** command.
-2. Downloading `link-picker-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-link-picker/releases).
+2. Downloading `link-picker-demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-link-picker/releases). It unzips into a single `link-picker-demo-vault-<version>` folder.
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
 ## Picking a link
