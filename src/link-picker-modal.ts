@@ -19,6 +19,7 @@ import {
   isFolder
 } from 'obsidian-dev-utils/obsidian/file-system';
 import { resolveFolderNote } from 'obsidian-dev-utils/obsidian/folder-note';
+import { applySpellcheckMode } from 'obsidian-dev-utils/obsidian/html-element';
 import { generateMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
 import { getFrontmatterSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 import {
@@ -26,6 +27,7 @@ import {
   ModalCommandsRenderMode
 } from 'obsidian-dev-utils/obsidian/modals/modal-command-builder';
 import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
+import { SpellcheckMode } from 'obsidian-dev-utils/obsidian/obsidian-settings';
 import { addPluginCssClasses } from 'obsidian-dev-utils/obsidian/plugin/plugin-context';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
@@ -478,6 +480,27 @@ export class LinkPickerModal extends SuggestModal<Item> {
     return isFile(file) ? String(file.stat.mtime).padStart(EPOCH_DIGITS, '0') : '';
   }
 
+  /**
+   * Spell-checks the box while — and only while — it can NAME a note.
+   *
+   * The box doubles as the new note's title: `createNewAsync` takes `inputEl.value` verbatim when it is
+   * non-empty, and only falls back to a prompt when it is not. So while `Create new` is on offer this is a
+   * name field, and every other name-entry surface — Obsidian's inline title and file-explorer rename, and
+   * this picker's own fallback prompt — follows `Editor > Spellcheck`.
+   *
+   * Keyed on the same condition `createNew` guards on, so the attribute cannot drift from whether the
+   * offer is actually being made. `update()` is the single funnel every toggle runs through, which is why
+   * this tracks a mid-open switch into folders-only without a second call site.
+   */
+  private refreshSpellcheck(): void {
+    const canNameANote = !this.shouldShowOnlyFolders && this.options.shouldAllowCreate;
+    applySpellcheckMode({
+      app: this.app,
+      element: this.inputEl,
+      spellcheckMode: canNameANote ? SpellcheckMode.FollowObsidianSetting : SpellcheckMode.Off
+    });
+  }
+
   private toggleIncludeAllFiles(): boolean {
     if (this.shouldShowOnlyFolders) {
       return true;
@@ -514,6 +537,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
     // Re-STATED, never rebuilt: replacing the strip on every keystroke would replace an element the
     // Pointer may be about to click.
     this.modalCommands.refresh();
+    this.refreshSpellcheck();
     this.items = this.buildItems();
 
     // Re-runs `getSuggestions` against the unchanged query, which is how a toggle repaints the list.

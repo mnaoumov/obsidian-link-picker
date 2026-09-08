@@ -842,6 +842,49 @@ describe('LinkPickerModal', () => {
       expect(relativePaths(modal.getSuggestions(''))).toContain('Ada.md');
     });
   });
+
+  /*
+   * Obsidian builds every `SuggestModal` input with a hardcoded `spellcheck="false"` and never consults
+   * `Editor > Spellcheck`. Right for a box that only FINDS a note; wrong while this one can NAME the note
+   * it is about to create, which is what `createNewAsync` does with `inputEl.value`.
+   *
+   * Every case reads the ATTRIBUTE rather than the `spellcheck` IDL property, because the hardcoded value
+   * being corrected is itself an attribute, and the IDL property reports a default for a missing one.
+   */
+  describe('spell checking the box', () => {
+    it('should follow the vault setting while a note can be named', () => {
+      appMock.vault.setConfig('spellcheck', true);
+
+      expect(openModal({}).inputEl.getAttribute('spellcheck')).toBe('true');
+    });
+
+    it('should leave the box unchecked when the vault has spell check off', () => {
+      appMock.vault.setConfig('spellcheck', false);
+
+      // Read in both directions on purpose: a single reading with the setting ON is indistinguishable
+      // From a box that is simply always checked, so only the pair proves it FOLLOWS the setting.
+      expect(openModal({}).inputEl.getAttribute('spellcheck')).toBe('false');
+    });
+
+    it('should leave the box unchecked when the caller turned creation off', () => {
+      appMock.vault.setConfig('spellcheck', true);
+
+      expect(openModal({ shouldAllowCreate: false }).inputEl.getAttribute('spellcheck')).toBe('false');
+    });
+
+    it('should track the `Folders only` toggle, which withdraws the offer to create', () => {
+      appMock.vault.setConfig('spellcheck', true);
+      const modal = openModal({});
+
+      clickControl(modal, 'Folders only');
+
+      expect(modal.inputEl.getAttribute('spellcheck')).toBe('false');
+
+      clickControl(modal, 'Folders only');
+
+      expect(modal.inputEl.getAttribute('spellcheck')).toBe('true');
+    });
+  });
 });
 
 function activeControlLabels(modal: TestableModal): string[] {
