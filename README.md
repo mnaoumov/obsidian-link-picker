@@ -35,6 +35,14 @@ A copy of the vault ships with every release. You can access it via any of the f
 2. Downloading `link-picker-demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-link-picker/releases). It unzips into a single `link-picker-demo-vault-<version>` folder.
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
+## What it does
+
+- **Navigate instead of guessing** — pick a folder to descend into it and `..` to come back out, so the list is one folder's contents rather than the whole vault. [02 Navigating folders](<./demo-vault/02 Navigating folders.md>)
+- **A ranking you can predict** — an exact name beats a prefix, which beats a path match, which beats a scattered one, so the same query puts the same note first every time. [03 Ranking](<./demo-vault/03 Ranking.md>)
+- **Aliases and folder notes are names too** — a note aliased three ways offers three rows, and a folder's alias lives on its folder note, read from your existing [`folder-notes`](https://github.com/LostPaul/obsidian-folder-notes) setup rather than configured again here. [03 Ranking](<./demo-vault/03 Ranking.md>)
+- **Named pickers** — a folder you link into constantly becomes its own command, already rooted there, with its own prefix, suffix and placeholder. [04 Named pickers](<./demo-vault/04 Named pickers.md>)
+- **Callable from a template or a script** — the picker resolves with the link as a **string**, so the answer can drop straight into a property value instead of being typed at a cursor. [06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>)
+
 ## Picking a link
 
 Run **Link Picker: Insert link...** in an editor. Any selected text seeds the query and is replaced by the link you choose.
@@ -141,22 +149,21 @@ const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 
 ## Installation
 
-The plugin is not yet available in the official Community Plugins repository.
+The plugin is available in [the official Community Plugins repository](https://community.obsidian.md/plugins/link-picker).
 
 ### Beta versions
 
-To install the latest beta release of this plugin (BRAT -> `Add Beta plugin` -> specify this repository -> `Enable after installing the plugin`):
+To install the latest beta release of this plugin (regardless if it is available in [the official Community Plugins repository](https://community.obsidian.md) or not), follow these steps:
 
-1. Install [BRAT](https://obsidian.md/plugins?id=obsidian42-brat)
-2. Run the command `Obsidian42 - BRAT: Add a beta plugin for testing`
-3. Enter `https://github.com/mnaoumov/obsidian-link-picker`
-4. Click `Add Plugin`
+1. Ensure you have the [BRAT plugin](https://community.obsidian.md/plugins/obsidian42-brat) installed and enabled.
+2. Click [Install via BRAT](https://intradeus.github.io/http-protocol-redirector?r=obsidian://brat?plugin=https://github.com/mnaoumov/obsidian-link-picker).
+3. An Obsidian pop-up window should appear. In the window, click the `Add plugin` button once and wait a few seconds for the plugin to install.
 
 ## Debugging
 
 By default, debug messages for this plugin are hidden.
 
-To show them, run the following command:
+To show them, run the following command in the `DevTools Console`:
 
 ```js
 window.DEBUG.enable('link-picker');
@@ -166,7 +173,7 @@ For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev
 
 ## Changelog
 
-See [CHANGELOG](./CHANGELOG.md).
+All notable changes to this project will be documented in the [CHANGELOG](./CHANGELOG.md).
 
 ## Contributing
 
