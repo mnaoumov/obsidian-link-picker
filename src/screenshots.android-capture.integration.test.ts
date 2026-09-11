@@ -266,7 +266,7 @@ function isKeyboardUp(snapshot: ViewportSnapshot): boolean {
  */
 async function openPicker(params: OpenPickerParams): Promise<string[]> {
   return await evalInObsidian({
-    async callback({ app, declineControlLabel, folderQuery, lib: { waitUntil }, pluginId, query }) {
+    async callback({ app, declineControlLabel, folderQuery, lib: { clickElement, waitUntil }, pluginId, query }) {
       const TIMEOUT_IN_MILLISECONDS = 30_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 900;
 
@@ -278,7 +278,7 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
         if (!(declineControl instanceof HTMLElement)) {
           throw new TypeError(`The previous picker has no ${declineControlLabel} control to close it with.`);
         }
-        declineControl.click();
+        await clickElement({ element: declineControl });
 
         await waitUntil({
           message: 'the previous picker to close',
@@ -312,7 +312,7 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
       if (!(folderRow instanceof HTMLElement)) {
         throw new TypeError('The folder was not offered.');
       }
-      folderRow.click();
+      await clickElement({ element: folderRow });
 
       await waitUntil({
         message: 'the folder to open',
