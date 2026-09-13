@@ -11,7 +11,7 @@ import {
  * run, so `Brv` finds nothing. Under `Fuzzy` the characters only have to appear in order, so it finds
  * `Bravo`.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`. The setting is written through the
+ * Cross-platform: the manifest declares `isDesktopOnly: false`. The setting is written through the
  * plugin's own settings component rather than through the settings tab, which is what keeps this suite
  * free of any key press — the picker itself is driven by clicking, as every cross-platform suite here is.
  *

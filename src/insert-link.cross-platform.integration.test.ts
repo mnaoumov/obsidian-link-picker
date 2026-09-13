@@ -10,7 +10,7 @@ import {
  * what is picked lands at the cursor as a link.
  *
  * Cross-platform: the manifest declares `isDesktopOnly: false`, and inserting a link has to hold on a
- * phone as much as on a desktop, so the file name puts it in both projects (G47).
+ * phone as much as on a desktop, so the file name puts it in both projects.
  */
 
 const PLUGIN_ID = 'link-picker';

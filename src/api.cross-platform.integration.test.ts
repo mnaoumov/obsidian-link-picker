@@ -24,7 +24,7 @@ import {
  * `instanceof`-checked. A reader with no copy of the library at all — which is exactly what this closure
  * is — proves that guarantee in a way a reader using the same copy as the provider never could.
  *
- * Cross-platform (G47): the row and the control are CLICKED, because the harness drives keys through
+ * Cross-platform: the row and the control are CLICKED, because the harness drives keys through
  * Electron's input API and Android has not got one.
  */
 

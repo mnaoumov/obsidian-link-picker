@@ -14,7 +14,7 @@ import {
  * setting while that offer stands, and is left exactly as Obsidian built it while it does not.
  *
  * Driven by CLICKING `Folders only` rather than pressing its hotkey, which is what makes this suite
- * cross-platform (G47): a phone has no `Alt` key, and the harness cannot send keys to Android anyway.
+ * cross-platform: a phone has no `Alt` key, and the harness cannot send keys to Android anyway.
  */
 
 const PLUGIN_ID = 'link-picker';
@@ -92,7 +92,7 @@ describe('spell checking the picker box', () => {
           }
 
           // Closed by CHOOSING a row rather than by a key press: `Escape` would have to be dispatched
-          // Untrusted, which Obsidian may ignore (G107), and the trusted `pressKey` is desktop-only while
+          // Untrusted, which Obsidian may ignore, and the trusted `pressKey` is desktop-only while
           // This suite also runs on Android. A pick closes the picker through its own resolve path.
           chooseFirstRow();
           await waitUntil({

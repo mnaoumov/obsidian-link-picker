@@ -13,7 +13,7 @@ import {
  * fixed `Alt + 1` navigated to the root instead of resolving empty.
  *
  * Driven by CLICKING the control rather than by pressing its hotkey, which is what makes this suite
- * cross-platform (G47): the manifest declares `isDesktopOnly: false`, a phone has no `Alt` key, and the
+ * cross-platform: the manifest declares `isDesktopOnly: false`, a phone has no `Alt` key, and the
  * harness cannot send keys to Android anyway. The keyboard route is covered separately, on desktop, by
  * `hotkeys.desktop.integration.test.ts`.
  */

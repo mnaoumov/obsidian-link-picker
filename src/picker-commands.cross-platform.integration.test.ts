@@ -10,7 +10,7 @@ import {
  * it is removed. Commands are added and removed while the plugin stays loaded, which no unit test can
  * prove: it is Obsidian's command registry that has to agree.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`.
+ * Cross-platform: the manifest declares `isDesktopOnly: false`.
  */
 
 const PLUGIN_ID = 'link-picker';
