@@ -18,7 +18,7 @@ import {
  * The record is read STRUCTURALLY out of the shared registry rather than through `watchPluginApi`, for two
  * reasons. The weak one: `lib` inside an `evalInObsidian` closure carries only the harness's own base
  * helpers unless the repo seeds `obsidian-dev-utils`' integration-test harness plugin, and that plugin
- * cannot load on Android at all (T725-P1) — which would cost this suite its Android half. The strong
+ * cannot load on Android at all — which would cost this suite its Android half. The strong
  * one: a structural read is the STRICTER test. Every plugin bundles its own `obsidian-dev-utils`, so a
  * registry record is a wire format between different library versions, and nothing crossing it may be
  * `instanceof`-checked. A reader with no copy of the library at all — which is exactly what this closure
