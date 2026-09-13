@@ -9,7 +9,7 @@ import {
  * Folder drill-in and drill-out, against a real Obsidian. This is the picker's whole reason for
  * existing over Obsidian's own `[[`, so it is the behavior most worth pinning end to end.
  *
- * Cross-platform (G47): the manifest declares `isDesktopOnly: false`.
+ * Cross-platform: the manifest declares `isDesktopOnly: false`.
  */
 
 const PLUGIN_ID = 'link-picker';

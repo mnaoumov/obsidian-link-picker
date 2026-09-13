@@ -15,7 +15,7 @@ import {
  *
  * Desktop only, and deliberately: the harness drives keys through Electron's input API, which Android
  * has not got. The behaviors themselves are not desktop-only — their controls are tapped on a phone,
- * which is why the six suites that cover them are cross-platform (G97, G47).
+ * which is why the six suites that cover them are cross-platform.
  */
 
 const PLUGIN_ID = 'link-picker';
