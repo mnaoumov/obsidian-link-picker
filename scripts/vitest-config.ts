@@ -32,11 +32,12 @@ const SCREENSHOTS_CAPTURE_ANDROID_TEST_FILES = 'src/**/screenshots.android-captu
  * up. It needs an emulator, it shells out to `adb`, and it takes minutes; running it is an explicit
  * operation (`npm run capture:control-strip`).
  *
- * Both Android capture suites share that one suffix on purpose: it is the file name ODU's shared ESLint
- * config exempts from `no-untrusted-input-events` (the trusted-input helpers are built on
- * `window.electron`, which Android does not have), and it is the name the rest of the fleet's screenshot
- * suites already carry. This repo is the only one with TWO Android capture projects, so the two globs name
- * the FILE rather than the bare suffix — routing both projects off `*.android-capture.` would hand each
+ * Both Android capture suites share that one suffix on purpose: it is the file name the shared ESLint
+ * config in `obsidian-dev-utils` exempts from `no-untrusted-input-events` (the trusted-input helpers
+ * are built on `window.electron`, which Android does not have), and it is the name the author's other
+ * screenshot suites already carry. This repo is the only one with TWO Android capture projects, so the
+ * two globs name the FILE rather than the bare suffix — routing both projects off
+ * `*.android-capture.` would hand each
  * suite to the other's project, running the control-strip pass on the 900x1600 screenshots AVD and taking
  * the listing shots on the 1344x2992 shared one, where they fail their own size assertion.
  */

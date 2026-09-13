@@ -10,9 +10,9 @@
 /*
  * The strip along the bottom of the picker carries no rules of its own.
  *
- * It is ODU's `ModalCommandBuilder` in `Buttons` render mode, so its `.modal-commands` / `.modal-command` /
- * `.modal-command-hotkey` rules are the library's and reach the plugin through the styles ODU injects at
- * runtime. This file held a copy of them until the two converged.
+ * It is the `ModalCommandBuilder` from `obsidian-dev-utils` in `Buttons` render mode, so its
+ * `.modal-commands` / `.modal-command` / `.modal-command-hotkey` rules are the library's and reach the
+ * plugin through the styles it injects at runtime. This file held a copy of them until the two converged.
  *
  * Those were the last rules that emitted anything, and the comments above do not survive the build — so
  * without the banner below `dist/build/styles.css` comes out ZERO BYTES, and GitHub's upload API rejects
