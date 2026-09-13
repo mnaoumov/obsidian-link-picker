@@ -448,8 +448,8 @@ describe('LinkPickerModal', () => {
     });
 
     it('should show each control\'s hotkey where there is a keyboard to press it on', () => {
-      // The library's format, not one of ours: `ModalCommandBuilder` renders the hint, and every picker in
-      // The fleet shows it this way.
+      // The library's format, not one of ours: `ModalCommandBuilder` renders the hint, and every picker
+      // Built on it shows it this way.
       expect(controlHotkeys(openModal({}))).toEqual([
         'alt 1',
         'shift ↵',
