@@ -3,7 +3,7 @@
  *
  * The control-strip pass on Android, driven by REAL touches.
  *
- * `T756-P44` held this open as "a manual pass on a phone", because three things about the strip cannot be
+ * This was held open as "a manual pass on a phone", because three things about the strip cannot be
  * settled from desktop: that it is reachable and legible on a small screen, that a control's `mousedown`
  * `preventDefault` really does keep the search alive under a finger, and that an unavailable control reads
  * as disabled rather than missing.
