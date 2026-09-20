@@ -8,11 +8,25 @@
  * `preventDefault` really does keep the search alive under a finger, and that an unavailable control reads
  * as disabled rather than missing.
  *
- * The first is answered by a captured frame a human looks at. The other two are answered HERE, and only
- * here, because every other suite reaches a control through `HTMLElement.click()`. A synthetic click
- * dispatches no `mousedown`, so it cannot show what `preventDefault` prevents. `adb shell input tap`
- * injects an OS-level touch that Android turns into the same event sequence a finger produces — the one
- * case where going outside the page is the only way to test what the page does.
+ * The first is answered by a captured frame a human looks at. The other two are answered HERE, on a device,
+ * because a synthetic `HTMLElement.click()` dispatches no `mousedown` and so cannot show what
+ * `preventDefault` prevents. The touch that does is the harness's **trusted mobile input**: `clickElement`
+ * injects a CDP `Input.dispatchTouchEvent` pair into the WebView, which Blink expands into the same
+ * compatibility `mousedown` → `mouseup` → `click` sequence a finger produces.
+ *
+ * **The suite does not take that expansion on trust.** Every tap below is required to have an observable
+ * effect — `aria-pressed` flips, or the picker ends — and that effect arrives only at the END of the
+ * compatibility sequence. So a tap that produced no `mousedown` could not produce the click the assertion
+ * waits for either, and the suite would fail rather than pass while proving nothing. That is what keeps
+ * the `preventDefault` step honest: the same tap has to flip `Subfolders` on AND leave the search field
+ * focused with its query intact, and only the real sequence can do both.
+ *
+ * **There is no page-to-screen calibration here, and re-adding one would be a regression.** An `adb shell
+ * input tap` speaks device pixels measured from the top of the SCREEN, so it needed `devicePixelRatio` and
+ * an empirically-found status-bar offset — neither knowable from inside the page, so the offset had to be
+ * discovered by trying candidates and seeing which one landed. CDP takes CSS pixels in the WebView's OWN
+ * viewport, which is the coordinate space `getBoundingClientRect` already reports, so both terms are gone
+ * by construction rather than by measurement.
  *
  * Excluded from `npm run test:integration` by its file name — `*.android-capture.` matches none of the
  * standard project globs, exactly as `*.desktop-capture.` does for the screenshot suites. Capturing is an
@@ -26,10 +40,12 @@
  *
  * The frames here are evidence for the release gate, NOT listing material: they are full-screen device
  * captures of intermediate states, several of which exist to show a control DISABLED. They land in
- * `dist/`, which is gitignored. The listing's own mobile frames are the other suite's job.
+ * `dist/`, which is gitignored. The listing's own mobile frames are the other suite's job. Photographing
+ * the DEVICE rather than the page is the one thing still worth a device handle: `captureObsidianScreenshot`
+ * goes through Appium in the WebView context and would leave out the system chrome these frames are read
+ * against.
  */
 
-import { execFileSync } from 'node:child_process';
 import {
   mkdirSync,
   writeFileSync
@@ -38,8 +54,10 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
+  captureDeviceScreenshot,
   evalInObsidian,
-  pollInObsidian
+  pollInObsidian,
+  resolveEmulatorDeviceId
 } from 'obsidian-integration-testing';
 import {
   describe,
@@ -59,12 +77,18 @@ const AVD_NAME = 'obsidian_test';
 const CAPTURE_DIRECTORY = join(process.cwd(), 'dist', 'control-strip');
 
 /**
- * Long, because every step is a round trip out to `adb` and back into the renderer.
+ * The control strip's buttons, as the strip renders them.
+ */
+const CONTROL_SELECTOR = '.modal-command';
+
+/**
+ * Long, because every step is a round trip into the renderer and — for a trusted touch or key press —
+ * back out to the host that injects it.
  */
 const TEST_TIMEOUT_IN_MILLISECONDS = 600_000;
 
 /**
- * Android turns a tap into a touch sequence, then a synthesized mouse sequence, then a click. Obsidian
+ * Blink expands a touch into a touch sequence, then a synthesized mouse sequence, then a click. Obsidian
  * re-renders off the last of those, so a snapshot taken immediately after the tap can read the state from
  * before it.
  */
@@ -150,20 +174,20 @@ interface StripSnapshot {
   readonly link: null | string;
   readonly queryText: string;
   readonly suggestionCount: number;
-  readonly viewport: ViewportSnapshot;
-}
 
-interface ViewportSnapshot {
-  readonly devicePixelRatio: number;
-  readonly innerHeight: number;
-  readonly innerWidth: number;
-  readonly screenY: number;
+  /**
+   * The viewport's height in CSS pixels, which is what the reachability assertion measures each control
+   * against. It is the only thing left of the viewport the suite reads: `devicePixelRatio` and `screenY`
+   * existed to convert a CSS rectangle into a screen coordinate for `adb shell input tap`, and a trusted
+   * touch is aimed in CSS pixels instead.
+   */
+  readonly viewportHeight: number;
 }
 
 describe('The control strip, under a real finger on Android', () => {
   it('is reachable, keeps the search alive, disables rather than hides, and runs all six behaviors', async () => {
     mkdirSync(CAPTURE_DIRECTORY, { recursive: true });
-    const deviceId = resolveEmulatorId();
+    const deviceId = await resolveEmulatorDeviceId({ avdName: AVD_NAME });
 
     await seedVault();
     await openPicker();
@@ -177,7 +201,7 @@ describe('The control strip, under a real finger on Android', () => {
     for (const control of snapshot.controls) {
       expect(control.rect.width).toBeGreaterThan(0);
       expect(control.rect.top).toBeGreaterThanOrEqual(0);
-      expect(control.rect.top + control.rect.height).toBeLessThanOrEqual(snapshot.viewport.innerHeight);
+      expect(control.rect.top + control.rect.height).toBeLessThanOrEqual(snapshot.viewportHeight);
     }
 
     // The strip is the picker's only affordance on a phone, so it must not be spending that width on keys
@@ -188,126 +212,88 @@ describe('The control strip, under a real finger on Android', () => {
     }
 
     expect(snapshot.suggestionCount).toBeGreaterThan(0);
-    capture(deviceId, '01-strip');
-
-    // Which vertical offset maps a CSS rectangle onto the touchscreen is not knowable from inside the
-    // Page, so it is measured rather than assumed — see `calibrate`.
-    const topOffsetInDevicePixels = await calibrate(deviceId, snapshot);
+    await capture(deviceId, '01-strip');
 
     // `Folders only` on: the two controls it would empty the list with must go DISABLED, and must still be
     // There. Removing them would reflow the strip under the finger that is still on it.
-    await tapControl(deviceId, snapshot, 'Folders only', topOffsetInDevicePixels);
+    await tapControl('Folders only');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'Folders only').isPressed).toBe(true);
     expect(findControl(snapshot, 'All files').isDisabled).toBe(true);
     expect(findControl(snapshot, 'Subfolders').isDisabled).toBe(true);
     expect(snapshot.controls).toHaveLength(CONTROL_LABELS.length);
-    capture(deviceId, '02-folders-only-disables');
+    await capture(deviceId, '02-folders-only-disables');
 
-    await tapControl(deviceId, snapshot, 'Folders only', topOffsetInDevicePixels);
+    await tapControl('Folders only');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'Folders only').isPressed).toBe(false);
     expect(findControl(snapshot, 'All files').isDisabled).toBe(false);
 
-    // The query is typed through the emulator's input method, not assigned to the field — so what follows
-    // Is a real search, in the state a finger would leave it in.
+    // The query is PRESSED into the field key by key, not assigned to it — so what follows is a real
+    // Search, in the state a thumb would leave it in.
     const query = 'Ada';
-    typeText(deviceId, query);
-    await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
+    await typeQuery(query);
     snapshot = await readStrip();
     expect(snapshot.queryText).toBe(query);
     expect(snapshot.isInputFocused).toBe(true);
-    capture(deviceId, '03-query-typed');
+    await capture(deviceId, '03-query-typed');
 
     // THE `preventDefault` PROOF. A touch on a control is a `mousedown` on something that is not the
     // Search field; without the handler's `preventDefault` the field loses focus, and a search in progress
-    // Ends mid-word. Only a real touch can show this — `click()` never dispatches the `mousedown`.
-    await tapControl(deviceId, snapshot, 'Subfolders', topOffsetInDevicePixels);
+    // Ends mid-word. Only a real touch can show this — `click()` never dispatches the `mousedown`. The
+    // Pressed assertion is what keeps the other two from passing vacuously: no `mousedown`, no click, no
+    // Toggle.
+    await tapControl('Subfolders');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'Subfolders').isPressed).toBe(true);
     expect(snapshot.queryText).toBe(query);
     expect(snapshot.isInputFocused).toBe(true);
-    capture(deviceId, '04-search-survives-a-touch');
+    await capture(deviceId, '04-search-survives-a-touch');
 
-    await tapControl(deviceId, snapshot, 'All files', topOffsetInDevicePixels);
+    await tapControl('All files');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'All files').isPressed).toBe(true);
     expect(snapshot.queryText).toBe(query);
 
     // On by default, so this one proves a touch can turn a toggle OFF as well as on.
-    await tapControl(deviceId, snapshot, 'By date', topOffsetInDevicePixels);
+    await tapControl('By date');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'By date').isPressed).toBe(false);
-    capture(deviceId, '05-toggles');
+    await capture(deviceId, '05-toggles');
 
     // `Create new` — the first of the two ACTIONS, which end the picker rather than restate it. The typed
     // Query is the new note's name, and what comes back is a link to it, prefix and all.
-    await tapControl(deviceId, snapshot, 'Create new', topOffsetInDevicePixels);
+    await tapControl('Create new');
     snapshot = await readStrip();
     expect(snapshot.isPickerOpen).toBe(false);
     expect(snapshot.link).toMatch(/^Person: /);
     expect(snapshot.link).toContain(query);
-    capture(deviceId, '06-create-new');
+    await capture(deviceId, '06-create-new');
 
     // `No link` — the second action, and the one that has to leave NOTHING behind, prefix included. It is
     // Also how this suite ends without a picker open for the next one to trip over.
     await openPicker();
     snapshot = await readStrip();
     expect(snapshot.isPickerOpen).toBe(true);
-    await tapControl(deviceId, snapshot, 'No link', topOffsetInDevicePixels);
+    await tapControl('No link');
     snapshot = await readStrip();
     expect(snapshot.isPickerOpen).toBe(false);
     expect(snapshot.link).toBe('');
-    capture(deviceId, '07-no-link');
+    await capture(deviceId, '07-no-link');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
 
 /**
- * Finds the vertical offset, in device pixels, between the page's coordinate space and the touchscreen's.
- *
- * A WebView may sit below a status bar, so a CSS `top` of 0 is not necessarily a screen `y` of 0, and
- * nothing inside the page reports the difference reliably across Android versions. Rather than assume one,
- * each candidate is TRIED: tap `Folders only`, and see whether its pressed state flipped. A candidate that
- * misses hits whatever is at those coordinates instead — usually a suggestion row, which closes the picker
- * — so the picker is reopened between attempts.
- *
- * @param deviceId - The emulator to drive.
- * @param snapshot - The strip as it stands, for the control rectangles.
- * @returns The offset that worked.
- */
-async function calibrate(deviceId: string, snapshot: StripSnapshot): Promise<number> {
-  const { devicePixelRatio, screenY } = snapshot.viewport;
-  const candidates = [...new Set([0, Math.round(screenY * devicePixelRatio)])];
-
-  for (const candidate of candidates) {
-    await tapControl(deviceId, snapshot, 'Folders only', candidate);
-    const afterTap = await readStrip();
-
-    if (afterTap.isPickerOpen && findControl(afterTap, 'Folders only').isPressed) {
-      // Restore, so calibration leaves the picker exactly as it found it.
-      await tapControl(deviceId, afterTap, 'Folders only', candidate);
-      return candidate;
-    }
-
-    if (!afterTap.isPickerOpen) {
-      await openPicker();
-    }
-  }
-
-  throw new Error(
-    `Could not map the page onto the touchscreen. Tried offsets ${candidates.join(', ')} against `
-      + `devicePixelRatio=${devicePixelRatio.toString()}, innerHeight=${snapshot.viewport.innerHeight.toString()}, screenY=${screenY.toString()}.`
-  );
-}
-
-/**
  * Writes one PNG of the whole device screen.
+ *
+ * The DEVICE's framebuffer, not the page: these frames are read for the system chrome around the picker
+ * as much as for the picker, and `captureObsidianScreenshot` photographs only the WebView.
  *
  * @param deviceId - The emulator to capture.
  * @param name - The frame's name, which becomes its file name.
  */
-function capture(deviceId: string, name: string): void {
-  const png = execFileSync('adb', ['-s', deviceId, 'exec-out', 'screencap', '-p'], { maxBuffer: 64 * 1024 * 1024 });
+async function capture(deviceId: string, name: string): Promise<void> {
+  const png = await captureDeviceScreenshot({ deviceId });
   writeFileSync(join(CAPTURE_DIRECTORY, `${name}.png`), png);
 }
 
@@ -389,11 +375,11 @@ async function openPicker(): Promise<void> {
  */
 async function readStrip(): Promise<StripSnapshot> {
   return await evalInObsidian({
-    callback(): StripSnapshot {
+    callback({ controlSelector }): StripSnapshot {
       const inputEl = document.querySelector('.prompt-input');
 
       return {
-        controls: [...document.querySelectorAll('.modal-command')].map((el) => {
+        controls: [...document.querySelectorAll(controlSelector)].map((el) => {
           const buttonEl = el as HTMLButtonElement;
           const rect = buttonEl.getBoundingClientRect();
 
@@ -415,38 +401,11 @@ async function readStrip(): Promise<StripSnapshot> {
         link: (window as CaptureWindow).__linkPickerCapture?.link ?? null,
         queryText: inputEl instanceof HTMLInputElement ? inputEl.value : '',
         suggestionCount: document.querySelectorAll('.suggestion-item').length,
-        viewport: {
-          devicePixelRatio: window.devicePixelRatio,
-          innerHeight: window.innerHeight,
-          innerWidth: window.innerWidth,
-          screenY: window.screenY
-        }
+        viewportHeight: window.innerHeight
       };
     },
-    input: {}
+    input: { controlSelector: CONTROL_SELECTOR }
   });
-}
-
-/**
- * @returns The id of the running emulator whose AVD is {@link AVD_NAME}.
- */
-function resolveEmulatorId(): string {
-  const listed = execFileSync('adb', ['devices'], { encoding: 'utf-8' })
-    .split('\n')
-    .slice(1)
-    .map((line) => line.trim())
-    .filter((line) => line.endsWith('\tdevice'))
-    .map((line) => line.split('\t', 1)[0] ?? '')
-    .filter((id) => id.startsWith('emulator-'));
-
-  for (const id of listed) {
-    const name = execFileSync('adb', ['-s', id, 'emu', 'avd', 'name'], { encoding: 'utf-8' }).split('\n', 1)[0]?.trim();
-    if (name === AVD_NAME) {
-      return id;
-    }
-  }
-
-  throw new Error(`No running emulator for AVD "${AVD_NAME}". Start it, or run the Android integration project once to have the harness start it.`);
 }
 
 /**
@@ -496,29 +455,57 @@ async function sleepOnHost(milliseconds: number): Promise<void> {
 }
 
 /**
- * Touches a control the way a finger does.
+ * Touches a control the way a thumb does.
  *
- * @param deviceId - The emulator to drive.
- * @param snapshot - The strip the rectangle is taken from.
+ * The element is found and clicked inside ONE closure, so the rectangle the touch is aimed at is the one
+ * the element has at the moment of the touch — the strip re-lays-out as toggles flip, and a rectangle
+ * carried across a round trip from Node could already be stale. That is also why no snapshot is passed in
+ * any more: a trusted touch is aimed at an element, not at a coordinate.
+ *
  * @param label - The control's visible label.
- * @param topOffsetInDevicePixels - The page-to-screen offset {@link calibrate} measured.
  */
-async function tapControl(deviceId: string, snapshot: StripSnapshot, label: string, topOffsetInDevicePixels: number): Promise<void> {
-  const { rect } = findControl(snapshot, label);
-  const { devicePixelRatio } = snapshot.viewport;
-  const x = Math.round((rect.left + rect.width / 2) * devicePixelRatio);
-  const y = Math.round((rect.top + rect.height / 2) * devicePixelRatio) + topOffsetInDevicePixels;
+async function tapControl(label: string): Promise<void> {
+  await evalInObsidian({
+    async callback({ controlLabel, controlSelector, lib: { clickElement } }): Promise<void> {
+      const control = [...document.querySelectorAll(controlSelector)]
+        .find((el) => el.querySelector('span')?.textContent === controlLabel);
+      if (!(control instanceof HTMLElement)) {
+        throw new TypeError(`No control labelled ${controlLabel}.`);
+      }
 
-  execFileSync('adb', ['-s', deviceId, 'shell', 'input', 'tap', x.toString(), y.toString()]);
+      await clickElement({ element: control });
+    },
+    input: {
+      controlLabel: label,
+      controlSelector: CONTROL_SELECTOR
+    }
+  });
+
   await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
 }
 
 /**
- * Types through the emulator's input method, so the search runs exactly as it does under a thumb.
+ * Presses the query into the picker's field, one trusted key at a time.
  *
- * @param deviceId - The emulator to drive.
- * @param text - What to type. Letters and digits only; `input text` has its own escaping rules.
+ * `pressKey` goes to whatever holds DOM focus, which is the field — so this only writes a query at all if
+ * the picker genuinely has focus, and the assertion that follows reads a query the search really ran on.
+ * Assigning `input.value` would write the same string past the input pipeline and prove neither.
+ *
+ * All the keys go in ONE closure on purpose: nothing may steal focus between them, and three injections
+ * are nowhere near the per-eval cap.
+ *
+ * @param text - What to type.
  */
-function typeText(deviceId: string, text: string): void {
-  execFileSync('adb', ['-s', deviceId, 'shell', 'input', 'text', text]);
+async function typeQuery(text: string): Promise<void> {
+  await evalInObsidian({
+    async callback({ lib: { pressKey }, text: query }): Promise<void> {
+      // Sequential on purpose: keystrokes are ordered, and pressing them in parallel would race the field.
+      for (const character of query) {
+        await pressKey({ key: character });
+      }
+    },
+    input: { text }
+  });
+
+  await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
 }
