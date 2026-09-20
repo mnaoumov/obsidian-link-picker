@@ -24,19 +24,21 @@ const DESKTOP_CAPTURE_TEST_FILES = 'src/**/*.desktop-capture.integration.test.ts
 const SCREENSHOTS_CAPTURE_ANDROID_TEST_FILES = 'src/**/screenshots.android-capture.integration.test.ts';
 
 /**
- * The control-strip pass on Android, which drives the picker with real `adb` touches and writes its frames
- * to `dist/control-strip/`.
+ * The control-strip pass on Android, which drives the picker with the harness's trusted mobile touches and
+ * writes its frames to `dist/control-strip/`.
  *
  * Named `*.android-capture.` for the same reason as above — it matches NONE of the standard project globs,
  * including the Android project's own `*.android.` — so `npm run test:integration:android` never picks it
- * up. It needs an emulator, it shells out to `adb`, and it takes minutes; running it is an explicit
- * operation (`npm run capture:control-strip`).
+ * up. It needs an emulator and it takes minutes; running it is an explicit operation
+ * (`npm run capture:control-strip`).
  *
- * Both Android capture suites share that one suffix on purpose: it is the file name the shared ESLint
- * config in `obsidian-dev-utils` exempts from `no-untrusted-input-events` (the trusted-input helpers
- * are built on `window.electron`, which Android does not have), and it is the name the author's other
- * screenshot suites already carry. This repo is the only one with TWO Android capture projects, so the
- * two globs name the FILE rather than the bare suffix — routing both projects off
+ * Both Android capture suites share that one suffix because it is the name the author's other screenshot
+ * suites already carry. It no longer buys anything else: the suffix used to exempt a file from
+ * `no-untrusted-input-events` on the grounds that the trusted-input helpers were built on
+ * `window.electron`, and both halves of that are gone — `obsidian-integration-testing` injects trusted
+ * mobile input over CDP, and from `obsidian-dev-utils` 103.0.0 the shared config holds these files to the
+ * rule like every other integration test. This repo is the only one with TWO Android capture projects, so
+ * the two globs name the FILE rather than the bare suffix — routing both projects off
  * `*.android-capture.` would hand each
  * suite to the other's project, running the control-strip pass on the 900x1600 screenshots AVD and taking
  * the listing shots on the 1344x2992 shared one, where they fail their own size assertion.
@@ -70,9 +72,10 @@ const LAYOUT_READY_TIMEOUT_IN_MILLISECONDS = 240_000;
 const DEMO_VAULT_TIMEOUT_IN_MILLISECONDS = 600_000;
 
 /**
- * The control-strip pass is one long test whose every step is a round trip out to `adb` and back into the
- * renderer — a tap, a settle, a snapshot, sometimes a full-screen PNG — on top of an already slow Appium
- * transport. The Android project's own 60s budget covers a single assertion, not a seven-frame walk.
+ * The control-strip pass is one long test whose every step is a round trip into the renderer and back —
+ * a tap, a settle, a snapshot, sometimes a full-screen PNG — on top of an already slow Appium transport,
+ * and a trusted touch adds a further hop out to the host that injects it. The Android project's own 60s
+ * budget covers a single assertion, not a seven-frame walk.
  */
 const CONTROL_STRIP_TIMEOUT_IN_MILLISECONDS = 600_000;
 
