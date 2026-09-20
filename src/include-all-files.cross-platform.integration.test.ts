@@ -1,4 +1,7 @@
-import { evalInObsidian } from 'obsidian-integration-testing';
+import {
+  evalInObsidian,
+  pollInObsidian
+} from 'obsidian-integration-testing';
 import {
   describe,
   expect,
@@ -13,134 +16,273 @@ import {
  * cross-platform: the manifest declares `isDesktopOnly: false`, a phone has no `Alt` key, and the
  * harness cannot send keys to Android anyway. The keyboard route is covered separately, on desktop, by
  * `hotkeys.desktop.integration.test.ts`.
+ *
+ * **The waiting happens in NODE, and each closure below is milliseconds of DOM reading.** A single
+ * `evalInObsidian` closure is capped at ~30s by the transport, so six waits sharing one closure could
+ * never each get the budget they declared. `pollInObsidian` is what makes the budget real: each poll is
+ * its own short eval, and `until` runs in Node, where it can close over the names this test already holds.
  */
 
 const PLUGIN_ID = 'link-picker';
-const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-interface IncludeAllFilesResult {
-  readonly rowsAfterToggle: string[];
-  readonly rowsBeforeToggle: string[];
-}
+const CONTROL_SELECTOR = '.modal-command';
+const INPUT_SELECTOR = '.prompt-input';
+const PROMPT_SELECTOR = '.prompt';
+const ROW_SELECTOR = '.suggestion-item';
+
+/**
+ * A render settle, short enough to sit inside an act closure without approaching the per-eval cap.
+ */
+const RENDER_DELAY_IN_MILLISECONDS = 400;
+
+/**
+ * Generous on purpose, and affordable now that it is Node's budget rather than one closure's: Android
+ * sets the floor, not desktop, and an aged emulator takes tens of seconds to lay out.
+ */
+const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
+
+/**
+ * Above the sum of the budgets used below, so a genuine stall reports the NAMED poll timeout rather than
+ * losing the race to a bare vitest timeout.
+ */
+const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 
 describe('The `All files` control', () => {
   it('offers files that are not notes, which are otherwise hidden', async () => {
-    const result = await evalInObsidian({
-      async callback({ app, lib: { createNote, waitUntil }, pluginId }): Promise<IncludeAllFilesResult> {
-        const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const TIMEOUT_IN_MILLISECONDS = 30_000;
-        const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
-        const folderName = `AllFiles-${stamp}`;
+    const stamp = `${Date.now().toString()}-${Math.floor(Math.random() * 1000).toString()}`;
+    const folderName = `AllFiles-${stamp}`;
+    const sourcePath = `Source-${stamp}.md`;
 
-        await app.vault.createFolder(folderName);
+    await pollInObsidian({
+      input: { folderName, sourcePath, stamp },
+      poll({ app, folderName: folder, sourcePath: path, stamp: suffix }): boolean {
+        return app.vault.getFileByPath(`${folder}/Note-${suffix}.md`) !== null
+          && app.vault.getFileByPath(`${folder}/Data-${suffix}.txt`) !== null
+          && app.vault.getFileByPath(path) !== null;
+      },
+      async start({ app, folderName: folder, lib: { createNote }, sourcePath: path, stamp: suffix }): Promise<void> {
+        await app.vault.createFolder(folder);
         await createNote({
           content: '# Note\n',
-          path: `${folderName}/Note-${stamp}.md`
+          path: `${folder}/Note-${suffix}.md`
         });
         await createNote({
           content: 'plain text',
-          path: `${folderName}/Data-${stamp}.txt`
+          path: `${folder}/Data-${suffix}.txt`
         });
         // The source note is deliberately empty, so a content read-back would prove nothing.
-        const source = await app.vault.create(`Source-${stamp}.md`, '');
-
-        await app.workspace.getLeaf(true).openFile(source);
-        await waitUntil({
-          message: 'the note being edited is open',
-          predicate: () => app.workspace.getActiveFile()?.path === source.path,
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-
-        app.commands.executeCommandById(`${pluginId}:insert-link`);
-        await waitUntil({
-          message: 'the picker is open',
-          predicate: () => document.querySelector('.prompt') !== null,
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-        await sleep(RENDER_DELAY_IN_MILLISECONDS);
-
-        await filterTo(folderName);
-        chooseFirstRow();
-        await waitUntil({
-          message: 'the folder is open',
-          predicate: () => rows().some((text) => text.includes('Note-')),
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-        await sleep(RENDER_DELAY_IN_MILLISECONDS);
-        const rowsBeforeToggle = rows();
-
-        focusInput();
-        clickControl('All files');
-        await waitUntil({
-          message: 'the plain file is offered',
-          predicate: () => rows().some((text) => text.includes('Data-')),
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-        await sleep(RENDER_DELAY_IN_MILLISECONDS);
-        const rowsAfterToggle = rows();
-
-        chooseRow('Note-');
-        await waitUntil({
-          message: 'the picker closed on a pick',
-          predicate: () => document.querySelector('.prompt') === null,
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-
-        return { rowsAfterToggle, rowsBeforeToggle };
-
-        function chooseRow(text: string): void {
-          const row = [...document.querySelectorAll('.suggestion-item')].find((el) => el.textContent.includes(text));
-          if (!(row instanceof HTMLElement)) {
-            throw new TypeError(`No row containing ${text}.`);
-          }
-          row.click();
-        }
-
-        function clickControl(label: string): void {
-          const buttonEl = [...document.querySelectorAll('.modal-command')]
-            .find((el) => el.querySelector('span')?.textContent === label);
-          if (!(buttonEl instanceof HTMLElement)) {
-            throw new TypeError(`No control labelled ${label}.`);
-          }
-          buttonEl.click();
-        }
-        function chooseFirstRow(): void {
-          const row = document.querySelector('.suggestion-item');
-          if (!(row instanceof HTMLElement)) {
-            throw new TypeError('The picker offered nothing to choose.');
-          }
-          row.click();
-        }
-
-        async function filterTo(query: string): Promise<void> {
-          const input = focusInput();
-          input.value = query;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          await waitUntil({
-            message: 'any row',
-            predicate: () => document.querySelector('.suggestion-item') !== null,
-            timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-          });
-          await sleep(RENDER_DELAY_IN_MILLISECONDS);
-        }
-
-        function focusInput(): HTMLInputElement {
-          const input = document.querySelector('.prompt-input');
-          if (!(input instanceof HTMLInputElement)) {
-            throw new TypeError('The picker has no input.');
-          }
-          input.focus();
-          return input;
-        }
-
-        function rows(): string[] {
-          return [...document.querySelectorAll('.suggestion-item')].map((el) => el.textContent);
-        }
+        await app.vault.create(path, '');
       },
-      input: { pluginId: PLUGIN_ID }
+      timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+      timeoutMessage: 'the staged files never appeared in the vault',
+      until: (arePresent: boolean): boolean => arePresent
     });
 
-    expect(result.rowsBeforeToggle.join('\n')).not.toContain('Data-');
-    expect(result.rowsAfterToggle.join('\n')).toContain('Data-');
+    await openSourceNote(sourcePath);
+    await openPicker();
+
+    await filterTo(folderName);
+    await chooseFirstRow();
+    await pollRows('the folder never opened', (rows: string[]): boolean => rows.some((text) => text.includes('Note-')));
+    const rowsBeforeToggle = await readRows();
+
+    await clickControl('All files');
+    await pollRows('the plain file was never offered', (rows: string[]): boolean => rows.some((text) => text.includes('Data-')));
+    const rowsAfterToggle = await readRows();
+
+    await chooseRow('Note-');
+    await pollPickerClosed('the picker never closed on the pick');
+
+    expect(rowsBeforeToggle.join('\n')).not.toContain('Data-');
+    expect(rowsAfterToggle.join('\n')).toContain('Data-');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
+
+/**
+ * Clicks whatever the picker is leading with.
+ */
+async function chooseFirstRow(): Promise<void> {
+  await evalInObsidian({
+    callback({ rowSelector }): void {
+      const row = document.querySelector(rowSelector);
+      if (!(row instanceof HTMLElement)) {
+        throw new TypeError('The picker offered nothing to choose.');
+      }
+
+      row.click();
+    },
+    input: { rowSelector: ROW_SELECTOR }
+  });
+}
+
+/**
+ * Clicks the first row whose text contains what is asked for.
+ *
+ * @param text - A fragment of the row's text.
+ */
+async function chooseRow(text: string): Promise<void> {
+  await evalInObsidian({
+    callback({ rowSelector, rowText }): void {
+      const row = [...document.querySelectorAll(rowSelector)].find((el) => el.textContent.includes(rowText));
+      if (!(row instanceof HTMLElement)) {
+        throw new TypeError(`No row containing ${rowText}.`);
+      }
+
+      row.click();
+    },
+    input: { rowSelector: ROW_SELECTOR, rowText: text }
+  });
+}
+
+/**
+ * Focuses the search box and clicks a control, in ONE closure.
+ *
+ * The focus is what the control's `mousedown` `preventDefault` exists to protect, so it belongs in the
+ * same round trip as the click rather than in one the picker can re-render between.
+ *
+ * @param label - The control's visible label.
+ */
+async function clickControl(label: string): Promise<void> {
+  await evalInObsidian({
+    callback({ controlSelector, inputSelector, label: controlLabel }): void {
+      const input = document.querySelector(inputSelector);
+      if (!(input instanceof HTMLInputElement)) {
+        throw new TypeError('The picker has no input.');
+      }
+
+      input.focus();
+
+      const buttonEl = [...document.querySelectorAll(controlSelector)]
+        .find((el) => el.querySelector('span')?.textContent === controlLabel);
+      if (!(buttonEl instanceof HTMLElement)) {
+        throw new TypeError(`No control labelled ${controlLabel}.`);
+      }
+
+      buttonEl.click();
+    },
+    input: { controlSelector: CONTROL_SELECTOR, inputSelector: INPUT_SELECTOR, label }
+  });
+}
+
+/**
+ * Types a query into the picker and waits for it to have something to show.
+ *
+ * @param query - What to type, or the empty string to clear the box.
+ */
+async function filterTo(query: string): Promise<void> {
+  await evalInObsidian({
+    callback({ inputSelector, query: text }): void {
+      const input = document.querySelector(inputSelector);
+      if (!(input instanceof HTMLInputElement)) {
+        throw new TypeError('The picker has no input.');
+      }
+
+      input.focus();
+      input.value = text;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+    input: { inputSelector: INPUT_SELECTOR, query }
+  });
+
+  await pollRows('the picker never offered a row', (rows: string[]): boolean => rows.length > 0);
+}
+
+/**
+ * Runs the editor command and waits for the picker to come up.
+ */
+async function openPicker(): Promise<void> {
+  await pollInObsidian({
+    input: { pluginId: PLUGIN_ID, promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) !== null;
+    },
+    start({ app, pluginId }): void {
+      app.commands.executeCommandById(`${pluginId}:insert-link`);
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the picker never opened',
+    until: (isOpen: boolean): boolean => isOpen
+  });
+}
+
+/**
+ * Opens the note the link is to be inserted into, and waits for it to become the active file.
+ *
+ * @param sourcePath - The note's path.
+ */
+async function openSourceNote(sourcePath: string): Promise<void> {
+  await pollInObsidian({
+    input: { sourcePath },
+    poll({ app }): string {
+      return app.workspace.getActiveFile()?.path ?? '';
+    },
+    async start({ app, sourcePath: path }): Promise<void> {
+      const source = app.vault.getFileByPath(path);
+      if (!source) {
+        throw new Error(`The source note ${path} is gone.`);
+      }
+
+      await app.workspace.getLeaf(true).openFile(source);
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the note being edited never became the active file',
+    until: (path: string): boolean => path === sourcePath
+  });
+}
+
+/**
+ * Waits for the picker to be gone.
+ *
+ * @param message - What to say if it never is.
+ */
+async function pollPickerClosed(message: string): Promise<void> {
+  await pollInObsidian({
+    input: { promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) === null;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: message,
+    until: (isClosed: boolean): boolean => isClosed
+  });
+}
+
+/**
+ * Polls the picker's rows until the Node-side predicate accepts them.
+ *
+ * The predicate runs in NODE, which is what lets it close over the stamped names this test already holds
+ * rather than passing each of them across the boundary.
+ *
+ * @param message - What to say if the rows never satisfy the predicate.
+ * @param checkRows - Whether a given reading of the rows is the one being waited for.
+ * @returns The accepted rows.
+ */
+async function pollRows(message: string, checkRows: (rows: string[]) => boolean): Promise<string[]> {
+  return await pollInObsidian({
+    input: { rowSelector: ROW_SELECTOR },
+    poll({ rowSelector }): string[] {
+      return [...document.querySelectorAll(rowSelector)].map((el) => el.textContent);
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: message,
+    until: checkRows
+  });
+}
+
+/**
+ * Lets the list settle, then reads it.
+ *
+ * The settle stays INSIDE the closure it guards: a poll for a list that has already stopped changing
+ * accepts the reading from before the re-render that is still on its way.
+ *
+ * @returns The rows the picker is showing.
+ */
+async function readRows(): Promise<string[]> {
+  return await evalInObsidian({
+    async callback({ renderDelayInMilliseconds, rowSelector }): Promise<string[]> {
+      await sleep(renderDelayInMilliseconds);
+      return [...document.querySelectorAll(rowSelector)].map((el) => el.textContent);
+    },
+    input: { renderDelayInMilliseconds: RENDER_DELAY_IN_MILLISECONDS, rowSelector: ROW_SELECTOR }
+  });
+}
