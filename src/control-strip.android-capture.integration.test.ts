@@ -37,7 +37,10 @@ import {
 import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { evalInObsidian } from 'obsidian-integration-testing';
+import {
+  evalInObsidian,
+  pollInObsidian
+} from 'obsidian-integration-testing';
 import {
   describe,
   expect,
@@ -66,6 +69,15 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 600_000;
  * before it.
  */
 const SETTLE_DELAY_IN_MILLISECONDS = 900;
+
+/**
+ * The budget each wait below actually gets, now that the waiting happens in NODE.
+ *
+ * A single `evalInObsidian` closure is capped at ~30s by the transport, so the two 30 s ceilings
+ * `openPicker` used to declare shared one budget neither could have. `pollInObsidian` re-runs a short
+ * `poll` closure from Node instead, so no single eval approaches the cap.
+ */
+const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 
 /**
  * The six labels, in the order `buildControls` declares them: the two actions, then the four toggles.
@@ -321,18 +333,31 @@ function findControl(snapshot: StripSnapshot, label: string): ControlSnapshot {
  * two ACTIONS have to get right: `Create new` keeps it, `No link` drops it.
  */
 async function openPicker(): Promise<void> {
-  await evalInObsidian({
-    async callback({ folderPath, lib: { waitUntil }, pluginId, prefix }): Promise<void> {
-      const OPEN_TIMEOUT = 30_000;
+  await pollInObsidian({
+    input: { pluginId: PLUGIN_ID },
+    poll({ pluginId }): boolean {
+      const registry = (window as CaptureWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      return registry?.records[pluginId]?.some((candidate) => !candidate.isRevoked) ?? false;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the plugin never published its API',
+    until: (isPublished: boolean): boolean => isPublished
+  });
+
+  await pollInObsidian({
+    input: {
+      folderPath: FOLDER_PATH,
+      pluginId: PLUGIN_ID,
+      prefix: PREFIX
+    },
+    poll(): boolean {
+      return document.querySelector('.prompt') !== null;
+    },
+    start({ folderPath, pluginId, prefix }): void {
       const captureWindow = window as CaptureWindow;
 
-      await waitUntil({
-        message: 'the plugin published its API',
-        predicate: () => findRecord() !== undefined,
-        timeoutInMilliseconds: OPEN_TIMEOUT
-      });
-
-      const record = findRecord();
+      const registry = captureWindow.__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const record: RecordLike | undefined = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
       if (!record) {
         throw new TypeError(`No API record was published for "${pluginId}".`);
       }
@@ -340,33 +365,19 @@ async function openPicker(): Promise<void> {
       const bag: LinkBag = { link: null };
       captureWindow.__linkPickerCapture = bag;
 
-      // Deliberately not awaited — `select` settles only once a control has ended the picker, which is
-      // Several host round trips away. The answer is written into the bag whenever that happens, and the
-      // Promise is kept so it is handled rather than floating.
-      captureWindow.__linkPickerCapture.pending = record.api.select({ folderPath, prefix })
+      // Deliberately not awaited: `select` settles only once a control has ended the picker, several host round trips away.
+      // The answer is written into the bag whenever that happens, and the promise is kept so it is handled rather than floating.
+      bag.pending = record.api.select({ folderPath, prefix })
         .then((link: string) => {
           bag.link = link;
         })
         .catch(() => {
           bag.link = null;
         });
-
-      await waitUntil({
-        message: 'the picker is open',
-        predicate: () => document.querySelector('.prompt') !== null,
-        timeoutInMilliseconds: OPEN_TIMEOUT
-      });
-
-      function findRecord(): RecordLike | undefined {
-        const registry = (window as CaptureWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
-        return registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
-      }
     },
-    input: {
-      folderPath: FOLDER_PATH,
-      pluginId: PLUGIN_ID,
-      prefix: PREFIX
-    }
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the picker never opened',
+    until: (isOpen: boolean): boolean => isOpen
   });
 
   await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);

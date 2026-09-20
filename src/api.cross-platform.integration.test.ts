@@ -1,4 +1,8 @@
-import { evalInObsidian } from 'obsidian-integration-testing';
+import {
+  ContextId,
+  evalInObsidian,
+  pollInObsidian
+} from 'obsidian-integration-testing';
 import {
   describe,
   expect,
@@ -26,9 +30,21 @@ import {
  *
  * Cross-platform: the row and the control are CLICKED, because the harness drives keys through
  * Electron's input API and Android has not got one.
+ *
+ * **The waiting happens in NODE, and each closure below is milliseconds of DOM reading.** A single
+ * `evalInObsidian` closure is capped at ~30s by the transport, so the five waits this flow declared
+ * shared one budget none of them could have. That forces the one thing this file could not do before:
+ * `select` settles only once something has been picked, several host round trips after the call that
+ * opened the picker, so its promise CANNOT be awaited in the closure that started it. A `ContextId` is
+ * what carries it across — the harness's own mechanism for state that must survive between closures —
+ * and the answer is polled for out here.
  */
 
 const PLUGIN_ID = 'link-picker';
+
+const CONTROL_SELECTOR = '.modal-command';
+const PROMPT_SELECTOR = '.prompt';
+const ROW_SELECTOR = '.suggestion-item';
 
 /**
  * The prefix and suffix the decline tests pass. A property list wants the `Person: ` shape; the suffix is
@@ -38,24 +54,36 @@ const PREFIX = 'Person: ';
 const SUFFIX = '(unknown)';
 
 /**
- * The flow waits on the record being published, then on the picker opening, then on the row appearing,
- * each of which can legitimately take seconds on a cold Obsidian.
+ * A render settle, short enough to sit inside an act closure without approaching the per-eval cap.
  */
-const TEST_TIMEOUT_IN_MILLISECONDS = 120_000;
+const RENDER_DELAY_IN_MILLISECONDS = 400;
+
+/**
+ * Generous on purpose, and affordable now that it is Node's budget rather than one closure's: Android
+ * sets the floor, not desktop, and an aged emulator takes tens of seconds to lay out.
+ */
+const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
+
+/**
+ * Above the sum of the budgets used below, so a genuine stall reports the NAMED poll timeout rather than
+ * losing the race to a bare vitest timeout.
+ */
+const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 
 interface ApiLike {
   select(params: SelectParamsLike): Promise<string>;
 }
 
-interface ApiResult {
-  readonly apiVersion: string;
-  readonly link: string;
-  readonly wasPickerOpened: boolean;
-}
-
-interface DeclineResult {
-  readonly link: string;
-  readonly wasPickerClosed: boolean;
+/**
+ * Where the picker's answer waits, on the shared context rather than in a closure variable.
+ *
+ * `select` settles long after the call that opened the picker returned, so the string is stashed and
+ * polled for from Node once a row or a control has ended the picker.
+ */
+interface ApiSuiteContext {
+  isSettled?: boolean;
+  link?: null | string;
+  pending?: Promise<void>;
 }
 
 interface RecordLike {
@@ -66,6 +94,14 @@ interface RecordLike {
 
 interface RegistryLike {
   readonly records: Record<string, RecordLike[] | undefined>;
+}
+
+/**
+ * The answer, as this test reads it back off the shared context.
+ */
+interface SelectAnswer {
+  readonly isSettled: boolean;
+  readonly link: null | string;
 }
 
 /**
@@ -91,98 +127,73 @@ interface StateEntryLike {
 
 describe('The published API', () => {
   it('opens the picker for a consumer holding nothing but the registry record, and resolves with the link text', async () => {
-    const result = await evalInObsidian({
-      async callback({ lib: { createNote, waitUntil }, pluginId }): Promise<ApiResult> {
-        const RENDER_DELAY_IN_MILLISECONDS = 400;
-        const OPEN_TIMEOUT_IN_MILLISECONDS = 30_000;
-        const stamp = `${Date.now().toString()}-${Math.floor(performance.now()).toString()}`;
+    const stamp = `${Date.now().toString()}-${Math.floor(Math.random() * 1000).toString()}`;
 
-        // At the vault root, because that is where the picker opens with no folder given.
-        const targetName = `Ada-${stamp}`;
+    // At the vault root, because that is where the picker opens with no folder given.
+    const targetName = `Ada-${stamp}`;
+
+    await pollInObsidian({
+      input: { targetName },
+      poll({ app, targetName: name }): boolean {
+        return app.vault.getFileByPath(`${name}.md`) !== null;
+      },
+      async start({ lib: { createNote }, targetName: name }): Promise<void> {
         await createNote({
           content: '# Ada\n',
-          path: `${targetName}.md`
+          path: `${name}.md`
         });
-
-        // These suites share one Obsidian, and each ends by picking something rather than by walking
-        // Away, so a picker still open here means an earlier suite broke that contract.
-        await waitUntil({
-          message: 'no picker left open by an earlier suite',
-          predicate: () => document.querySelector('.prompt') === null,
-          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-        });
-
-        await waitUntil({
-          message: 'the plugin published its API',
-          predicate: () => findRecord() !== undefined,
-          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-        });
-
-        const record = findRecord();
-        if (!record) {
-          throw new TypeError(`No API record was published for "${pluginId}".`);
-        }
-
-        // Not awaited yet: `select` opens the picker and settles only once something is picked, so the
-        // Driving below has to happen while this promise is still pending.
-        const linkPromise = record.api.select({
-          initialQuery: targetName,
-          prefix: 'Person: '
-        });
-
-        await waitUntil({
-          message: 'the picker is open',
-          predicate: () => document.querySelector('.prompt') !== null,
-          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-        });
-        await sleep(RENDER_DELAY_IN_MILLISECONDS);
-        const wasPickerOpened = document.querySelector('.prompt') !== null;
-
-        await waitUntil({
-          message: 'the picked note is offered',
-          predicate: () => [...document.querySelectorAll('.suggestion-item')].some((el) => el.textContent.includes(targetName)),
-          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-        });
-
-        // Addressed by TEXT rather than by position, so a row the vault happens to also match cannot be
-        // Picked by mistake.
-        const row = [...document.querySelectorAll('.suggestion-item')].find((el) => el.textContent.includes(targetName));
-        if (!(row instanceof HTMLElement)) {
-          throw new TypeError('The picked note was not offered.');
-        }
-        row.click();
-
-        const link = await linkPromise;
-        await waitUntil({
-          message: 'the picker closed',
-          predicate: () => document.querySelector('.prompt') === null,
-          timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-        });
-
-        return {
-          apiVersion: record.apiVersion,
-          link,
-          wasPickerOpened
-        };
-
-        function findRecord(): RecordLike | undefined {
-          // `window`, not `globalThis`, only because a lint rule forbids the latter — in the renderer they
-          // Are the same realm global the library writes its shared state onto.
-          const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
-          return registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
-        }
       },
-      input: { pluginId: PLUGIN_ID }
+      timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+      timeoutMessage: 'the staged note never appeared in the vault',
+      until: (isPresent: boolean): boolean => isPresent
     });
 
-    expect(result.wasPickerOpened).toBe(true);
-    expect(result.apiVersion).toMatch(/^1\./);
+    await pollNoPickerOpen();
+    await pollApiPublished();
+    const apiVersion = await readApiVersion();
 
-    // The prefix is the whole shape the templates depend on: the result drops straight into
-    // A note's property list as `Person: [[Ada]]`.
-    expect(result.link).toMatch(/^Person: /);
-    expect(result.link).toContain('Ada-');
-    expect(result.link).toMatch(/\[\[|]\(/);
+    const contextId = new ContextId<ApiSuiteContext>();
+
+    try {
+      await startSelect(contextId, { initialQuery: targetName, prefix: PREFIX });
+      const wasPickerOpened = await checkPickerOpen();
+
+      await pollInObsidian({
+        input: { rowSelector: ROW_SELECTOR, targetName },
+        poll({ rowSelector, targetName: name }): boolean {
+          return [...document.querySelectorAll(rowSelector)].some((el) => el.textContent.includes(name));
+        },
+        timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+        timeoutMessage: 'the picked note was never offered',
+        until: (isOffered: boolean): boolean => isOffered
+      });
+
+      await evalInObsidian({
+        callback({ rowSelector, targetName: name }): void {
+          // Addressed by TEXT rather than by position, so a row the vault happens to also match cannot be picked by mistake.
+          const row = [...document.querySelectorAll(rowSelector)].find((el) => el.textContent.includes(name));
+          if (!(row instanceof HTMLElement)) {
+            throw new TypeError('The picked note was not offered.');
+          }
+
+          row.click();
+        },
+        input: { rowSelector: ROW_SELECTOR, targetName }
+      });
+
+      const link = await pollSelectAnswer(contextId);
+      await checkPickerClosed();
+
+      expect(wasPickerOpened).toBe(true);
+      expect(apiVersion).toMatch(/^1\./);
+
+      // The prefix is the whole shape the templates depend on: the result drops straight into a note's property list as `Person: [[Ada]]`.
+      expect(link).toMatch(/^Person: /);
+      expect(link).toContain('Ada-');
+      expect(link).toMatch(/\[\[|]\(/);
+    } finally {
+      await contextId.dispose();
+    }
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
   it('drops the prefix and the suffix when the consumer declines a link', async () => {
@@ -190,8 +201,8 @@ describe('The published API', () => {
 
     expect(result.wasPickerClosed).toBe(true);
 
-    // The point of the whole rework: an optional link that was declined leaves NOTHING behind, where the
-    // Retired `inlineField` wrote a `Person: ` with nothing after it into the property list.
+    // The point of the whole rework: an optional link that was declined leaves NOTHING behind.
+    // The retired `inlineField` wrote a `Person: ` with nothing after it into the property list.
     expect(result.link).toBe('');
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
@@ -206,6 +217,45 @@ describe('The published API', () => {
 });
 
 /**
+ * The result a decline test reads back.
+ */
+interface DeclineResult {
+  readonly link: null | string;
+  readonly wasPickerClosed: boolean;
+}
+
+/**
+ * Waits for the picker to be gone.
+ *
+ * @returns Whether it is, which is always `true` when this resolves rather than throwing.
+ */
+async function checkPickerClosed(): Promise<boolean> {
+  return await pollInObsidian({
+    input: { promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) === null;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the picker never closed',
+    until: (isClosed: boolean): boolean => isClosed
+  });
+}
+
+/**
+ * Reads whether a picker is on screen right now, without waiting for one.
+ *
+ * @returns Whether one is.
+ */
+async function checkPickerOpen(): Promise<boolean> {
+  return await evalInObsidian({
+    callback({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) !== null;
+    },
+    input: { promptSelector: PROMPT_SELECTOR }
+  });
+}
+
+/**
  * Opens the picker through the published API with a prefix and a suffix, declines the link by CLICKING
  * `No link`, and resolves with what the API handed back.
  *
@@ -217,85 +267,165 @@ describe('The published API', () => {
  * @returns The string the API returned, and whether the picker closed behind it.
  */
 async function declineLink(shouldApplyPrefixSuffixWhenNoLinkSelected: boolean): Promise<DeclineResult> {
-  return await evalInObsidian({
-    async callback({ lib: { waitUntil }, pluginId, prefix, shouldApply, suffix }): Promise<DeclineResult> {
-      const RENDER_DELAY_IN_MILLISECONDS = 400;
-      const OPEN_TIMEOUT_IN_MILLISECONDS = 30_000;
+  await pollNoPickerOpen();
+  await pollApiPublished();
 
-      await waitUntil({
-        message: 'no picker left open by an earlier suite',
-        predicate: () => document.querySelector('.prompt') === null,
-        timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-      });
+  const contextId = new ContextId<ApiSuiteContext>();
 
-      await waitUntil({
-        message: 'the plugin published its API',
-        predicate: () => findRecord() !== undefined,
-        timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-      });
+  try {
+    await startSelect(contextId, {
+      prefix: PREFIX,
+      shouldApplyPrefixSuffixWhenNoLinkSelected,
+      suffix: SUFFIX
+    });
 
-      const record = findRecord();
-      if (!record) {
-        throw new TypeError(`No API record was published for "${pluginId}".`);
-      }
+    // The settle and the click stay in ONE closure: the strip is rebuilt on every `update()`.
+    // A re-render landing between reading the control and clicking it would click a detached button.
+    await evalInObsidian({
+      async callback({ controlSelector, label, renderDelayInMilliseconds }): Promise<void> {
+        await sleep(renderDelayInMilliseconds);
 
-      // Pending on purpose, exactly as above: the control can only be clicked while the picker is open.
-      const linkPromise = record.api.select({
-        prefix,
-        shouldApplyPrefixSuffixWhenNoLinkSelected: shouldApply,
-        suffix
-      });
-
-      await waitUntil({
-        message: 'the picker is open',
-        predicate: () => document.querySelector('.prompt') !== null,
-        timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-      });
-      await sleep(RENDER_DELAY_IN_MILLISECONDS);
-
-      clickControl('No link');
-
-      const link = await linkPromise;
-      await waitUntil({
-        message: 'the picker closed',
-        predicate: () => document.querySelector('.prompt') === null,
-        timeoutInMilliseconds: OPEN_TIMEOUT_IN_MILLISECONDS
-      });
-      await sleep(RENDER_DELAY_IN_MILLISECONDS);
-
-      return {
-        link,
-        wasPickerClosed: document.querySelector('.prompt') === null
-      };
-
-      /**
-       * Addressed by its LABEL rather than by position, so reordering the strip cannot silently retarget
-       * the click.
-       *
-       * @param label - The control's visible label.
-       */
-      function clickControl(label: string): void {
-        const buttonEl = [...document.querySelectorAll('.modal-command')]
+        // Addressed by its LABEL rather than by position, so reordering the strip cannot silently retarget the click.
+        const buttonEl = [...document.querySelectorAll(controlSelector)]
           .find((el) => el.querySelector('span')?.textContent === label);
         if (!(buttonEl instanceof HTMLElement)) {
           throw new TypeError(`No control labelled ${label}.`);
         }
+
         buttonEl.click();
+      },
+      input: {
+        controlSelector: CONTROL_SELECTOR,
+        label: 'No link',
+        renderDelayInMilliseconds: RENDER_DELAY_IN_MILLISECONDS
+      }
+    });
+
+    const link = await pollSelectAnswer(contextId);
+    const wasPickerClosed = await checkPickerClosed();
+
+    return { link, wasPickerClosed };
+  } finally {
+    await contextId.dispose();
+  }
+}
+
+/**
+ * Waits for the plugin to have published its API record into the shared registry.
+ */
+async function pollApiPublished(): Promise<void> {
+  await pollInObsidian({
+    input: { pluginId: PLUGIN_ID },
+    poll({ pluginId }): boolean {
+      // `window`, not `globalThis`, only because a lint rule forbids the latter.
+      // In the renderer they are the same realm global the library writes its shared state onto.
+      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      return registry?.records[pluginId]?.some((candidate) => !candidate.isRevoked) ?? false;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the plugin never published its API',
+    until: (isPublished: boolean): boolean => isPublished
+  });
+}
+
+/**
+ * Asserts the shared Obsidian was handed over with no picker open.
+ *
+ * These suites share one Obsidian, and each ends by picking something rather than by walking away, so a
+ * picker still open here means an earlier suite broke that contract.
+ */
+async function pollNoPickerOpen(): Promise<void> {
+  await pollInObsidian({
+    input: { promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) === null;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'a picker was left open by an earlier suite',
+    until: (isClosed: boolean): boolean => isClosed
+  });
+}
+
+/**
+ * Polls the shared context until `select` has settled, and returns what it settled with.
+ *
+ * @param contextId - The context `select`'s answer was stashed on.
+ * @returns The link the API handed back.
+ */
+async function pollSelectAnswer(contextId: ContextId<ApiSuiteContext>): Promise<null | string> {
+  const answer = await pollInObsidian({
+    contextId,
+    poll({ context }): SelectAnswer {
+      return {
+        isSettled: context.isSettled ?? false,
+        link: context.link ?? null
+      };
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the API never resolved',
+    until: (result: SelectAnswer): boolean => result.isSettled
+  });
+
+  return answer.link;
+}
+
+/**
+ * @returns The `apiVersion` the live record declares.
+ */
+async function readApiVersion(): Promise<string> {
+  return await evalInObsidian({
+    callback({ pluginId }): string {
+      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const record = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
+      if (!record) {
+        throw new TypeError(`No API record was published for "${pluginId}".`);
       }
 
-      /**
-       * @returns The plugin's live API record, read structurally out of the shared registry.
-       */
-      function findRecord(): RecordLike | undefined {
-        const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
-        return registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
-      }
+      return record.apiVersion;
     },
-    input: {
-      pluginId: PLUGIN_ID,
-      prefix: PREFIX,
-      shouldApply: shouldApplyPrefixSuffixWhenNoLinkSelected,
-      suffix: SUFFIX
-    }
+    input: { pluginId: PLUGIN_ID }
+  });
+}
+
+/**
+ * Calls `select` through the published API without awaiting it, stashing the answer on the shared
+ * context, and waits for the picker it opens.
+ *
+ * Deliberately not awaited inside the closure: `select` settles only once a row or a control has ended
+ * the picker, which is several host round trips away.
+ * The promise is kept on the context so it is handled rather than floating.
+ *
+ * @param contextId - The context the answer is stashed on.
+ * @param params - What the consumer asks `select` for.
+ */
+async function startSelect(contextId: ContextId<ApiSuiteContext>, params: SelectParamsLike): Promise<void> {
+  await pollInObsidian({
+    contextId,
+    input: { params, pluginId: PLUGIN_ID, promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) !== null;
+    },
+    start({ context, params: selectParams, pluginId }): void {
+      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const record = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
+      if (!record) {
+        throw new TypeError(`No API record was published for "${pluginId}".`);
+      }
+
+      context.isSettled = false;
+      context.link = null;
+      context.pending = record.api.select(selectParams)
+        .then((link: string) => {
+          context.link = link;
+          context.isSettled = true;
+        })
+        .catch(() => {
+          context.link = null;
+          context.isSettled = true;
+        });
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the picker never opened',
+    until: (isOpen: boolean): boolean => isOpen
   });
 }

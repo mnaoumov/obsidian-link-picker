@@ -11,6 +11,12 @@
  * with the way out pinned above its contents; the second shows one query
  * putting four similarly-named notes in a fixed order.
  *
+ * **The waiting happens in NODE, and each closure below is milliseconds of DOM
+ * reading.** A single `evalInObsidian` closure is capped at ~30s by the
+ * transport, and `openPicker` declared five waits plus three settles inside one
+ * of them. `pollInObsidian` is what makes each budget real: every poll is its
+ * own short eval.
+ *
  * Excluded from `npm run test:integration` by its file name — see the
  * `capture-screenshots:desktop` project in `scripts/vitest-config.ts`.
  */
@@ -25,6 +31,7 @@ import {
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
+  pollInObsidian,
   readPngDimensions
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
@@ -39,7 +46,23 @@ const PLUGIN_ID = 'link-picker';
 const WIDTH_IN_PIXELS = 1200;
 const HEIGHT_IN_PIXELS = 800;
 
+const INPUT_SELECTOR = '.prompt-input';
+const PROMPT_SELECTOR = '.prompt';
+const ROW_SELECTOR = '.suggestion-item';
+
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
+
+/**
+ * A render settle, short enough to sit inside an act closure without approaching the per-eval cap. Longer
+ * than the functional suites use, because what these frames capture is the painted result rather than the
+ * state behind it.
+ */
+const SETTLE_DELAY_IN_MILLISECONDS = 900;
+
+/**
+ * Generous on purpose, and affordable now that it is Node's budget rather than one closure's.
+ */
+const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 
 beforeAll(async () => {
   const vault = getTemporaryVault();
@@ -57,27 +80,23 @@ beforeAll(async () => {
   });
   await vault.syncToDevice();
 
-  await evalInObsidian({
-    async callback({ app, lib: { waitUntil } }) {
-      const SETTLE_TIMEOUT_IN_MILLISECONDS = 30_000;
-      const SETTLE_DELAY_IN_MILLISECONDS = 1000;
-
+  await pollInObsidian({
+    poll({ app }): boolean {
+      return app.vault.getFileByPath('Source.md') !== null;
+    },
+    start({ app }): void {
       app.changeTheme('obsidian');
 
-      // The picker is the subject, not the file explorer, so the sidebar is collapsed to give the
-      // Modal the frame.
+      // The picker is the subject, not the file explorer, so the sidebar is collapsed to give the modal the frame.
       app.workspace.leftSplit.collapse();
-
-      await waitUntil({
-        message: 'the staged note to be readable',
-        predicate: () => app.vault.getFileByPath('Source.md') !== null,
-        timeoutInMilliseconds: SETTLE_TIMEOUT_IN_MILLISECONDS
-      });
-
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
     },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the staged note never became readable',
+    until: (isPresent: boolean): boolean => isPresent,
     vaultPath: vaultPath()
   });
+
+  await settle();
 });
 
 describe('desktop store screenshots', () => {
@@ -102,92 +121,171 @@ interface OpenPickerParams {
 }
 
 /**
+ * Clicks whatever the picker is leading with.
+ */
+async function chooseFirstRow(): Promise<void> {
+  await evalInObsidian({
+    callback({ rowSelector }): void {
+      const row = document.querySelector(rowSelector);
+      if (!(row instanceof HTMLElement)) {
+        throw new TypeError('The folder was not offered.');
+      }
+
+      row.click();
+    },
+    input: { rowSelector: ROW_SELECTOR },
+    vaultPath: vaultPath()
+  });
+}
+
+/**
+ * Puts away whatever picker the previous shot left on screen.
+ *
+ * Each shot leaves its picker up — that is the point of the shot — so the next one has to close it
+ * before opening its own. `Escape` travels through Electron's input API, which this desktop-only suite
+ * has, so the press and the check that one is open stay in the same closure.
+ */
+async function closeAnyOpenPicker(): Promise<void> {
+  const wasOpen = await evalInObsidian({
+    async callback({ lib: { pressKey }, promptSelector }): Promise<boolean> {
+      if (!document.querySelector(promptSelector)) {
+        return false;
+      }
+
+      await pressKey({ key: 'Escape' });
+      return true;
+    },
+    input: { promptSelector: PROMPT_SELECTOR },
+    vaultPath: vaultPath()
+  });
+
+  if (!wasOpen) {
+    return;
+  }
+
+  await pollInObsidian({
+    input: { promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) === null;
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the previous picker never closed',
+    until: (isClosed: boolean): boolean => isClosed,
+    vaultPath: vaultPath()
+  });
+}
+
+/**
+ * Types into the picker and waits for it to have something to show.
+ *
+ * @param text - What to type.
+ */
+async function filterTo(text: string): Promise<void> {
+  await evalInObsidian({
+    callback({ inputSelector, text: query }): void {
+      const input = document.querySelector(inputSelector);
+      if (!(input instanceof HTMLInputElement)) {
+        throw new TypeError('The picker has no input.');
+      }
+
+      input.value = query;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+    input: { inputSelector: INPUT_SELECTOR, text },
+    vaultPath: vaultPath()
+  });
+
+  await pollRows('no row was ever offered', (rows: string[]): boolean => rows.length > 0);
+  await settle();
+}
+
+/**
  * Opens the picker, navigates into a folder, and leaves it on screen for the capture.
  *
  * @param params - The folder to navigate into, and what to type once inside it.
  * @returns The rows the picker is showing.
  */
 async function openPicker(params: OpenPickerParams): Promise<string[]> {
-  return await evalInObsidian({
-    async callback({ app, folderQuery, lib: { pressKey, waitUntil }, pluginId, query }) {
-      const TIMEOUT_IN_MILLISECONDS = 15_000;
-      const SETTLE_DELAY_IN_MILLISECONDS = 900;
+  await closeAnyOpenPicker();
 
-      // Each shot leaves its picker on screen — that is the point of the shot — so the next one has to
-      // Put it away before opening its own.
-      if (document.querySelector('.prompt')) {
-        await pressKey({ key: 'Escape' });
-        await waitUntil({
-          message: 'the previous picker to close',
-          predicate: () => document.querySelector('.prompt') === null,
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-      }
-
+  await pollInObsidian({
+    poll({ app }): string {
+      return app.workspace.getActiveFile()?.path ?? '';
+    },
+    async start({ app }): Promise<void> {
       const source = app.vault.getFileByPath('Source.md');
       if (!source) {
         throw new Error('The staged note is missing.');
       }
 
       await app.workspace.getLeaf(false).openFile(source);
-      await waitUntil({
-        message: 'the staged note to be open',
-        predicate: () => app.workspace.getActiveFile()?.path === 'Source.md',
-        timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-      });
+    },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the staged note never opened',
+    until: (path: string): boolean => path === 'Source.md',
+    vaultPath: vaultPath()
+  });
 
+  await pollInObsidian({
+    input: { pluginId: PLUGIN_ID, promptSelector: PROMPT_SELECTOR },
+    poll({ promptSelector }): boolean {
+      return document.querySelector(promptSelector) !== null;
+    },
+    start({ app, pluginId }): void {
       app.commands.executeCommandById(`${pluginId}:insert-link`);
-      await waitUntil({
-        message: 'the picker to open',
-        predicate: () => document.querySelector('.prompt') !== null,
-        timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-      });
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-
-      await filterTo(folderQuery);
-      const folderRow = document.querySelector('.suggestion-item');
-      if (!(folderRow instanceof HTMLElement)) {
-        throw new TypeError('The folder was not offered.');
-      }
-      folderRow.click();
-
-      await waitUntil({
-        message: 'the folder to open',
-        predicate: () => rows().length > 1,
-        timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-      });
-      await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-
-      if (query) {
-        await filterTo(query);
-      }
-
-      return rows();
-
-      async function filterTo(text: string): Promise<void> {
-        const input = document.querySelector('.prompt-input');
-        if (!(input instanceof HTMLInputElement)) {
-          throw new TypeError('The picker has no input.');
-        }
-        input.value = text;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        await waitUntil({
-          message: 'a row to be offered',
-          predicate: () => document.querySelector('.suggestion-item') !== null,
-          timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
-        });
-        await sleep(SETTLE_DELAY_IN_MILLISECONDS);
-      }
-
-      function rows(): string[] {
-        return [...document.querySelectorAll('.suggestion-item')].map((el) => el.textContent);
-      }
     },
-    input: {
-      folderQuery: params.folderQuery,
-      pluginId: PLUGIN_ID,
-      query: params.query
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: 'the picker never opened',
+    until: (isOpen: boolean): boolean => isOpen,
+    vaultPath: vaultPath()
+  });
+  await settle();
+
+  await filterTo(params.folderQuery);
+  await chooseFirstRow();
+
+  await pollRows('the folder never opened', (rows: string[]): boolean => rows.length > 1);
+  await settle();
+
+  if (params.query) {
+    await filterTo(params.query);
+  }
+
+  return await pollRows('the picker showed nothing to photograph', (rows: string[]): boolean => rows.length > 0);
+}
+
+/**
+ * Polls the picker's rows until the Node-side predicate accepts them.
+ *
+ * @param message - What to say if the rows never satisfy the predicate.
+ * @param checkRows - Whether a given reading of the rows is the one being waited for.
+ * @returns The accepted rows.
+ */
+async function pollRows(message: string, checkRows: (rows: string[]) => boolean): Promise<string[]> {
+  return await pollInObsidian({
+    input: { rowSelector: ROW_SELECTOR },
+    poll({ rowSelector }): string[] {
+      return [...document.querySelectorAll(rowSelector)].map((el) => el.textContent);
     },
+    timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
+    timeoutMessage: message,
+    until: checkRows,
+    vaultPath: vaultPath()
+  });
+}
+
+/**
+ * Lets the frame finish painting.
+ *
+ * A poll can only say that the state behind a frame has arrived, never that the pixels have — so these
+ * shots keep an explicit settle, inside its own short closure.
+ */
+async function settle(): Promise<void> {
+  await evalInObsidian({
+    async callback({ settleDelayInMilliseconds }): Promise<void> {
+      await sleep(settleDelayInMilliseconds);
+    },
+    input: { settleDelayInMilliseconds: SETTLE_DELAY_IN_MILLISECONDS },
     vaultPath: vaultPath()
   });
 }
