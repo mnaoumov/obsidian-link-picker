@@ -1,8 +1,9 @@
+import type { PluginApiDeclaration } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+
 import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
-import { publishPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
 import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
@@ -17,6 +18,33 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
+  private linkPickerApi: LinkPickerApi | null = null;
+
+  /**
+   * Declares the API for the base to publish, once {@link onloadImpl} has built it.
+   *
+   * Declared rather than published by hand, so that the `obsidian-dev-utils:plugin-loaded` broadcast carries
+   * the contract version — the base derives that payload's `apiVersions` from this method alone, so a
+   * hand-published API is invisible to the neutral, library-free route a third party is told to take. It also
+   * moves revocation from the plugin onto the feature surface, which is where the picker this API delegates
+   * to lives.
+   *
+   * @returns The declaration, or none before the picker exists.
+   */
+  protected override getPluginApis(): PluginApiDeclaration[] {
+    if (!this.linkPickerApi) {
+      return [];
+    }
+
+    return [
+      {
+        api: this.linkPickerApi,
+        apiVersion: LINK_PICKER_API_VERSION,
+        contract: LINK_PICKER_API_CONTRACT
+      }
+    ];
+  }
+
   protected override async onloadImpl(): Promise<void> {
     const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
@@ -46,13 +74,8 @@ export class Plugin extends PluginBase {
     // The half of the plugin the extraction was actually for.
     // The 17 Templater templates it came from all want the STRING, not an edit at a cursor, so a
     // Command-only plugin would serve none of them.
-    // `publishPluginApi` registers its own revocation on the plugin, so unloading takes the API away.
-    publishPluginApi<LinkPickerApi>({
-      api: new LinkPickerApi(linkPickerComponent),
-      apiVersion: LINK_PICKER_API_VERSION,
-      contract: LINK_PICKER_API_CONTRACT,
-      plugin: this
-    });
+    // Built here and published by the base through `getPluginApis`, which registers the revocation itself.
+    this.linkPickerApi = new LinkPickerApi(linkPickerComponent);
 
     await this.commandHandlerComponent.registerCommandHandlers(() => [
       new InsertLinkEditorCommandHandler({

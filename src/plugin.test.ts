@@ -2,11 +2,15 @@ import type {
   App,
   PluginManifest
 } from 'obsidian';
+import type { PluginApiDeclaration } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import type { PluginLifecycleEventPayload } from 'obsidian-dev-utils/obsidian/plugin/plugin-lifecycle-events';
 
 import { Component as ComponentCls } from 'obsidian';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import { PLUGIN_LOADED_EVENT_NAME } from 'obsidian-dev-utils/obsidian/plugin/plugin-lifecycle-events';
 import { App as AppCls } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -18,6 +22,12 @@ import {
 
 interface ComponentModuleActual {
   Component: new () => object;
+}
+
+// `getPluginApis` is protected on the base — the declaration is for the library, not for callers — so a test
+// Reads it through a probe rather than widening the plugin's own surface.
+interface PluginApisProbe {
+  getPluginApis(): PluginApiDeclaration[];
 }
 
 vi.mock('./plugin-settings-tab.ts', () => ({
@@ -117,6 +127,37 @@ describe('Plugin', () => {
     // `publishPluginApi` registered the revocation itself, so nothing here had to tear it down.
     expect(ref.value).toBeNull();
     component.unload();
+  });
+
+  it('should declare the API for the base to publish, rather than publishing it by hand', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+
+    // Nothing to declare until `onloadImpl` has built the picker the API delegates to.
+    // The base only asks after that, but the declaration is what a reader checks the guard against.
+    expect(castTo<PluginApisProbe>(plugin).getPluginApis()).toEqual([]);
+
+    await plugin.onload();
+
+    const declarations = castTo<PluginApisProbe>(plugin).getPluginApis();
+    expect(declarations).toHaveLength(1);
+    expect(declarations[0]?.api).toBeInstanceOf(LinkPickerApi);
+    expect(declarations[0]?.apiVersion).toBe(LINK_PICKER_API_VERSION);
+    expect(declarations[0]?.contract).toBe(LINK_PICKER_API_CONTRACT);
+    plugin.unload();
+  });
+
+  it('should name the contract version in the plugin-loaded broadcast, so a library-free consumer sees it', async () => {
+    // The broadcast is a wire contract for third parties who will never install `obsidian-dev-utils`.
+    // Its `apiVersions` is derived from `getPluginApis()` alone, so a hand-published API reads as no API at all on the one route those consumers are told to take.
+    // Asserted on the payload rather than on the override, because the override is only the means.
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    plugin.app.workspace.on(PLUGIN_LOADED_EVENT_NAME, callback);
+
+    await plugin.onload();
+
+    expect(callback.mock.calls[0]?.[0].apiVersions).toEqual([LINK_PICKER_API_VERSION]);
+    plugin.unload();
   });
 
   it('should register the generic insert command and the demo-vault command itself', async () => {
