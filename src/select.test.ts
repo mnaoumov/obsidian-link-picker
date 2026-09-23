@@ -12,8 +12,8 @@ import type { SelectParams } from './select.ts';
 import { select } from './select.ts';
 
 interface ModalConstructorParams {
-  reject(this: void, reason: unknown): void;
-  resolve(this: void, value: string): void;
+  readonly reject: (this: void, reason: unknown) => void;
+  readonly resolve: (this: void, value: string) => void;
 }
 
 const open = vi.fn();

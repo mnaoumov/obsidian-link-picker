@@ -79,7 +79,7 @@ interface GenerateMarkdownLinkParams {
 
 interface HotkeyRegistration {
   key: string;
-  listener(event: KeyboardEvent, context: never): unknown;
+  listener: (event: KeyboardEvent, context: never) => unknown;
   modifier: string;
   scope: unknown;
 }
@@ -97,15 +97,15 @@ interface RecentFileTrackerMock {
 }
 
 interface TestableModal {
-  getSuggestions(query: string): Item[];
+  getSuggestions: (query: string) => Item[];
   readonly inputEl: HTMLInputElement;
   readonly modalEl: HTMLElement;
-  onChooseSuggestion(item: Item, event: KeyboardEvent | MouseEvent): void;
-  onClose(): void;
-  onOpen(): void;
-  renderSuggestion(item: Item, el: HTMLElement): void;
+  onChooseSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
+  onClose: () => void;
+  onOpen: () => void;
+  renderSuggestion: (item: Item, el: HTMLElement) => void;
   readonly scope: unknown;
-  selectSuggestion(item: Item, event: KeyboardEvent | MouseEvent): void;
+  selectSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
 }
 
 interface WorkspaceWithRecentFiles {

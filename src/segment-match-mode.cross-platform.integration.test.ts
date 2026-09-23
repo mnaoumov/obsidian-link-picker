@@ -61,8 +61,8 @@ interface PluginWithSettings {
 }
 
 interface SettingsComponentLike {
-  saveToFile(): Promise<void>;
-  setProperty(propertyName: string, value: unknown): Promise<string>;
+  saveToFile: () => Promise<void>;
+  setProperty: (propertyName: string, value: unknown) => Promise<string>;
 }
 
 describe('The segment matching setting', () => {
