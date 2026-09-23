@@ -41,11 +41,11 @@ vi.mock('obsidian-dev-utils/obsidian/file-system', async (importOriginal) => ({
 vi.mock('./select.ts', () => ({ select }));
 
 interface FolderNoteConfigLike {
-  resolveName(folder: TFolder): string;
+  resolveName: (folder: TFolder) => string;
 }
 
 interface WorkspaceLike {
-  getActiveFile(): null | TFile;
+  getActiveFile: () => null | TFile;
 }
 
 let activeFile: null | TFile;

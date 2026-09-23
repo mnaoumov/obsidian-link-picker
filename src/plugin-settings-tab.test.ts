@@ -44,8 +44,8 @@ import {
  * four members are what a picker row's binding is asserted on.
  */
 interface CapturedBinding {
-  componentToPluginSettingsValueConverter?(value: unknown): unknown;
-  pluginSettingsToComponentValueConverter?(value: unknown): unknown;
+  componentToPluginSettingsValueConverter?: (value: unknown) => unknown;
+  pluginSettingsToComponentValueConverter?: (value: unknown) => unknown;
   propertyName: string;
   shouldShowValidationMessage?: boolean;
 }

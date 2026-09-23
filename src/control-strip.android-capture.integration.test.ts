@@ -122,7 +122,7 @@ const FOLDER_PATH = 'People';
  * closure needs still has to arrive through `input`.
  */
 interface ApiLike {
-  select(params: Record<string, unknown>): Promise<string>;
+  select: (params: Record<string, unknown>) => Promise<string>;
 }
 
 interface CaptureWindow {

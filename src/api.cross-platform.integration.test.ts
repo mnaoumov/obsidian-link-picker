@@ -71,7 +71,7 @@ const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 
 interface ApiLike {
-  select(params: SelectParamsLike): Promise<string>;
+  select: (params: SelectParamsLike) => Promise<string>;
 }
 
 /**

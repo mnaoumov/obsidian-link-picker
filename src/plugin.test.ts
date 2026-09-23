@@ -27,7 +27,7 @@ interface ComponentModuleActual {
 // `getPluginApis` is protected on the base — the declaration is for the library, not for callers — so a test
 // Reads it through a probe rather than widening the plugin's own surface.
 interface PluginApisProbe {
-  getPluginApis(): PluginApiDeclaration[];
+  getPluginApis: () => PluginApiDeclaration[];
 }
 
 vi.mock('./plugin-settings-tab.ts', () => ({

@@ -31,7 +31,7 @@ export interface SelectOptions {
    * @param newNoteTitle - What the user typed.
    * @returns The created note.
    */
-  createNote?(this: void, folderPath: string, newNoteTitle: string): Promise<TFile>;
+  readonly createNote?: (this: void, folderPath: string, newNoteTitle: string) => Promise<TFile>;
 
   /**
    * Paths matching any of these are hidden. Overrides the setting.
@@ -119,7 +119,7 @@ export interface SelectOptions {
  */
 export interface SelectParams {
   readonly app: App;
-  createNote(this: void, folderPath: string, newNoteTitle: string): Promise<TFile>;
+  readonly createNote: (this: void, folderPath: string, newNoteTitle: string) => Promise<TFile>;
   readonly excludedPathPatterns: readonly string[];
   readonly folderNoteConfig: FolderNoteConfig;
   readonly folderPath: string;

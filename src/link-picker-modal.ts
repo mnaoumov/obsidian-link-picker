@@ -48,8 +48,8 @@ const RECENT_FILE_PATHS_MAX_COUNT = 50;
 
 interface LinkPickerModalConstructorParams {
   readonly options: SelectParams;
-  reject(this: void, reason: unknown): void;
-  resolve(this: void, value: string): void;
+  readonly reject: (this: void, reason: unknown) => void;
+  readonly resolve: (this: void, value: string) => void;
 }
 
 export class LinkPickerModal extends SuggestModal<Item> {

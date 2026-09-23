@@ -20,7 +20,7 @@ import { createPicker } from '../plugin-settings.ts';
 import { InsertLinkEditorCommandHandler } from './insert-link-editor-command-handler.ts';
 
 interface TestableHandler {
-  executeEditor(editor: Editor, context: MarkdownFileInfo): Promise<void>;
+  executeEditor: (editor: Editor, context: MarkdownFileInfo) => Promise<void>;
   readonly icon: string;
   readonly id: string;
   readonly name: string;
