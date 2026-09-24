@@ -15,7 +15,10 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkPickerApiSelectParams } from './link-picker-api.ts';
+import type {
+  LinkPickerApi as LinkPickerApiDeclaration,
+  LinkPickerApiSelectParams
+} from '../api.d.ts';
 import type { LinkPickerComponent } from './link-picker-component.ts';
 
 import { SegmentMatchMode } from './item.ts';
@@ -36,7 +39,10 @@ describe('LINK_PICKER_API_VERSION', () => {
 describe('LinkPickerApi', () => {
   it('should delegate to the picker, so the published surface adds no behavior of its own', async () => {
     const select = vi.fn(() => Promise.resolve('Person: [[Ada]]'));
-    const api = new LinkPickerApi(strictProxy<LinkPickerComponent>({ select }));
+
+    // Held through the DECLARATION in `api.d.ts`, not through the class, so the call below is typed the way a
+    // Consumer's is — which is what proves the `implements` link reaches a call site rather than only a header.
+    const api: LinkPickerApiDeclaration = new LinkPickerApi(strictProxy<LinkPickerComponent>({ select }));
     const params: LinkPickerApiSelectParams = { folderPath: 'People' };
 
     expect(await api.select(params)).toBe('Person: [[Ada]]');

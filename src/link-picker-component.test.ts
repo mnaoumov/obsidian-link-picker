@@ -172,13 +172,20 @@ describe('LinkPickerComponent', () => {
     });
 
     it('should accept a resolved config from the caller, so a batch of calls resolves it once', async () => {
-      const folderNoteConfig = strictProxy<FolderNoteConfig>({});
+      const folderNoteConfig: FolderNoteConfig = {
+        extensions: ['md'],
+        isHidden: false,
+        location: FolderNoteLocation.InsideFolder,
+        resolveName: (): string => 'index'
+      };
 
       await createComponent().select({
         folderNoteConfig
       });
 
-      expect(lastParams().folderNoteConfig).toBe(folderNoteConfig);
+      // Restated rather than carried through by identity, which is what the published spelling costs: the
+      // Caller's `location` is a plain string, so the picker reads the config into the one it works with.
+      expect(lastParams().folderNoteConfig).toEqual(folderNoteConfig);
       expect(resolveFolderNoteConfig).not.toHaveBeenCalled();
     });
   });

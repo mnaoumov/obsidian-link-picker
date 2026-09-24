@@ -5,6 +5,7 @@ import type {
 import type { PathOrFile } from 'obsidian-dev-utils/obsidian/file-system';
 import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
+import type { LinkPickerApiSelectParams } from '../api.d.ts';
 import type { SegmentMatchMode } from './item.ts';
 
 import { LinkPickerModal } from './link-picker-modal.ts';
@@ -12,107 +13,16 @@ import { LinkPickerModal } from './link-picker-modal.ts';
 /**
  * What a caller passes to {@link select}.
  *
- * Every member is optional: the plugin's settings supply the defaults, and anything given here overrides
- * them for this one call.
+ * An alias of `api.d.ts`'s {@link LinkPickerApiSelectParams} rather than a second declaration of it: the
+ * plugin's internal caller-facing shape and its PUBLISHED one are the same shape, and keeping them one
+ * type is what stops the published file drifting from the code it describes.
  *
- * There is deliberately no `app` here. This is the shape the plugin's published API takes, and a consumer
- * reaching that API across the plugin boundary must not have to hand the provider back the very
- * {@link App} the provider already holds.
+ * It is therefore spelled in the published vocabulary — `folderNoteConfig.location` and
+ * `segmentMatchMode` are plain string unions here, not the `obsidian-dev-utils` and `item.ts` enums the
+ * internals use, because `api.d.ts` may not import either. {@link SelectParams} is where that becomes
+ * concrete, and `link-picker-component.ts` owns the conversion.
  */
-export interface SelectOptions {
-  /**
-   * Creates the note when the user picks "create new".
-   *
-   * The hook exists because note creation is where vault conventions live — validating the name, deriving
-   * a subfolder from it, seeding frontmatter, applying a template. None of that is expressible in
-   * settings, so a caller with such conventions supplies them here and the plugin stays out of the way.
-   *
-   * @param folderPath - The folder the picker is currently rooted at.
-   * @param newNoteTitle - What the user typed.
-   * @returns The created note.
-   */
-  readonly createNote?: (this: void, folderPath: string, newNoteTitle: string) => Promise<TFile>;
-
-  /**
-   * Paths matching any of these are hidden. Overrides the setting.
-   */
-  readonly excludedPathPatterns?: readonly string[];
-
-  /**
-   * A resolved folder-note setup. Overrides the setting, and is worth passing when the same setup is used
-   * across many calls, since resolving it reads another plugin's configuration.
-   */
-  readonly folderNoteConfig?: FolderNoteConfig;
-
-  /**
-   * The folder the picker opens rooted at. Empty means the vault root.
-   */
-  readonly folderPath?: string;
-
-  /**
-   * Whether the picker starts with subfolder contents included.
-   */
-  readonly includeSubfolders?: boolean;
-
-  /**
-   * Seeds the input, so a picker opened over a selection starts filtered by it.
-   */
-  readonly initialQuery?: string;
-
-  /**
-   * The modal's placeholder text.
-   */
-  readonly placeholder?: string;
-
-  /**
-   * Emitted immediately before the link.
-   *
-   * A property list wants `Person: `, so that is what this is for — but it is a plain string rather than a
-   * field name, so a caller that wants `- ` or `"` gets those too without the plugin knowing what a
-   * Dataview inline field is.
-   */
-  readonly prefix?: string;
-
-  /**
-   * How one term of the query is tested against one part of a path. Overrides the setting.
-   */
-  readonly segmentMatchMode?: SegmentMatchMode;
-
-  /**
-   * Whether "create new" is offered.
-   */
-  readonly shouldAllowCreate?: boolean;
-
-  /**
-   * Whether {@link prefix} and {@link suffix} are still emitted when the user declines a link.
-   *
-   * Off by default, which makes declining return the empty string rather than a `Person: ` with nothing
-   * after it — a dangling property key is worse than an absent one. Turn it on where the surrounding
-   * document needs the key present regardless.
-   */
-  readonly shouldApplyPrefixSuffixWhenNoLinkSelected?: boolean;
-
-  /**
-   * The note the generated link is written INTO, which decides whether it comes out relative or absolute.
-   * Defaults to the active file.
-   */
-  readonly sourcePathOrFile?: PathOrFile;
-
-  /**
-   * Emitted immediately after the link.
-   */
-  readonly suffix?: string;
-
-  /**
-   * Frontmatter property holding a note's display title. Overrides the setting.
-   */
-  readonly titlePropertyName?: string;
-
-  /**
-   * Frontmatter property holding a note's last-updated stamp. Overrides the setting.
-   */
-  readonly updatedPropertyName?: string;
-}
+export type SelectOptions = LinkPickerApiSelectParams;
 
 /**
  * {@link SelectOptions} with every default already applied — what the modal actually reads.
