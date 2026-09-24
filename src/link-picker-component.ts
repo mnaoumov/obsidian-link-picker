@@ -3,6 +3,7 @@ import type {
   TFolder
 } from 'obsidian';
 import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
+import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
 import { TFile } from 'obsidian';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
@@ -19,6 +20,7 @@ import type {
   SelectParams
 } from './select.ts';
 
+import { SegmentMatchMode } from './item.ts';
 import { select } from './select.ts';
 
 /**
@@ -32,6 +34,36 @@ interface LinkPickerComponentConstructorParams {
 }
 
 type LinkPickerComponentResolveOptionsParams = SelectOptions;
+
+/**
+ * The folder-note locations that can still be seen once `Auto` has been resolved away.
+ */
+type ResolvedFolderNoteLocation = FolderNoteConfig['location'];
+
+/**
+ * Maps a published folder-note location onto the `obsidian-dev-utils` enum member that spells it.
+ *
+ * `api.d.ts` may not import `obsidian-dev-utils`, so it inlines the location as a plain string union — and
+ * a string enum is NOMINAL in TypeScript, so the two are not assignable however identical their runtime
+ * values are. A table rather than a cast because the key type is derived FROM the enum (a template literal
+ * expands a string enum to its literal values), so a member added, renamed or removed upstream fails to
+ * compile HERE, which is the only compile-time tether the published file's inlined copies have: nothing
+ * checks them otherwise, `skipLibCheck` meaning a root declaration is never checked from the inside.
+ */
+const FOLDER_NOTE_LOCATIONS: Record<`${ResolvedFolderNoteLocation}`, ResolvedFolderNoteLocation> = {
+  InsideFolder: FolderNoteLocation.InsideFolder,
+  None: FolderNoteLocation.None,
+  ParentFolder: FolderNoteLocation.ParentFolder
+};
+
+/**
+ * Maps a published segment-match mode onto its {@link SegmentMatchMode} member, for the reason
+ * {@link FOLDER_NOTE_LOCATIONS} gives.
+ */
+const SEGMENT_MATCH_MODES: Record<`${SegmentMatchMode}`, SegmentMatchMode> = {
+  Fuzzy: SegmentMatchMode.Fuzzy,
+  Substring: SegmentMatchMode.Substring
+};
 
 /**
  * Owns the picker: turns a caller's partial {@link SelectOptions} into the fully resolved options the
@@ -99,13 +131,13 @@ export class LinkPickerComponent extends ComponentEx {
       app: this.app,
       createNote: params.createNote ?? (async (folderPath: string, newNoteTitle: string): Promise<TFile> => await this.createNote(folderPath, newNoteTitle)),
       excludedPathPatterns: params.excludedPathPatterns ?? settings.excludedPathPatterns,
-      folderNoteConfig: params.folderNoteConfig ?? this.resolveFolderNoteConfig(),
+      folderNoteConfig: params.folderNoteConfig ? toFolderNoteConfig(params.folderNoteConfig) : this.resolveFolderNoteConfig(),
       folderPath: params.folderPath ?? '',
       includeSubfolders: params.includeSubfolders ?? false,
       initialQuery: params.initialQuery ?? '',
       placeholder: params.placeholder ?? '',
       prefix: params.prefix ?? '',
-      segmentMatchMode: params.segmentMatchMode ?? settings.segmentMatchMode,
+      segmentMatchMode: params.segmentMatchMode ? SEGMENT_MATCH_MODES[params.segmentMatchMode] : settings.segmentMatchMode,
       shouldAllowCreate: params.shouldAllowCreate ?? true,
       shouldApplyPrefixSuffixWhenNoLinkSelected: params.shouldApplyPrefixSuffixWhenNoLinkSelected ?? false,
 
@@ -117,4 +149,17 @@ export class LinkPickerComponent extends ComponentEx {
       updatedPropertyName: params.updatedPropertyName ?? settings.updatedPropertyName
     };
   }
+}
+
+/**
+ * Restates a caller's published folder-note setup in the vocabulary the picker reads.
+ *
+ * @param folderNoteConfig - The setup as the published API accepts it.
+ * @returns The same setup, with its location spelled as the `obsidian-dev-utils` enum member.
+ */
+function toFolderNoteConfig(folderNoteConfig: NonNullable<SelectOptions['folderNoteConfig']>): FolderNoteConfig {
+  return {
+    ...folderNoteConfig,
+    location: FOLDER_NOTE_LOCATIONS[folderNoteConfig.location]
+  };
 }

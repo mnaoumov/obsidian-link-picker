@@ -5,6 +5,10 @@ import type { PluginApiContract } from 'obsidian-dev-utils/obsidian/plugin/plugi
 import { TFile } from 'obsidian';
 import { z } from 'zod';
 
+import type {
+  LinkPickerApi as LinkPickerApiDeclaration,
+  LinkPickerApiSelectParams
+} from '../api.d.ts';
 import type { LinkPickerComponent } from './link-picker-component.ts';
 import type { SelectOptions } from './select.ts';
 
@@ -18,11 +22,6 @@ import { SegmentMatchMode } from './item.ts';
  * does not. Consumers pin a range against this one, not against the plugin.
  */
 export const LINK_PICKER_API_VERSION = '1.1.0';
-
-/**
- * What {@link LinkPickerApi.select} accepts — the plugin's public picker options.
- */
-export type LinkPickerApiSelectParams = SelectOptions;
 
 /**
  * Validates a callback, which no schema can look inside.
@@ -101,16 +100,16 @@ export const LINK_PICKER_API_CONTRACT: PluginApiContract = {
  * What the plugin publishes for other plugins and scripts to call.
  *
  * @remarks
- * A consumer reaches this through `watchPluginApi` from
- * `obsidian-dev-utils/obsidian/plugin/plugin-api`, and declares its own copy of this shape — the plugin
- * is not published to npm, and {@link LINK_PICKER_API_CONTRACT} is what actually checks the two sides
- * agree.
+ * The shape is declared ONCE, in the repo-root `api.d.ts`, which this implements. That file imports from
+ * `obsidian` and nothing else, so a consumer can copy it whole without acquiring a dependency on this
+ * plugin or on `obsidian-dev-utils` — which is the point of it, the plugin not being published to npm.
+ * {@link LINK_PICKER_API_CONTRACT} is what actually checks the two sides agree at runtime.
  *
  * A thin delegate rather than the {@link LinkPickerComponent} itself, because publishing the component
  * would publish `load`, `unload` and the rest of the `Component` surface as though they were API, and
  * every one of them would then be something consumers could come to depend on.
  */
-export class LinkPickerApi {
+export class LinkPickerApi implements LinkPickerApiDeclaration {
   public constructor(private readonly linkPickerComponent: LinkPickerComponent) {}
 
   /**

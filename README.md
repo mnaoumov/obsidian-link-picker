@@ -106,18 +106,20 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 - **Updated property** — the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time.
 - **Title property** — the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
 
-## API
+## For plugin developers
 
-The picker is callable, and that is where the plugin came from: it is an extraction of a script whose every consumer was a Templater template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
+The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a Templater template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
 
-It is published through [`obsidian-dev-utils`' cross-plugin API registry](https://mnaoumov.github.io/obsidian-dev-utils/guides/cross-plugin-apis/), keyed by the plugin id, version-negotiated, and revoked automatically if the plugin is disabled. The contract version is **`1.1.0`**, and it is independent of the plugin's own version.
+The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `obsidian-dev-utils`.
+
+The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.1.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
+
+If your plugin already uses [`obsidian-dev-utils`](https://mnaoumov.dev/obsidian-dev-utils/guides/cross-plugin-apis/), `watchPluginApi` is the whole of it:
 
 ```typescript
-import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import type { LinkPickerApi } from './api.d.ts';
 
-interface LinkPickerApi {
-  select(params: LinkPickerApiSelectParams): Promise<string>;
-}
+import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
 const ref = watchPluginApi<LinkPickerApi>({
   apiVersionRange: '^1',
@@ -132,18 +134,13 @@ const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 // → 'Person: [[Ada Lovelace|Ada]]'
 ```
 
-`select` resolves with the link text and **rejects** when the picker is dismissed — dismissing is the caller's cue that the user backed out, which is different from the empty string that `No link` returns. Every option is optional; anything omitted falls back to the settings above.
+If it does not — and is not going to — you still need no dependency on anything. The registry, and the two events a plugin announces itself through, are a documented wire protocol reachable with the `obsidian` module alone; [Plugin API protocol](https://mnaoumov.dev/obsidian-dev-utils/guides/plugin-api-protocol/) is that route written out, and `api.d.ts` types it just as well, since nothing in that file imports the library either.
+
+`select` resolves with the link text and **rejects** when the picker is dismissed — dismissing is the caller's cue that the user backed out, which is different from the empty string that `No link` returns. Every option is optional and anything omitted falls back to the settings above; three are worth knowing before you design around the API:
 
 - **`createNote`** — called when the user picks `Create new`, and given the folder the picker is currently rooted at plus what they typed. This is the hook the whole API exists for: validating a name, deriving a subfolder from it, seeding frontmatter and applying a template are vault conventions, and none of them are expressible in settings. Without it the plugin creates an empty note.
-- **`folderPath`** — the folder the picker opens rooted at. A starting point, not a fence.
-- **`includeSubfolders`** — whether it starts with subfolder contents included.
-- **`initialQuery`** — seeds the input, so a picker opened over a selection starts filtered by it.
-- **`prefix`** and **`suffix`** — wrap the link. A prefix of `"Person: "` produces `Person: [[Ada]]`; plain strings rather than field names, so `"- "` or `"` work too.
-- **`shouldApplyPrefixSuffixWhenNoLinkSelected`** — whether the prefix and suffix are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
-- **`placeholder`** — the modal's placeholder text.
-- **`shouldAllowCreate`** — whether `Create new` is offered at all.
+- **`prefix`** and **`suffix`** wrap the link — a prefix of `"Person: "` produces `Person: [[Ada]]` — and **`shouldApplyPrefixSuffixWhenNoLinkSelected`** decides whether they are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
 - **`sourcePathOrFile`** — the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.
-- **`excludedPathPatterns`**, **`folderNoteConfig`**, **`segmentMatchMode`**, **`titlePropertyName`**, **`updatedPropertyName`** — per-call overrides of the matching settings.
 
 [06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>) in the demo vault has a runnable version of the above.
 
