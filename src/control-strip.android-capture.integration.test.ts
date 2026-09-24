@@ -197,7 +197,7 @@ describe('The control strip, under a real finger on Android', () => {
     expect(snapshot.controls.map((control) => control.label)).toEqual(CONTROL_LABELS);
 
     // Reachable, stated as a number rather than as an impression: every control lies inside the viewport,
-    // Which is the thing a small screen puts at risk.
+    // which is the thing a small screen puts at risk.
     for (const control of snapshot.controls) {
       expect(control.rect.width).toBeGreaterThan(0);
       expect(control.rect.top).toBeGreaterThanOrEqual(0);
@@ -205,7 +205,7 @@ describe('The control strip, under a real finger on Android', () => {
     }
 
     // The strip is the picker's only affordance on a phone, so it must not be spending that width on keys
-    // Nobody can press. `renderControls` suppresses the hint on mobile; this is where that is confirmed on
+    // nobody can press. `renderControls` suppresses the hint on mobile; this is where that is confirmed on
     // A device rather than against a mocked `Platform`.
     for (const control of snapshot.controls) {
       expect(control.hasHotkeyHint).toBe(false);
@@ -215,7 +215,7 @@ describe('The control strip, under a real finger on Android', () => {
     await capture(deviceId, '01-strip');
 
     // `Folders only` on: the two controls it would empty the list with must go DISABLED, and must still be
-    // There. Removing them would reflow the strip under the finger that is still on it.
+    // there. Removing them would reflow the strip under the finger that is still on it.
     await tapControl('Folders only');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'Folders only').isPressed).toBe(true);
@@ -230,7 +230,7 @@ describe('The control strip, under a real finger on Android', () => {
     expect(findControl(snapshot, 'All files').isDisabled).toBe(false);
 
     // The query is PRESSED into the field key by key, not assigned to it — so what follows is a real
-    // Search, in the state a thumb would leave it in.
+    // search, in the state a thumb would leave it in.
     const query = 'Ada';
     await typeQuery(query);
     snapshot = await readStrip();
@@ -239,10 +239,10 @@ describe('The control strip, under a real finger on Android', () => {
     await capture(deviceId, '03-query-typed');
 
     // THE `preventDefault` PROOF. A touch on a control is a `mousedown` on something that is not the
-    // Search field; without the handler's `preventDefault` the field loses focus, and a search in progress
-    // Ends mid-word. Only a real touch can show this — `click()` never dispatches the `mousedown`. The
-    // Pressed assertion is what keeps the other two from passing vacuously: no `mousedown`, no click, no
-    // Toggle.
+    // search field; without the handler's `preventDefault` the field loses focus, and a search in progress
+    // ends mid-word. Only a real touch can show this — `click()` never dispatches the `mousedown`. The
+    // pressed assertion is what keeps the other two from passing vacuously: no `mousedown`, no click, no
+    // toggle.
     await tapControl('Subfolders');
     snapshot = await readStrip();
     expect(findControl(snapshot, 'Subfolders').isPressed).toBe(true);
@@ -262,7 +262,7 @@ describe('The control strip, under a real finger on Android', () => {
     await capture(deviceId, '05-toggles');
 
     // `Create new` — the first of the two ACTIONS, which end the picker rather than restate it. The typed
-    // Query is the new note's name, and what comes back is a link to it, prefix and all.
+    // query is the new note's name, and what comes back is a link to it, prefix and all.
     await tapControl('Create new');
     snapshot = await readStrip();
     expect(snapshot.isPickerOpen).toBe(false);
@@ -271,7 +271,7 @@ describe('The control strip, under a real finger on Android', () => {
     await capture(deviceId, '06-create-new');
 
     // `No link` — the second action, and the one that has to leave NOTHING behind, prefix included. It is
-    // Also how this suite ends without a picker open for the next one to trip over.
+    // also how this suite ends without a picker open for the next one to trip over.
     await openPicker();
     snapshot = await readStrip();
     expect(snapshot.isPickerOpen).toBe(true);
@@ -421,7 +421,7 @@ async function seedVault(): Promise<void> {
       const names = ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'];
 
       // `vault.create` refuses a path whose folder does not exist, and `createFolder` refuses one that
-      // Does — so both are guarded, which also makes a re-run against a surviving vault a no-op.
+      // does — so both are guarded, which also makes a re-run against a surviving vault a no-op.
       if (!app.vault.getAbstractFileByPath(folderPath)) {
         await app.vault.createFolder(folderPath);
       }

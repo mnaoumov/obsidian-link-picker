@@ -45,8 +45,8 @@ export class PickerCommandsComponent extends ComponentEx {
 
   public override async onloadAsync(): Promise<void> {
     // Both events, because the settings reach this component by two different routes: a save is the
-    // Settings tab writing, and a load is `data.json` changing under Obsidian — a sync client, or the
-    // User editing the file by hand.
+    // settings tab writing, and a load is `data.json` changing under Obsidian — a sync client, or the
+    // user editing the file by hand.
     for (const eventName of ['loadSettings', 'saveSettings'] as const) {
       registerAsyncEvent(
         this,
