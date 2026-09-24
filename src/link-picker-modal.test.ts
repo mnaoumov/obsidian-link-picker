@@ -11,8 +11,7 @@ import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
 import {
   App,
   Platform,
-  Scope,
-  Vault
+  Scope
 } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -232,14 +231,8 @@ describe('LinkPickerModal', () => {
     });
 
     it('should not list the folder it is already inside among that folder\'s own contents', () => {
-      // Obsidian's own `Vault.recurseChildren` hands the callback the folder it was given BEFORE its
-      // descendants; the test mock only walks the descendants, so the real contract is restored here —
-      // without it, the folder would appear as an empty-named row inside itself.
-      const { recurseChildren } = Vault;
-      vi.spyOn(Vault, 'recurseChildren').mockImplementation((folder, callback) => {
-        callback(folder);
-        recurseChildren(folder, callback);
-      });
+      // `Vault.recurseChildren` hands the callback the folder it was given BEFORE its descendants.
+      // Without skipping it, the folder would appear as an empty-named row inside itself.
       const modal = openModal({
         folderPath: 'Notes',
         includeSubfolders: true
@@ -786,9 +779,9 @@ describe('LinkPickerModal', () => {
       expect(el.querySelectorAll('div')).toHaveLength(0);
     });
 
-    it('should skip a blank alias rather than render an empty line for it', () => {
-      // A folder row carries its folder note's aliases wholesale, so a blank one in the frontmatter
-      // reaches the renderer where a note row's never would.
+    it('should render no line for a blank alias in the folder note\'s frontmatter', () => {
+      // A folder row carries its folder note's aliases wholesale.
+      // Obsidian's parseFrontMatterAliases drops a blank entry, so none ever reaches the renderer.
       appMock.metadataCache.setCache__('Notes/Notes.md', { frontmatter: { aliases: ['', 'Writing'] } });
       const modal = openModal({});
       const el = createDiv();
