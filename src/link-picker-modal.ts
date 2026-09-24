@@ -132,9 +132,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
     fragment.append(document.createTextNode(item.relativePath));
 
     for (const alias of item.aliases) {
-      if (!alias) {
-        continue;
-      }
       const aliasEl = createDiv();
       aliasEl.append(getIcon('lucide-forward') ?? '', document.createTextNode(` ${alias}`));
       fragment.append(aliasEl);
