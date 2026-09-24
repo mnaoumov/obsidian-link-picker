@@ -73,7 +73,7 @@ export class Plugin extends PluginBase {
 
     // The half of the plugin the extraction was actually for.
     // The 17 Templater templates it came from all want the STRING, not an edit at a cursor, so a
-    // Command-only plugin would serve none of them.
+    // command-only plugin would serve none of them.
     // Built here and published by the base through `getPluginApis`, which registers the revocation itself.
     this.linkPickerApi = new LinkPickerApi(linkPickerComponent);
 
@@ -91,7 +91,7 @@ export class Plugin extends PluginBase {
     ]);
 
     // Registered after the generic command, and separately, because these come and go with the settings
-    // While the generic one is always there.
+    // while the generic one is always there.
     this.addChild(
       new PickerCommandsComponent({
         commandHandlerComponent: this.commandHandlerComponent,

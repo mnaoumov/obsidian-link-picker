@@ -202,7 +202,7 @@ beforeAll(async () => {
 describe('mobile store screenshots', () => {
   it('1 - the picker rooted inside a folder', async () => {
     // The wrapper spans the whole shot, so the setting is live before the picker's field takes focus and
-    // The device is put back exactly as it was found even if the capture throws.
+    // the device is put back exactly as it was found even if the capture throws.
     await withSoftKeyboardEnabled({
       async callback() {
         const rows = await openPicker({ folderQuery: 'Legal', query: '' });
@@ -221,9 +221,9 @@ describe('mobile store screenshots', () => {
 
         expect(rows.length).toBeGreaterThan(1);
         // The caption names the ORDER rather than the query. The query is legible now — raising the
-        // Keyboard lifted the field clear of the caption band, which used to cover it — but the four
-        // Ranked rows are what the shot is evidence FOR, and the query is only the input that produced
-        // Them.
+        // keyboard lifted the field clear of the caption band, which used to cover it — but the four
+        // ranked rows are what the shot is evidence FOR, and the query is only the input that produced
+        // them.
         await shoot(2, 'Exact match first, then prefix, then the rest');
       },
       deviceId
@@ -632,8 +632,8 @@ async function shoot(index: number, caption: string): Promise<void> {
   }
 
   // The DEVICE's framebuffer, not the harness's screenshot. `captureObsidianScreenshot` goes through
-  // Appium in the WebView context, so it photographs the web page: no status bar, and — the reason this
-  // Suite cannot use it — no keyboard, because the IME is a system window and not part of the page.
+  // appium in the WebView context, so it photographs the web page: no status bar, and — the reason this
+  // suite cannot use it — no keyboard, because the IME is a system window and not part of the page.
   const bytes = await captureDeviceScreenshot({ deviceId });
 
   const labeled = await labelScreenshot(await paintOutStatusBar(bytes), { text: caption });
