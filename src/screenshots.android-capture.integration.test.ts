@@ -43,9 +43,9 @@
  * different offset between emulator boots. The keyboard is raised while the field is EMPTY (the harness's
  * `shouldEmptyFieldForTouch`, on by default), because the touch that raises it draws Chromium's selection
  * handle when it lands inside text — which is how shot 2 shipped a teal handle twice. And the caret is not
- * painted at all (`hideCaret`), because it blinks and no settle can outwait a blink. Only the last of the
- * three is still this file's: the caret is a presentation choice about THIS picker, where the other two
- * are true of any device capture.
+ * painted at all (the harness's `hideCaret`), because it blinks and no settle can outwait a blink. All three
+ * are the harness's now; the caret is the one this file still has to ASK for, since a device capture reads
+ * the framebuffer and so cannot hide it the way `captureObsidianScreenshot` does by default.
  *
  * **So a re-capture that changes a PNG is a real change, and worth reading as one.** Prove it the way it
  * was proved here: capture twice and compare the two frames byte for byte.
@@ -73,6 +73,7 @@ import process from 'node:process';
 import {
   captureDeviceScreenshot,
   evalInObsidian,
+  hideCaret,
   labelScreenshot,
   paintOutStatusBar,
   pollInObsidian,
@@ -347,32 +348,6 @@ async function filterTo(text: string): Promise<void> {
 }
 
 /**
- * Stops the text caret in the open picker from being drawn.
- *
- * The caret BLINKS, so two captures of the same state disagree on a 2px column whenever they land in
- * opposite halves of the blink — 76 pixels at full contrast, measured between two runs of this suite.
- * There is nothing to wait for, since the next blink undoes whatever the last one did, so the caret is
- * simply not painted. The keyboard standing open is what shows the field has focus, and it is in frame.
- *
- * Set on the element rather than through a stylesheet: a lint rule refuses a `style` element outright,
- * and this is presentation for one capture rather than something the plugin ships.
- */
-async function hideCaret(): Promise<void> {
-  await evalInObsidian({
-    callback({ inputSelector }): void {
-      const input = document.querySelector(inputSelector);
-      if (!(input instanceof HTMLInputElement)) {
-        throw new TypeError('The picker has no input.');
-      }
-
-      input.setCssStyles({ caretColor: 'transparent' });
-    },
-    input: { inputSelector: INPUT_SELECTOR },
-    vaultPath: vaultPath()
-  });
-}
-
-/**
  * Opens the picker, navigates into a folder, and leaves it on screen for the capture.
  *
  * @param params - The folder to navigate into, and what to type once inside it.
@@ -498,8 +473,6 @@ async function settle(): Promise<void> {
  * @param caption - The caption drawn across the bottom of the frame.
  */
 async function shoot(index: number, caption: string): Promise<void> {
-  await hideCaret();
-
   // `raiseSoftKeyboard` empties the field for the touch and writes the query back afterwards — the touch
   // That raises the IME puts Chromium's handle under the caret when it lands inside TEXT, and the
   // Framebuffer photographs it, which is how shot 2 shipped a teal handle and shot 1 (empty field) did not.
@@ -512,14 +485,25 @@ async function shoot(index: number, caption: string): Promise<void> {
   });
   await expectControlStripClearOfKeyboard(snapshot);
 
-  // The write-back tells the page its query is there again, but says nothing about the rows the suggester
-  // Re-renders off it. The frame is the painted result, so it waits for the paint rather than for a state.
-  await settle();
+  // The caret blinks, and no settle can outwait a blink, so it is not painted at all.
+  // A device capture reads the framebuffer, so the harness cannot hide it for us the way `captureObsidianScreenshot` does.
+  // `hideCaret` acts on the FOCUSED element, which is the picker's field here: the keyboard just came up for it.
+  const caret = await hideCaret({ vaultPath: vaultPath() });
+  expect(caret.isHidden).toBe(true);
 
-  // The DEVICE's framebuffer, not the harness's screenshot. `captureObsidianScreenshot` goes through
-  // appium in the WebView context, so it photographs the web page: no status bar, and — the reason this
-  // suite cannot use it — no keyboard, because the IME is a system window and not part of the page.
-  const bytes = await captureDeviceScreenshot({ deviceId });
+  let bytes: Uint8Array;
+  try {
+    // The write-back tells the page its query is there again, but says nothing about the rows the suggester
+    // Re-renders off it. The frame is the painted result, so it waits for the paint rather than for a state.
+    await settle();
+
+    // The DEVICE's framebuffer, not the harness's screenshot. `captureObsidianScreenshot` goes through
+    // appium in the WebView context, so it photographs the web page: no status bar, and — the reason this
+    // suite cannot use it — no keyboard, because the IME is a system window and not part of the page.
+    bytes = await captureDeviceScreenshot({ deviceId });
+  } finally {
+    await caret.restore();
+  }
 
   const labeled = await labelScreenshot(
     await paintOutStatusBar(bytes, { heightInPixels: STATUS_BAR_HEIGHT_IN_PIXELS }),
