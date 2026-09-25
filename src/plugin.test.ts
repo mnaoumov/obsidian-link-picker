@@ -25,7 +25,7 @@ interface ComponentModuleActual {
 }
 
 // `getPluginApis` is protected on the base — the declaration is for the library, not for callers — so a test
-// Reads it through a probe rather than widening the plugin's own surface.
+// reads it through a probe rather than widening the plugin's own surface.
 interface PluginApisProbe {
   getPluginApis: () => PluginApiDeclaration[];
 }
@@ -100,7 +100,7 @@ describe('Plugin', () => {
 
   it('should publish the API, and take it away again when the plugin unloads', async () => {
     // Through the REAL registry rather than a spy on `publishPluginApi`: what matters is that a consumer
-    // Watching in the ordinary way finds the API, which mocking the publish would assert nothing about.
+    // watching in the ordinary way finds the API, which mocking the publish would assert nothing about.
     const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
     const component = new ComponentCls();
     const ref = watchPluginApi<LinkPickerApi>({

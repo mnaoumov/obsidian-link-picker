@@ -41,7 +41,7 @@ describe('LinkPickerApi', () => {
     const select = vi.fn(() => Promise.resolve('Person: [[Ada]]'));
 
     // Held through the DECLARATION in `api.d.ts`, not through the class, so the call below is typed the way a
-    // Consumer's is — which is what proves the `implements` link reaches a call site rather than only a header.
+    // consumer's is — which is what proves the `implements` link reaches a call site rather than only a header.
     const api: LinkPickerApiDeclaration = new LinkPickerApi(strictProxy<LinkPickerComponent>({ select }));
     const params: LinkPickerApiSelectParams = { folderPath: 'People' };
 
@@ -96,7 +96,7 @@ describe('LINK_PICKER_API_CONTRACT', () => {
 
     it('should accept a `TFile` source as well as a path', () => {
       // A REAL `TFile`, not a `strictProxy` of one: the schema tests it with `instanceof`, which is safe
-      // Here precisely because `TFile` comes from the one `obsidian` module every plugin shares.
+      // here precisely because `TFile` comes from the one `obsidian` module every plugin shares.
       const app = AppCls.createConfigured__();
       const file = TFileCls.create__(app.vault, 'People/Ada.md').asOriginalType2__();
 

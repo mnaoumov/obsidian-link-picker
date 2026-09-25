@@ -184,7 +184,7 @@ describe('LinkPickerComponent', () => {
       });
 
       // Restated rather than carried through by identity, which is what the published spelling costs: the
-      // Caller's `location` is a plain string, so the picker reads the config into the one it works with.
+      // caller's `location` is a plain string, so the picker reads the config into the one it works with.
       expect(lastParams().folderNoteConfig).toEqual(folderNoteConfig);
       expect(resolveFolderNoteConfig).not.toHaveBeenCalled();
     });

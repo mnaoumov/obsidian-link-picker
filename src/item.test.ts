@@ -32,7 +32,7 @@ const VAULT_FILES: Record<string, string> = {
   'Legal/Judge Smith.md': 'body',
 
   // `ur` is inside this one only as a subsequence (`Ultra`), and inside `Court.md` as a contiguous run —
-  // The one query the two match modes disagree about.
+  // the one query the two match modes disagree about.
   'Legal/Ultra brief.md': 'body'
 };
 
@@ -324,7 +324,7 @@ describe('sortItems', () => {
 
   it('should let the query outrank the updated date once the user has typed', () => {
     // `u e` ties on every ranking tier, so the ordering reaches the file properties — where the newer
-    // Note would win if the date still counted. It does not: what was typed decides.
+    // note would win if the date still counted. It does not: what was typed decides.
     const items = [
       buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md', updated: '2030-01-01' }),
       buildItem('Legal/Judge.md', { relativePath: 'Judge.md', updated: '2020-01-01' })
@@ -342,9 +342,18 @@ describe('sortItems', () => {
     expect(sortItems(items, '', buildSortContext()).map((item) => item.aliases[0] ?? '')).toEqual(['', 'Alpha']);
   });
 
+  it('should put a row with no alias first whichever order the rows arrive in', () => {
+    const items = [
+      buildItem('Legal/Judge.md', { relativePath: 'Judge.md' }),
+      buildItem('Legal/Judge.md', { aliases: ['Alpha'], relativePath: 'Judge.md' })
+    ];
+
+    expect(sortItems(items, '', buildSortContext()).map((item) => item.aliases[0] ?? '')).toEqual(['', 'Alpha']);
+  });
+
   it('should fall through every tier to the path when two notes match only by containing the terms', () => {
     // Neither note starts with, equals, or has a path part beginning with `u` or `e`, so all seven ranking
-    // Tiers tie and the ordering falls back to the file properties.
+    // tiers tie and the ordering falls back to the file properties.
     const items = [
       buildItem('Legal/Judgement.md', { relativePath: 'Judgement.md' }),
       buildItem('Legal/Judge.md', { relativePath: 'Judge.md' })

@@ -11,8 +11,7 @@ import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
 import {
   App,
   Platform,
-  Scope,
-  Vault
+  Scope
 } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -36,7 +35,7 @@ const {
 }));
 
 // Stubbed to skip the plugin-context initialization, but it still ADDS the classes: the control strip is
-// Addressed by them, so a no-op mock would make every assertion about it vacuous.
+// addressed by them, so a no-op mock would make every assertion about it vacuous.
 vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-context', () => ({
   addPluginCssClasses: (el: HTMLElement, cssClasses?: string | string[]): void => {
     el.addClass(...(typeof cssClasses === 'string' ? [cssClasses] : cssClasses ?? []));
@@ -232,14 +231,8 @@ describe('LinkPickerModal', () => {
     });
 
     it('should not list the folder it is already inside among that folder\'s own contents', () => {
-      // Obsidian's own `Vault.recurseChildren` hands the callback the folder it was given BEFORE its
-      // Descendants; the test mock only walks the descendants, so the real contract is restored here —
-      // Without it, the folder would appear as an empty-named row inside itself.
-      const { recurseChildren } = Vault;
-      vi.spyOn(Vault, 'recurseChildren').mockImplementation((folder, callback) => {
-        callback(folder);
-        recurseChildren(folder, callback);
-      });
+      // `Vault.recurseChildren` hands the callback the folder it was given BEFORE its descendants.
+      // Without skipping it, the folder would appear as an empty-named row inside itself.
       const modal = openModal({
         folderPath: 'Notes',
         includeSubfolders: true
@@ -292,7 +285,7 @@ describe('LinkPickerModal', () => {
       pressHotkey(modal, 'Alt', '4');
 
       // The way out survives the filter deliberately: the mode is for navigating, and a mode you cannot
-      // Leave would be a trap.
+      // leave would be a trap.
       expect(relativePaths(modal.getSuggestions(''))).toEqual([PARENT_RELATIVE_PATH, 'Deep']);
     });
 
@@ -318,7 +311,7 @@ describe('LinkPickerModal', () => {
       const modal = openModal({});
 
       // Obsidian types the character unless the handler says it took the key. Left unsaid, `Alt + 3`
-      // Also filters the list by `3` — and `Alt + 1`, which closes the picker, types into the note.
+      // also filters the list by `3` — and `Alt + 1`, which closes the picker, types into the note.
       expect(pressHotkey(modal, 'Alt', '1')).toBe(false);
       expect(pressHotkey(openModal({}), 'Alt', '2')).toBe(false);
       expect(pressHotkey(openModal({}), 'Alt', '3')).toBe(false);
@@ -333,7 +326,7 @@ describe('LinkPickerModal', () => {
       pressHotkey(modal, 'Alt', '4');
 
       // `true`, the same way `createNew` declines — Obsidian consumes on `false` and hands the key back on
-      // Anything else, so all six say so the one way.
+      // anything else, so all six say so the one way.
       expect(pressHotkey(modal, 'Alt', '1')).toBe(true);
       expect(pressHotkey(modal, 'Alt', '2')).toBe(true);
       expect(pressHotkey(modal, 'Alt', '3')).toBe(true);
@@ -355,7 +348,7 @@ describe('LinkPickerModal', () => {
     it('should name the setting rather than what pressing would do next', () => {
       // The instruction bar this replaced had to flip its wording — `Include subfolders` became
       // `Exclude subfolders` once it was on. A control carries its state instead, so the label holds
-      // Still and only the pressed look changes.
+      // still and only the pressed look changes.
       const modal = openModal({});
 
       clickControl(modal, 'Subfolders');
@@ -449,7 +442,7 @@ describe('LinkPickerModal', () => {
 
     it('should show each control\'s hotkey where there is a keyboard to press it on', () => {
       // The library's format, not one of ours: `ModalCommandBuilder` renders the hint, and every picker
-      // Built on it shows it this way.
+      // built on it shows it this way.
       expect(controlHotkeys(openModal({}))).toEqual([
         'alt 1',
         'shift ↵',
@@ -491,7 +484,7 @@ describe('LinkPickerModal', () => {
 
     it('should list the vault root properly after climbing out of a top-level folder', () => {
       // The root's path is `/`, not the empty string. Left as it comes, it reads as a folder with a
-      // Parent and two leading characters to strip, which mangles every row on the way back out.
+      // parent and two leading characters to strip, which mangles every row on the way back out.
       const modal = openModal({ folderPath: 'Notes' });
 
       modal.selectSuggestion(itemFor(modal, PARENT_RELATIVE_PATH), mouseEvent());
@@ -622,7 +615,7 @@ describe('LinkPickerModal', () => {
 
     it('should still reject after navigating, since navigating is not choosing', () => {
       // Navigation used to go through `selectSuggestion`, which marked the picker as having produced a
-      // Result — so dismissing it after one drill-in left the caller's promise pending forever.
+      // result — so dismissing it after one drill-in left the caller's promise pending forever.
       const modal = openModal({});
 
       modal.selectSuggestion(itemFor(modal, 'Notes'), mouseEvent());
@@ -786,9 +779,9 @@ describe('LinkPickerModal', () => {
       expect(el.querySelectorAll('div')).toHaveLength(0);
     });
 
-    it('should skip a blank alias rather than render an empty line for it', () => {
-      // A folder row carries its folder note's aliases wholesale, so a blank one in the frontmatter
-      // Reaches the renderer where a note row's never would.
+    it('should render no line for a blank alias in the folder note\'s frontmatter', () => {
+      // A folder row carries its folder note's aliases wholesale.
+      // Obsidian's parseFrontMatterAliases drops a blank entry, so none ever reaches the renderer.
       appMock.metadataCache.setCache__('Notes/Notes.md', { frontmatter: { aliases: ['', 'Writing'] } });
       const modal = openModal({});
       const el = createDiv();
@@ -862,7 +855,7 @@ describe('LinkPickerModal', () => {
       appMock.vault.setConfig('spellcheck', false);
 
       // Read in both directions on purpose: a single reading with the setting ON is indistinguishable
-      // From a box that is simply always checked, so only the pair proves it FOLLOWS the setting.
+      // from a box that is simply always checked, so only the pair proves it FOLLOWS the setting.
       expect(openModal({}).inputEl.getAttribute('spellcheck')).toBe('false');
     });
 

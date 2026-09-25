@@ -132,9 +132,6 @@ export class LinkPickerModal extends SuggestModal<Item> {
     fragment.append(document.createTextNode(item.relativePath));
 
     for (const alias of item.aliases) {
-      if (!alias) {
-        continue;
-      }
       const aliasEl = createDiv();
       aliasEl.append(getIcon('lucide-forward') ?? '', document.createTextNode(` ${alias}`));
       fragment.append(aliasEl);
@@ -145,14 +142,14 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
   public override selectSuggestion(value: Item, event_: KeyboardEvent | MouseEvent): void {
     // Choosing a folder navigates into it rather than picking it — the only way to reach a nested note
-    // Without typing its whole path. Handled HERE rather than in `onChooseSuggestion`, because the base
-    // Class closes the modal around that callback: on mobile the close lands after anything the callback
-    // Does, so reopening from there — inline or on the next tick — simply dismissed the picker. Never
-    // Closing it in the first place is both simpler and free of the ordering question.
+    // without typing its whole path. Handled HERE rather than in `onChooseSuggestion`, because the base
+    // class closes the modal around that callback: on mobile the close lands after anything the callback
+    // does, so reopening from there — inline or on the next tick — simply dismissed the picker. Never
+    // closing it in the first place is both simpler and free of the ordering question.
     //
     // The empty row is excluded by identity, not by type. It is backed by the vault ROOT, which IS a
-    // Folder, so a plain `isFolder` test would send `Alt + 1` navigating to the root instead of
-    // Declining the link.
+    // folder, so a plain `isFolder` test would send `Alt + 1` navigating to the root instead of
+    // declining the link.
     if (value !== this.emptyItem && isFolder(value.file)) {
       this.navigateTo(value.file.path);
       return;
@@ -169,7 +166,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     if (this.folderPath) {
       // Only the vault root has no parent, and the root's path is empty — so inside this branch the
-      // Parent always exists, and asserting it says so without leaving a branch that can never be taken.
+      // parent always exists, and asserting it says so without leaving a branch that can never be taken.
       const parent = ensureNonNullable(getFolder({ app: this.app, pathOrFolder: this.folderPath }).parent, 'A non-root folder always has a parent');
       items.unshift({
         ...createEmptyItem(parent),
@@ -313,7 +310,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
     this.selectSuggestion(this.emptyItem, event_);
 
     // Explicitly consumed, unlike the other hotkeys: this one CLOSES the picker, so without saying so the
-    // Keypress carries on to whatever gains focus next and types the digit into the note being edited.
+    // keypress carries on to whatever gains focus next and types the digit into the note being edited.
     return false;
   }
 
@@ -433,11 +430,8 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   private isFolderNote(file: TAbstractFile): boolean {
-    if (!isFile(file) || !file.parent) {
-      return false;
-    }
-
-    return resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file.parent })?.path === file.path;
+    return isFile(file) && file.parent !== null
+      && resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file.parent })?.path === file.path;
   }
 
   /**
@@ -450,7 +444,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
   private navigateTo(folderPath: string): void {
     // Normalized because the vault ROOT's path is `/`, and `..` out of a top-level folder lands on it.
     // Left as `/` it is truthy, so the picker would look for a parent the root does not have and would
-    // Slice two characters off every row's relative path.
+    // slice two characters off every row's relative path.
     this.folderPath = normalizeFolderPath(folderPath);
     this.shouldShowOnlyFolders = false;
     this.inputEl.value = '';
@@ -476,7 +470,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }
 
     // Zero-padded so it still sorts lexicographically alongside the ISO strings a frontmatter property
-    // Holds — the comparator does one `localeCompare` and must not care which source a value came from.
+    // holds — the comparator does one `localeCompare` and must not care which source a value came from.
     return isFile(file) ? String(file.stat.mtime).padStart(EPOCH_DIGITS, '0') : '';
   }
 
@@ -535,7 +529,7 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
   private update(): void {
     // Re-STATED, never rebuilt: replacing the strip on every keystroke would replace an element the
-    // Pointer may be about to click.
+    // pointer may be about to click.
     this.modalCommands.refresh();
     this.refreshSpellcheck();
     this.items = this.buildItems();
