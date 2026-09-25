@@ -430,11 +430,8 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   private isFolderNote(file: TAbstractFile): boolean {
-    if (!isFile(file) || !file.parent) {
-      return false;
-    }
-
-    return resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file.parent })?.path === file.path;
+    return isFile(file) && file.parent !== null
+      && resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder: file.parent })?.path === file.path;
   }
 
   /**
