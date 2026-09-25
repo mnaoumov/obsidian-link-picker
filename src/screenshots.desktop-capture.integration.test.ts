@@ -200,6 +200,32 @@ async function filterTo(text: string): Promise<void> {
 }
 
 /**
+ * Stops the text caret in the open picker from being drawn.
+ *
+ * The caret BLINKS, so two captures of the same state disagree on a 1px column whenever they land in
+ * opposite halves of the blink — 20 pixels of `screenshot-desktop-2.png`, measured between two runs.
+ * There is nothing to wait for, since the next blink undoes whatever the last one did, so the caret is
+ * simply not painted. The field keeps its focus ring, which is what shows it has focus.
+ *
+ * Set on the element rather than through a stylesheet: a lint rule refuses a `style` element outright,
+ * and this is presentation for one capture rather than something the plugin ships.
+ */
+async function hideCaret(): Promise<void> {
+  await evalInObsidian({
+    callback({ inputSelector }): void {
+      const input = document.querySelector(inputSelector);
+      if (!(input instanceof HTMLInputElement)) {
+        throw new TypeError('The picker has no input.');
+      }
+
+      input.setCssStyles({ caretColor: 'transparent' });
+    },
+    input: { inputSelector: INPUT_SELECTOR },
+    vaultPath: vaultPath()
+  });
+}
+
+/**
  * Opens the picker, navigates into a folder, and leaves it on screen for the capture.
  *
  * @param params - The folder to navigate into, and what to type once inside it.
@@ -250,6 +276,8 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
   if (params.query) {
     await filterTo(params.query);
   }
+
+  await hideCaret();
 
   return await pollRows('the picker showed nothing to photograph', (rows: string[]): boolean => rows.length > 0);
 }
