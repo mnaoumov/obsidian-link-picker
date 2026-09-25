@@ -311,11 +311,7 @@ function compareByFileProperties(a: QueryItem, b: QueryItem, query: string, sort
   }
 
   const pathSort = a.item.relativePath.localeCompare(b.item.relativePath);
-  if (pathSort !== 0) {
-    return pathSort;
-  }
-
-  return (a.item.aliases[0] ?? '').localeCompare(b.item.aliases[0] ?? '');
+  return pathSort === 0 ? (a.item.aliases[0] ?? '').localeCompare(b.item.aliases[0] ?? '') : pathSort;
 }
 
 function compareByQueryTiers(a: QueryItem, b: QueryItem): number {
@@ -325,11 +321,13 @@ function compareByQueryTiers(a: QueryItem, b: QueryItem): number {
       return tierSort;
     }
 
-    if (tier(a)) {
-      const folderSort = rankFirst(a, b, (queryItem) => queryItem.item.isFolder);
-      if (folderSort !== 0) {
-        return folderSort;
-      }
+    if (!tier(a)) {
+      continue;
+    }
+
+    const folderSort = rankFirst(a, b, (queryItem) => queryItem.item.isFolder);
+    if (folderSort !== 0) {
+      return folderSort;
     }
   }
 
