@@ -12,13 +12,15 @@
     "brace-expansion-upstream - the alias that installs the patched brace-expansion 5.x. Its only consumer is patches/brace-expansion-callable/index.js, which depcheck does not scan as project source. See pinned-versions.json's brace-expansion entry.",
     "czg - run as a CLI by scripts/commit.ts.",
     "husky - installed by scripts/prepare.ts; the hooks in .husky/ are its output.",
-    "nano-staged - .husky/pre-commit runs it; configured by scripts/nano-staged-config.ts."
+    "nano-staged - .husky/pre-commit runs it; configured by scripts/nano-staged-config.ts.",
+    "sharp - obsidian-integration-testing's OPTIONAL peer, which it loads at runtime through its own importSharp. labelScreenshot and paintOutStatusBar in screenshots.android-capture.integration.test.ts both need it installed, and neither names it, so a capture run fails on a missing sharp the moment this entry is taken as licence to uninstall it. It was imported directly here until the local paintOutStatusBar moved into the harness."
   ],
   "ignores": [
     "better-typescript-lib",
     "brace-expansion-upstream",
     "czg",
     "husky",
-    "nano-staged"
+    "nano-staged",
+    "sharp"
   ]
 }

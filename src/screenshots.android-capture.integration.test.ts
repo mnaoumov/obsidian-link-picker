@@ -24,9 +24,9 @@
  * **Both of those now come from the harness**, not from this file. `withSoftKeyboardEnabled` owns the
  * device setting and its exact restore (including restoring a setting that had never been written, which
  * takes a delete rather than a write); `raiseSoftKeyboard` owns the touch, the settle, the geometric
- * did-it-come-up test and the framebuffer diagnostic a failure leaves behind. This suite was where that
- * recipe was worked out by hand, so it is also the regression test for the shared version: its two frames
- * must come back materially unchanged.
+ * did-it-come-up test, the framebuffer diagnostic a failure leaves behind, AND the emptying of the field
+ * the touch lands in. This suite was where that whole recipe was worked out by hand, so it is also the
+ * regression test for the shared version: its two frames must come back BYTE-identical, and do.
  *
  * What deliberately stays here is the assertion that is about the PRODUCT rather than the keyboard —
  * every control-strip button still above the lifted field. The harness returns the geometry it decided on
@@ -37,12 +37,15 @@
  * found by capturing twice and diffing, not by reasoning. A framebuffer carries the status bar, and a
  * status bar carries a wall clock, a battery that charges while the emulator runs and a radio that comes
  * and goes, so re-running this suite on an unchanged tree used to rewrite both PNGs with content nobody
- * could commit. The band is therefore PAINTED OUT (`paintOutStatusBar`) rather than pinned: SystemUI's
- * demo mode held the clock at a fixed `12:00` and two runs still disagreed on 1823 full-contrast pixels,
- * because the bar's leading group is laid out at a different offset between emulator boots. The keyboard
- * is raised while the field is EMPTY (`shoot`), because the touch that raises it draws Chromium's
- * selection handle when it lands inside text — which is how shot 2 shipped a teal handle twice. And the
- * caret is not painted at all (`hideCaret`), because it blinks and no settle can outwait a blink.
+ * could commit. The band is therefore PAINTED OUT (the harness's `paintOutStatusBar`, given the height
+ * this AVD measures) rather than pinned: SystemUI's demo mode held the clock at a fixed `12:00` and two
+ * runs still disagreed on 1823 full-contrast pixels, because the bar's leading group is laid out at a
+ * different offset between emulator boots. The keyboard is raised while the field is EMPTY (the harness's
+ * `shouldEmptyFieldForTouch`, on by default), because the touch that raises it draws Chromium's selection
+ * handle when it lands inside text — which is how shot 2 shipped a teal handle twice. And the caret is not
+ * painted at all (`hideCaret`), because it blinks and no settle can outwait a blink. Only the last of the
+ * three is still this file's: the caret is a presentation choice about THIS picker, where the other two
+ * are true of any device capture.
  *
  * **So a re-capture that changes a PNG is a real change, and worth reading as one.** Prove it the way it
  * was proved here: capture twice and compare the two frames byte for byte.
@@ -71,6 +74,7 @@ import {
   captureDeviceScreenshot,
   evalInObsidian,
   labelScreenshot,
+  paintOutStatusBar,
   pollInObsidian,
   raiseSoftKeyboard,
   readPngDimensions,
@@ -78,8 +82,6 @@ import {
   withSoftKeyboardEnabled
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
-// eslint-disable-next-line import-x/no-named-as-default -- sharp's ESM entry exports only the default; the named `sharp` the rule points at exists in the typings alone, where it is the very binding the default re-exports. `import { sharp } from 'sharp'` therefore typechecks and then throws `does not provide an export named 'sharp'` at runtime.
-import sharp from 'sharp';
 import {
   beforeAll,
   describe,
@@ -139,27 +141,15 @@ const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 /**
  * How tall the device's status bar is, in framebuffer pixels.
  *
- * 24dp at this AVD's density 320, and measured rather than assumed: the bar's own content occupies rows
- * 8 to 37 of the frame, rows 38 to 47 are empty, and Obsidian's top chrome starts at exactly row 48.
- * {@link expectStatusBarBandIsClearOfChrome} fails the capture if that ever stops being true, because a
- * band that reached into the app would paint over the product rather than over the device.
+ * The harness deliberately has no default for this, because a wrong height paints over the product rather
+ * than failing: it is one AVD's measurement, not a constant of Android. 24dp at this AVD's density 320,
+ * and measured rather than assumed — the bar's own content occupies rows 8 to 37 of the frame, rows 38 to
+ * 47 are empty, and Obsidian's top chrome starts at exactly row 48. `paintOutStatusBar`'s own
+ * clear-of-chrome check fails the capture if that ever stops being true, so this number cannot go stale
+ * quietly; the sample inset and edge margin it reads the band with are the harness's defaults, which are
+ * the 4px and 100px this file used to declare for itself.
  */
 const STATUS_BAR_HEIGHT_IN_PIXELS = 48;
-
-/**
- * Where the background color under the status bar is read from — the middle of the band's empty rows.
- *
- * Sampled rather than hardcoded, so the frame stays seamless if the theme's background ever changes.
- */
-const STATUS_BAR_BACKGROUND_SAMPLE_Y = STATUS_BAR_HEIGHT_IN_PIXELS - 4;
-
-/**
- * How far in from each edge the band's clear-of-chrome check looks.
- *
- * The device's rounded corners darken a handful of pixels at both ends of every row in the band, and they
- * are constant; the check is about what the APP draws, so it ignores them.
- */
-const STATUS_BAR_EDGE_MARGIN_IN_PIXELS = 100;
 
 let deviceId = '';
 
@@ -230,21 +220,6 @@ describe('mobile store screenshots', () => {
     });
   });
 });
-
-/**
- * As much of a raw frame's geometry as the band work needs, which is what sharp reports beside its pixels.
- */
-interface FrameGeometry {
-  /**
-   * How many bytes each pixel occupies.
-   */
-  readonly channels: number;
-
-  /**
-   * The frame's width in pixels.
-   */
-  readonly width: number;
-}
 
 interface OpenPickerParams {
   readonly folderQuery: string;
@@ -323,7 +298,14 @@ async function closeAnyOpenPicker(): Promise<void> {
  * keyboard that covered it would be a worse frame than the empty band it replaced. The strip sits above
  * the field, and the field is now above the keyboard, so a strip above the field is a strip in the clear.
  *
- * @param snapshot - The geometry the harness settled on once the keyboard was up.
+ * **The two rectangles are read on opposite sides of the harness's write-back**, and that is safe here for
+ * the same reason the lift test works at all: both the field and the strip are anchored to the BOTTOM of
+ * the modal, above the keyboard. What the restored query changes is the number of rows above them, not
+ * where they sit. A picker that ever anchored them to its content instead would need this read again after
+ * the restore, which is exactly what `raiseSoftKeyboard` warns about.
+ *
+ * @param snapshot - The geometry the harness settled on once the keyboard was up, read with the field
+ * empty for the touch.
  */
 async function expectControlStripClearOfKeyboard(snapshot: SoftKeyboardViewportSnapshot): Promise<void> {
   const raisedInputRect = snapshot.inputRect;
@@ -338,32 +320,6 @@ async function expectControlStripClearOfKeyboard(snapshot: SoftKeyboardViewportS
     expect(rect.top).toBeGreaterThanOrEqual(0);
     expect(rect.top + rect.height).toBeLessThanOrEqual(raisedInputRect.top);
   }
-}
-
-/**
- * Proves the band about to be painted over holds nothing but device chrome.
- *
- * The band's height is a constant, and a constant can go stale — a taller status bar, or an Obsidian that
- * draws higher, would have this capture quietly paint over the product. So the rows just below the status
- * bar's own content are required to be one flat color all the way across: that is what an empty band
- * looks like, and it is what the sampled background color is read from.
- *
- * @param data - The frame's raw pixels.
- * @param info - Its geometry, as sharp reports it.
- */
-function expectStatusBarBandIsClearOfChrome(data: Uint8Array, info: FrameGeometry): void {
-  const rowStart = STATUS_BAR_BACKGROUND_SAMPLE_Y * info.width * info.channels;
-  const firstOffset = rowStart + STATUS_BAR_EDGE_MARGIN_IN_PIXELS * info.channels;
-  const colors = new Set<string>();
-
-  for (let x = STATUS_BAR_EDGE_MARGIN_IN_PIXELS; x < info.width - STATUS_BAR_EDGE_MARGIN_IN_PIXELS; x++) {
-    const offset = rowStart + x * info.channels;
-    colors.add(`${String(data[offset])},${String(data[offset + 1])},${String(data[offset + 2])}`);
-  }
-
-  expect(colors).toStrictEqual(
-    new Set([`${String(data[firstOffset])},${String(data[firstOffset + 1])},${String(data[firstOffset + 2])}`])
-  );
 }
 
 /**
@@ -472,52 +428,6 @@ async function openPicker(params: OpenPickerParams): Promise<string[]> {
 }
 
 /**
- * Fills the status-bar band with the background behind it, so the frame carries no device chrome.
- *
- * This is what makes the mobile half REPRODUCIBLE, and it is the one thing that does. The band is where
- * every varying pixel lives — the wall clock, a battery that charges while the emulator runs, a radio that
- * comes and goes — and pinning them is not enough: with SystemUI's demo mode holding the clock at a fixed
- * `12:00`, two runs still disagreed on 1823 full-contrast pixels, because the bar's leading group is laid
- * out at a different offset between emulator boots. So the band is removed rather than pinned, which also
- * retires the device settings that pinning it needed. Nothing in it is evidence about the picker, and a
- * listing frame without a status bar is what a listing frame normally looks like.
- *
- * Compositing over the captured frame is not a new liberty: `labelScreenshot` already draws the caption
- * band across the bottom of the same image.
- *
- * @param bytes - The device framebuffer, as captured.
- * @returns The same frame with the band painted out, as PNG bytes.
- */
-async function paintOutStatusBar(bytes: Uint8Array): Promise<Uint8Array> {
-  const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-
-  expectStatusBarBandIsClearOfChrome(data, info);
-
-  const sampleOffset = (STATUS_BAR_BACKGROUND_SAMPLE_Y * info.width + Math.floor(info.width / 2)) * info.channels;
-  const background = {
-    b: data[sampleOffset + 2] ?? 0,
-    g: data[sampleOffset + 1] ?? 0,
-    r: data[sampleOffset] ?? 0
-  };
-
-  return await sharp(bytes)
-    .composite([{
-      input: {
-        create: {
-          background,
-          channels: 3,
-          height: STATUS_BAR_HEIGHT_IN_PIXELS,
-          width: info.width
-        }
-      },
-      left: 0,
-      top: 0
-    }])
-    .png()
-    .toBuffer();
-}
-
-/**
  * Polls the picker's rows until the Node-side predicate accepts them.
  *
  * @param message - What to say if the rows never satisfy the predicate.
@@ -565,26 +475,6 @@ async function readControlRects(): Promise<ElementRect[]> {
 }
 
 /**
- * Reads what the picker's field currently holds.
- *
- * @returns The query, or the empty string when the field is empty.
- */
-async function readQuery(): Promise<string> {
-  return await evalInObsidian({
-    callback({ inputSelector }): string {
-      const input = document.querySelector(inputSelector);
-      if (!(input instanceof HTMLInputElement)) {
-        throw new TypeError('The picker has no input.');
-      }
-
-      return input.value;
-    },
-    input: { inputSelector: INPUT_SELECTOR },
-    vaultPath: vaultPath()
-  });
-}
-
-/**
  * Lets the frame finish painting.
  *
  * A poll can only say that the state behind a frame has arrived, never that the pixels have — so these
@@ -608,18 +498,13 @@ async function settle(): Promise<void> {
  * @param caption - The caption drawn across the bottom of the frame.
  */
 async function shoot(index: number, caption: string): Promise<void> {
-  // The keyboard is raised with the field EMPTY, and the query is typed back afterwards.
-  // Raising it takes a real touch, and a touch landing inside TEXT puts Chromium's handle under the caret.
-  // The framebuffer photographs it, which is how shot 2 shipped a teal selection handle and shot 1 did not.
-  // An empty editable is the one case Android draws no handle for, and a scripted value raises none at all.
   await hideCaret();
 
-  const query = await readQuery();
-
-  if (query) {
-    await filterTo('');
-  }
-
+  // `raiseSoftKeyboard` empties the field for the touch and writes the query back afterwards — the touch
+  // That raises the IME puts Chromium's handle under the caret when it lands inside TEXT, and the
+  // Framebuffer photographs it, which is how shot 2 shipped a teal handle and shot 1 (empty field) did not.
+  // The geometry it returns is read with the field still EMPTY, which is the state
+  // `expectControlStripClearOfKeyboard` has always asserted against: the strip is above the field either way.
   const snapshot = await raiseSoftKeyboard({
     deviceId,
     inputSelector: INPUT_SELECTOR,
@@ -627,16 +512,19 @@ async function shoot(index: number, caption: string): Promise<void> {
   });
   await expectControlStripClearOfKeyboard(snapshot);
 
-  if (query) {
-    await filterTo(query);
-  }
+  // The write-back tells the page its query is there again, but says nothing about the rows the suggester
+  // Re-renders off it. The frame is the painted result, so it waits for the paint rather than for a state.
+  await settle();
 
   // The DEVICE's framebuffer, not the harness's screenshot. `captureObsidianScreenshot` goes through
   // appium in the WebView context, so it photographs the web page: no status bar, and — the reason this
   // suite cannot use it — no keyboard, because the IME is a system window and not part of the page.
   const bytes = await captureDeviceScreenshot({ deviceId });
 
-  const labeled = await labelScreenshot(await paintOutStatusBar(bytes), { text: caption });
+  const labeled = await labelScreenshot(
+    await paintOutStatusBar(bytes, { heightInPixels: STATUS_BAR_HEIGHT_IN_PIXELS }),
+    { text: caption }
+  );
 
   expect(readPngDimensions(labeled)).toStrictEqual({
     heightInPixels: HEIGHT_IN_PIXELS,
