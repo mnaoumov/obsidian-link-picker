@@ -28,6 +28,7 @@ import {
 import { join } from 'node:path';
 import process from 'node:process';
 import {
+  applyObsidianTheme,
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
@@ -80,13 +81,18 @@ beforeAll(async () => {
   });
   await vault.syncToDevice();
 
+  /*
+   * Not a bare `app.changeTheme('obsidian')` inside the closure below.
+   * That only SCHEDULES the config save, a second later, and a config reload landing first drops `theme`, so every frame comes out light and silently overwrites the committed ones.
+   * `applyObsidianTheme` saves at once, waits for the theme on screen and on disk, and makes `captureObsidianScreenshot` refuse a frame that has left it.
+   */
+  await applyObsidianTheme({ theme: 'dark', vaultPath: vaultPath() });
+
   await pollInObsidian({
     poll({ app }): boolean {
       return app.vault.getFileByPath('Source.md') !== null;
     },
     start({ app }): void {
-      app.changeTheme('obsidian');
-
       // The picker is the subject, not the file explorer, so the sidebar is collapsed to give the modal the frame.
       app.workspace.leftSplit.collapse();
     },
