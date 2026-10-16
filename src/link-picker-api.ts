@@ -1,18 +1,12 @@
-import type { PathOrFile } from 'obsidian-dev-utils/obsidian/file-system';
-import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 import type { PluginApiContract } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
-
-import { TFile } from 'obsidian';
-import { z } from 'zod';
 
 import type {
   LinkPickerApi as LinkPickerApiDeclaration,
   LinkPickerApiSelectParams
 } from '../api.d.ts';
 import type { LinkPickerComponent } from './link-picker-component.ts';
-import type { SelectOptions } from './select.ts';
 
-import { SegmentMatchMode } from './item.ts';
+import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '../api-contract.ts';
 
 /**
  * The version of the API {@link LINK_PICKER_API_CONTRACT} describes.
@@ -24,77 +18,14 @@ import { SegmentMatchMode } from './item.ts';
 export const LINK_PICKER_API_VERSION = '1.1.0';
 
 /**
- * Validates a callback, which no schema can look inside.
- *
- * A cross-plugin call carries the function itself across the boundary, so all that can be said about it
- * is that it is callable — and that is still worth saying, because passing a non-function here fails deep
- * inside the picker rather than at the call that made the mistake.
- */
-const noteCreatorSchema = z.custom<NonNullable<SelectOptions['createNote']>>((value) => typeof value === 'function');
-
-/**
- * Validates a resolved folder-note setup.
- *
- * It carries a `resolveName` callback, so — as with {@link noteCreatorSchema} — only its shape at the top
- * level is checkable.
- */
-const folderNoteConfigSchema = z.custom<FolderNoteConfig>((value) => typeof value === 'object' && value !== null);
-
-/**
- * Validates the note a link is generated relative to.
- *
- * `TFile` comes from the `obsidian` module, which every plugin shares one instance of, so `instanceof` is
- * safe here in a way it would never be for a class from a bundled library — of which each plugin carries
- * its own copy.
- */
-const sourcePathOrFileSchema: z.ZodType<PathOrFile> = z.union([
-  z.string(),
-  z.custom<TFile>((value) => value instanceof TFile)
-]);
-
-/**
- * Validates {@link SelectOptions}.
- *
- * Deliberately loose rather than strict: a consumer compiled against a LATER contract version may pass an
- * option this version has never heard of, and rejecting the whole call for it would make every additive
- * change to the API a breaking one.
- */
-const selectOptionsSchema = z.looseObject({
-  createNote: noteCreatorSchema.optional(),
-  excludedPathPatterns: z.array(z.string()).optional(),
-  folderNoteConfig: folderNoteConfigSchema.optional(),
-  folderPath: z.string().optional(),
-  includeSubfolders: z.boolean().optional(),
-  initialQuery: z.string().optional(),
-  placeholder: z.string().optional(),
-  prefix: z.string().optional(),
-  segmentMatchMode: z.enum(SegmentMatchMode).optional(),
-  shouldAllowCreate: z.boolean().optional(),
-  shouldApplyPrefixSuffixWhenNoLinkSelected: z.boolean().optional(),
-  sourcePathOrFile: sourcePathOrFileSchema.optional(),
-  suffix: z.string().optional(),
-  titlePropertyName: z.string().optional(),
-  updatedPropertyName: z.string().optional()
-});
-
-/**
  * The contract {@link LINK_PICKER_API_VERSION} of the API satisfies.
  *
  * @remarks
- * Both schemas are SYNCHRONOUS on purpose. An asynchronous one cannot throw into the call it guards —
- * that call has already returned by the time the answer arrives — so its failures are only reported
- * through the debugger, where nobody is looking.
- *
- * Validation runs only while the `obsidian-dev-utils:PluginApi` debugger is enabled, so nothing here
- * costs a production caller anything.
+ * The repo-root `api-contract.ts` constant a consumer copies, so the provider and its consumers validate
+ * against one definition. Assigning it here is also what checks that the hand-written schemas are Standard
+ * Schemas the registry accepts.
  */
-export const LINK_PICKER_API_CONTRACT: PluginApiContract = {
-  select: {
-    // `input` validates the ARGUMENT LIST, hence a tuple — one member per parameter, and `select` takes one.
-    input: z.tuple([selectOptionsSchema]),
-    output: z.string()
-  }
-};
+export const LINK_PICKER_API_CONTRACT: PluginApiContract = COPYABLE_LINK_PICKER_API_CONTRACT;
 
 /**
  * What the plugin publishes for other plugins and scripts to call.

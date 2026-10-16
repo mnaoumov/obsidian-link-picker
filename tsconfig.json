@@ -28,6 +28,8 @@
   },
   "include": [
     "./.markdownlint-cli2.mts",
+    "./api-contract.ts",
+    "./api.d.ts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
     "./src/**/*.ts",

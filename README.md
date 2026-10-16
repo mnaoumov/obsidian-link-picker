@@ -112,6 +112,8 @@ The picker is callable from another plugin or a script, and that is where this p
 
 The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `obsidian-dev-utils`.
 
+Beside it, [`api-contract.ts`](./api-contract.ts) holds the published API's contract, `LINK_PICKER_API_CONTRACT`: for `select`, a schema over its arguments and a schema over what it resolves to. It is the constant this plugin publishes with the API, so copy it next to `api.d.ts` and pass it as the `contract`, and both sides check the same definition. It imports from `obsidian` and `./api.d.ts` alone, its schemas being hand-written [Standard Schema](https://standardschema.dev) objects. (It is not named `api.ts`: TypeScript would read `api.d.ts` as that file's own declarations.)
+
 The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.1.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
 
 If your plugin already uses [`obsidian-dev-utils`](https://mnaoumov.dev/obsidian-dev-utils/guides/cross-plugin-apis/), `watchPluginApi` is the whole of it:
@@ -121,10 +123,13 @@ import type { LinkPickerApi } from './api.d.ts';
 
 import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
+import { LINK_PICKER_API_CONTRACT } from './api-contract.ts';
+
 const ref = watchPluginApi<LinkPickerApi>({
   apiVersionRange: '^1',
   app: this.app,
   component: this,
+  contract: LINK_PICKER_API_CONTRACT,
   pluginId: 'link-picker'
 });
 

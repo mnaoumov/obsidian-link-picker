@@ -21,6 +21,7 @@ import type {
 } from '../api.d.ts';
 import type { LinkPickerComponent } from './link-picker-component.ts';
 
+import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '../api-contract.ts';
 import { SegmentMatchMode } from './item.ts';
 import {
   LINK_PICKER_API_CONTRACT,
@@ -60,7 +61,7 @@ describe('LINK_PICKER_API_CONTRACT', () => {
       const issues = validateInput([{
         createNote: (): Promise<TFile> => Promise.resolve(castTo<TFile>({})),
         excludedPathPatterns: ['/!!files'],
-        folderNoteConfig: {},
+        folderNoteConfig: { extensions: ['md'], isHidden: false, location: 'InsideFolder', resolveName: (): string => '' },
         folderPath: 'People',
         includeSubfolders: true,
         initialQuery: 'Ada',
@@ -113,6 +114,46 @@ describe('LINK_PICKER_API_CONTRACT', () => {
 
     it('should reject an argument list that is not one options bag', () => {
       expect(validateInput(['People'])).not.toEqual([]);
+      expect(validateInput([null])).not.toEqual([]);
+    });
+
+    it('should reject a missing or an extra argument', () => {
+      expect(validateInput([])).toEqual([{ message: 'Expected 1 argument, got 0.' }]);
+      expect(validateInput([{}, {}])).toEqual([{ message: 'Expected 1 argument, got 2.' }]);
+    });
+
+    it('should reject a value that is not an argument list at all', () => {
+      expect(validateInput({})).toEqual([{ message: 'Expected an argument list.' }]);
+    });
+
+    it('should reject a folder-note config missing any of its members, now that the whole shape is checked', () => {
+      const folderNoteConfig = { extensions: ['md'], isHidden: false, location: 'InsideFolder', resolveName: (): string => '' };
+
+      for (const broken of [
+        null,
+        {},
+        { ...folderNoteConfig, extensions: [1] },
+        { ...folderNoteConfig, isHidden: 'no' },
+        { ...folderNoteConfig, location: 'Auto' },
+        { ...folderNoteConfig, location: 1 },
+        { ...folderNoteConfig, resolveName: 'name' }
+      ]) {
+        expect(validateInput([{ folderNoteConfig: broken }])).toEqual([{ message: 'Expected a folder-note config.', path: [0, 'folderNoteConfig'] }]);
+      }
+    });
+
+    it('should name every failing option and what it expected', () => {
+      expect(validateInput([{ excludedPathPatterns: 'x', folderPath: 42, segmentMatchMode: 'Substringish' }])).toEqual([
+        { message: 'Expected an array of strings.', path: [0, 'excludedPathPatterns'] },
+        { message: 'Expected a string.', path: [0, 'folderPath'] },
+        { message: 'Expected one of Fuzzy, Substring.', path: [0, 'segmentMatchMode'] }
+      ]);
+    });
+
+    it('should hand a valid argument list back unchanged', () => {
+      const value = [{ folderPath: 'People' }];
+
+      expect(validate(castTo<StandardSchemaV1>(selectContract.input), value)).toEqual({ value });
     });
   });
 
@@ -126,8 +167,15 @@ describe('LINK_PICKER_API_CONTRACT', () => {
     });
 
     it('should reject a non-string, which is what a provider on a later contract might return', () => {
-      expect(validateOutput({ path: 'People/Ada.md' })).not.toEqual([]);
+      expect(validateOutput({ path: 'People/Ada.md' })).toEqual([{ message: 'Expected the link text.' }]);
     });
+  });
+
+  it('should be the copyable root constant, so the provider and its consumers check one definition', () => {
+    expect(LINK_PICKER_API_CONTRACT).toBe(COPYABLE_LINK_PICKER_API_CONTRACT);
+    expect(Object.keys(LINK_PICKER_API_CONTRACT)).toEqual(['select']);
+    expect(castTo<StandardSchemaV1>(selectContract.input)['~standard']).toMatchObject({ vendor: 'link-picker', version: 1 });
+    expect(castTo<StandardSchemaV1>(selectContract.output)['~standard']).toMatchObject({ vendor: 'link-picker', version: 1 });
   });
 
   it('should validate synchronously, because an async schema cannot throw into the call it guards', () => {
