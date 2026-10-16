@@ -31,6 +31,8 @@ import {
 
 const selectContract = castTo<PluginApiMethodContract>(LINK_PICKER_API_CONTRACT['select']);
 
+const SELECT_OPTIONS_MESSAGE = 'Expected select options, each of its declared type (createNote: a function; excludedPathPatterns: an array of strings; folderNoteConfig: a folder-note config; folderPath: a string; includeSubfolders: a boolean; initialQuery: a string; placeholder: a string; prefix: a string; segmentMatchMode: one of Fuzzy, Substring; shouldAllowCreate: a boolean; shouldApplyPrefixSuffixWhenNoLinkSelected: a boolean; sourcePathOrFile: a path or a file; suffix: a string; titlePropertyName: a string; updatedPropertyName: a string).';
+
 describe('LINK_PICKER_API_VERSION', () => {
   it('should be a semver version, because a consumer pins a range against it', () => {
     expect(LINK_PICKER_API_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
@@ -118,8 +120,8 @@ describe('LINK_PICKER_API_CONTRACT', () => {
     });
 
     it('should reject a missing or an extra argument', () => {
-      expect(validateInput([])).toEqual([{ message: 'Expected 1 argument, got 0.' }]);
-      expect(validateInput([{}, {}])).toEqual([{ message: 'Expected 1 argument, got 2.' }]);
+      expect(validateInput([])).toEqual([{ message: SELECT_OPTIONS_MESSAGE, path: [0] }]);
+      expect(validateInput([{}, {}])).toEqual([{ message: 'Expected at most 1 argument(s), got 2.' }]);
     });
 
     it('should reject a value that is not an argument list at all', () => {
@@ -129,25 +131,28 @@ describe('LINK_PICKER_API_CONTRACT', () => {
     it('should reject a folder-note config missing any of its members, now that the whole shape is checked', () => {
       const folderNoteConfig = { extensions: ['md'], isHidden: false, location: 'InsideFolder', resolveName: (): string => '' };
 
-      for (const broken of [
-        null,
-        {},
-        { ...folderNoteConfig, extensions: [1] },
-        { ...folderNoteConfig, isHidden: 'no' },
-        { ...folderNoteConfig, location: 'Auto' },
-        { ...folderNoteConfig, location: 1 },
-        { ...folderNoteConfig, resolveName: 'name' }
-      ]) {
-        expect(validateInput([{ folderNoteConfig: broken }])).toEqual([{ message: 'Expected a folder-note config.', path: [0, 'folderNoteConfig'] }]);
+      for (
+        const broken of [
+          null,
+          {},
+          { ...folderNoteConfig, extensions: [1] },
+          { ...folderNoteConfig, isHidden: 'no' },
+          { ...folderNoteConfig, location: 'Auto' },
+          { ...folderNoteConfig, location: 1 },
+          { ...folderNoteConfig, resolveName: 'name' }
+        ]
+      ) {
+        expect(validateInput([{ folderNoteConfig: broken }])).toEqual([{ message: SELECT_OPTIONS_MESSAGE, path: [0] }]);
       }
     });
 
-    it('should name every failing option and what it expected', () => {
+    it('should say what every option expects, in the one issue it reports for the options argument', () => {
       expect(validateInput([{ excludedPathPatterns: 'x', folderPath: 42, segmentMatchMode: 'Substringish' }])).toEqual([
-        { message: 'Expected an array of strings.', path: [0, 'excludedPathPatterns'] },
-        { message: 'Expected a string.', path: [0, 'folderPath'] },
-        { message: 'Expected one of Fuzzy, Substring.', path: [0, 'segmentMatchMode'] }
+        { message: SELECT_OPTIONS_MESSAGE, path: [0] }
       ]);
+      expect(SELECT_OPTIONS_MESSAGE).toContain('excludedPathPatterns: an array of strings');
+      expect(SELECT_OPTIONS_MESSAGE).toContain('folderNoteConfig: a folder-note config');
+      expect(SELECT_OPTIONS_MESSAGE).toContain('segmentMatchMode: one of Fuzzy, Substring');
     });
 
     it('should hand a valid argument list back unchanged', () => {
