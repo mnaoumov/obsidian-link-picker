@@ -3,7 +3,7 @@ import type {
   MarkdownFileInfo
 } from 'obsidian';
 
-import { EditorCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/editor-command-handler';
+import { EditorCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/editor-command-handler';
 
 import type { LinkPickerComponent } from '../link-picker-component.ts';
 import type { Picker } from '../plugin-settings.ts';

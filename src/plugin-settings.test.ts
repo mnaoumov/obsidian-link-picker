@@ -1,4 +1,4 @@
-import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
+import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
 import {
   describe,
   expect,

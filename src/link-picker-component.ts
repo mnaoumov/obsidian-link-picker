@@ -1,18 +1,18 @@
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
+import type { FolderNoteConfig } from '@mnaoumov/obsidian-lib/folder-note';
 import type {
   App,
   TFolder
 } from 'obsidian';
-import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
-import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
-import { TFile } from 'obsidian';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
-import { getFileOrNull } from 'obsidian-dev-utils/obsidian/file-system';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
+import { getFileOrNull } from '@mnaoumov/obsidian-lib/file-system';
 import {
   FolderNoteLocation,
   resolveFolderNoteConfig
-} from 'obsidian-dev-utils/obsidian/folder-note';
-import { join } from 'obsidian-dev-utils/path';
+} from '@mnaoumov/obsidian-lib/folder-note';
+import { join } from '@mnaoumov/typescript-lib/path';
+import { TFile } from 'obsidian';
 
 import type { PluginSettings } from './plugin-settings.ts';
 import type {
@@ -41,9 +41,9 @@ type LinkPickerComponentResolveOptionsParams = SelectOptions;
 type ResolvedFolderNoteLocation = FolderNoteConfig['location'];
 
 /**
- * Maps a published folder-note location onto the `obsidian-dev-utils` enum member that spells it.
+ * Maps a published folder-note location onto the `@mnaoumov/obsidian-lib` enum member that spells it.
  *
- * `api.d.ts` may not import `obsidian-dev-utils`, so it inlines the location as a plain string union — and
+ * `api.d.ts` may not import `@mnaoumov/obsidian-lib`, so it inlines the location as a plain string union — and
  * a string enum is NOMINAL in TypeScript, so the two are not assignable however identical their runtime
  * values are. A table rather than a cast because the key type is derived FROM the enum (a template literal
  * expands a string enum to its literal values), so a member added, renamed or removed upstream fails to
@@ -155,11 +155,13 @@ export class LinkPickerComponent extends ComponentEx {
  * Restates a caller's published folder-note setup in the vocabulary the picker reads.
  *
  * @param folderNoteConfig - The setup as the published API accepts it.
- * @returns The same setup, with its location spelled as the `obsidian-dev-utils` enum member.
+ * @returns The same setup, with its location spelled as the `@mnaoumov/obsidian-lib` enum member.
  */
 function toFolderNoteConfig(folderNoteConfig: NonNullable<SelectOptions['folderNoteConfig']>): FolderNoteConfig {
+  // The location is taken out before the spread, so the published string union never lands on the enum-typed field, even for a moment.
+  const { location, ...rest } = folderNoteConfig;
   return {
-    ...folderNoteConfig,
-    location: FOLDER_NOTE_LOCATIONS[folderNoteConfig.location]
+    ...rest,
+    location: FOLDER_NOTE_LOCATIONS[location]
   };
 }

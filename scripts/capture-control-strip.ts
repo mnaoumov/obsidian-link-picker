@@ -1,5 +1,5 @@
-import { wrapCliTask } from 'obsidian-dev-utils/script-utils/cli-utils';
-import { test } from 'obsidian-dev-utils/script-utils/test-runners/vitest';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { test } from '@mnaoumov/typescript-dev-toolkit/test-runners/vitest';
 
 // Android only, and deliberately outside `test:integration`. It drives the picker with real `adb` touches
 // on the `obsidian_test` emulator and writes `dist/control-strip/*.png` — the evidence for the pre-release

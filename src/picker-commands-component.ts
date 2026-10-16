@@ -1,10 +1,10 @@
-import type { DisposableEx } from 'obsidian-dev-utils/disposable';
-import type { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
-import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
+import type { CommandHandlerComponent } from '@mnaoumov/obsidian-lib/command-handlers/command-handler-component';
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
+import type { DisposableEx } from '@mnaoumov/typescript-lib/disposable';
 
-import { isDeepEqual } from 'obsidian-dev-utils/object-utils';
-import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
-import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+import { registerAsyncEvent } from '@mnaoumov/obsidian-lib/components/async-events-component';
+import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
+import { isDeepEqual } from '@mnaoumov/typescript-lib/object-utils';
 
 import type { LinkPickerComponent } from './link-picker-component.ts';
 import type {

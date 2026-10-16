@@ -1,15 +1,15 @@
+import type { PluginSettingsTabBaseConstructorParams } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import type { ValueComponentWithChangeTracking } from '@mnaoumov/obsidian-lib/setting-components/value-component-with-change-tracking';
 import type {
   SettingDefinitionItem,
   SettingDefinitionList,
   SettingDefinitionPage
 } from 'obsidian';
-import type { PluginSettingsTabBaseConstructorParams } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
-import type { ValueComponentWithChangeTracking } from 'obsidian-dev-utils/obsidian/setting-components/value-component-with-change-tracking';
 
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
-import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
-import { appendCodeBlock } from 'obsidian-dev-utils/obsidian/html-element';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
+import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 
 import type { PluginSettings } from './plugin-settings.ts';
 

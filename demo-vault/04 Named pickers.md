@@ -59,7 +59,7 @@ A picker's command is identified by an id minted when the picker is created, not
 
 Anything richer than those six fields is code, not configuration: validating a name, routing a new note to a folder derived from it, seeding frontmatter from a template. That is what the plugin's API is for, and a caller with such conventions supplies them there.
 
-The API is not published yet — it is waiting on a cross-plugin API registry being built in `obsidian-dev-utils`. This note will grow a section when it lands.
+[06 Calling it from a script](<./06 Calling it from a script.md>) shows that API in use.
 
 ## Putting it back
 
