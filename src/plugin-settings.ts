@@ -47,7 +47,7 @@ export class Picker {
   /**
    * Emitted immediately before the picked link. Empty means the link alone.
    *
-   * A plain string rather than a field name, so `Person: ` covers Dataview's inline-field shape without
+   * A plain string rather than a field name, so `Person: ` covers `Dataview`'s inline-field shape without
    * the plugin having to know what one is, and `- ` or `"` work just as well.
    */
   public prefix = '';
