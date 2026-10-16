@@ -5,7 +5,7 @@ Every setting the plugin stores, named by the key it appears under in `data.json
 ## Folder notes
 
 - `folderNoteLocation`
-  - where a folder's folder note lives. `Auto` — the default — reads the installed **Folder Notes** plugin's own configuration, so a vault that already has folder notes needs nothing here. The alternatives are `InsideFolder`, `ParentFolder`, and `None` for a vault that has no folder notes at all.
+  - where a folder's folder note lives. `Auto` — the default — reads the installed `Folder Notes` plugin's own configuration, so a vault that already has folder notes needs nothing here. The alternatives are `InsideFolder`, `ParentFolder`, and `None` for a vault that has no folder notes at all.
 - `folderNoteName`
   - the folder note's name, without extension, when `folderNoteLocation` is not `Auto`. Empty names it after its folder.
 

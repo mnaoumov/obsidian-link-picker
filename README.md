@@ -108,7 +108,7 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 
 ## For plugin developers
 
-The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a Templater template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
+The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a `Templater` template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
 
 The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `obsidian-dev-utils`.
 

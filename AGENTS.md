@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Link Picker is a folder-scoped, deterministically ranked note picker for Obsidian. It ships two faces deliberately:
+`Link Picker` is a folder-scoped, deterministically ranked note picker for Obsidian. It ships two faces deliberately:
 
 - an **`Insert link...` editor command**, the user-facing half;
-- a **callable API returning a string**, which is where the plugin came from — it is an extraction of a 568-line script (`LinkSuggester.ts`) in the author's personal vault whose 17 consumers are all Templater templates writing `<field>: <link>` into a note's properties. The extraction is done; publishing the API and shrinking that script to a shim is still ahead.
+- a **callable API returning a string**, which is where the plugin came from — it is an extraction of a 568-line script (`LinkSuggester.ts`) in the author's personal vault whose 17 consumers are all `Templater` templates writing `<field>: <link>` into a note's properties. The extraction is done; publishing the API and shrinking that script to a shim is still ahead.
 
 A command-only plugin would serve none of those consumers, which is why the API is not an afterthought.
 

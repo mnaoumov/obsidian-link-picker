@@ -2,7 +2,7 @@
 
 Everything so far has been the command: you run it, and a link lands at your cursor. That is the half of the plugin with a keyboard shortcut, and it is not the half the plugin was built for.
 
-The picker was extracted from a script in the author's own vault whose every caller was a Templater template writing a link into a property value:
+The picker was extracted from a script in the author's own vault whose every caller was a `Templater` template writing a link into a property value:
 
 ```text
 - <% await select({ folderPath: 'Legal/Суд', prefix: 'Суд: ' }) %>
@@ -61,7 +61,7 @@ const ref = watchPluginApi<LinkPickerApi>({
 const link = await ref.whenAvailable();
 ```
 
-`ref.value` is `null` until Link Picker has loaded and becomes non-`null` on its own, so load order is not something a consumer has to solve. If Link Picker is later disabled, the value goes back to `null` rather than leaving a handle pointing into a torn-down plugin.
+`ref.value` is `null` until `Link Picker` has loaded and becomes non-`null` on its own, so load order is not something a consumer has to solve. If `Link Picker` is later disabled, the value goes back to `null` rather than leaving a handle pointing into a torn-down plugin.
 
 ## Where next
 

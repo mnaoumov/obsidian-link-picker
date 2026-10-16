@@ -28,7 +28,7 @@ Now open the Command Palette. Alongside **Link Picker: Insert link...** there is
 Person: [[Ada Lovelace|Ada]]
 ```
 
-That prefix is the `prefix` setting — a plain string, not a field name, so `"Person: "` gives you Dataview's inline-field shape while `"- "` or `"` give you something else entirely. A `suffix` closes the pair when you need one.
+That prefix is the `prefix` setting — a plain string, not a field name, so `"Person: "` gives you `Dataview`'s inline-field shape while `"- "` or `"` give you something else entirely. A `suffix` closes the pair when you need one.
 
 ## What a picker holds
 

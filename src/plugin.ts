@@ -72,7 +72,7 @@ export class Plugin extends PluginBase {
     );
 
     // The half of the plugin the extraction was actually for.
-    // The 17 Templater templates it came from all want the STRING, not an edit at a cursor, so a
+    // The 17 `Templater` templates it came from all want the STRING, not an edit at a cursor, so a
     // command-only plugin would serve none of them.
     // Built here and published by the base through `getPluginApis`, which registers the revocation itself.
     this.linkPickerApi = new LinkPickerApi(linkPickerComponent);

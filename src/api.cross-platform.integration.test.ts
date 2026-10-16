@@ -13,7 +13,7 @@ import {
  * The other half of the plugin, end to end against a real Obsidian: another plugin — or a script —
  * reaches the picker through the published API and gets a STRING back.
  *
- * This is the half the extraction was for. The 17 Templater templates the picker came from all write
+ * This is the half the extraction was for. The 17 `Templater` templates the picker came from all write
  * `<prefix><link><suffix>` into a property value, so a command that edits at a cursor serves none of them.
  * Both ends of that shape are exercised here: picking a row yields the prefixed link, and DECLINING one
  * yields the empty string rather than a dangling `Person: ` — the behavior change that replaced
