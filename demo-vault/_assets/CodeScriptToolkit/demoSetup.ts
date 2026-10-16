@@ -8,7 +8,7 @@ const SCRATCH_NOTE_PATH = 'Materials/01 Picking a link/Scratch.md';
 const PEOPLE_FOLDER_PATH = 'Materials/01 Picking a link/People';
 
 /**
- * The key the plugin's bundled `obsidian-dev-utils` publishes its API registry under, on the realm global.
+ * The key the plugin's bundled `@mnaoumov/obsidian-lib` publishes its API registry under, on the realm global.
  *
  * A script in a vault has no bundler and no copy of the library, so it reads the record structurally —
  * which the registry is designed for: every plugin bundles its own library copy, so a record is a wire

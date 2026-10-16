@@ -1,9 +1,9 @@
+import type { ApiMethodContract } from '@mnaoumov/typescript-lib/api-contract';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type { TFile } from 'obsidian';
-import type { PluginApiMethodContract } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   App as AppCls,
   TFile as TFileCls
@@ -29,7 +29,7 @@ import {
   LinkPickerApi
 } from './link-picker-api.ts';
 
-const selectContract = castTo<PluginApiMethodContract>(LINK_PICKER_API_CONTRACT['select']);
+const selectContract = castTo<ApiMethodContract>(LINK_PICKER_API_CONTRACT.select);
 
 const SELECT_OPTIONS_MESSAGE = 'Expected select options, each of its declared type (createNote: a function; excludedPathPatterns: an array of strings; folderNoteConfig: a folder-note config; folderPath: a string; includeSubfolders: a boolean; initialQuery: a string; placeholder: a string; prefix: a string; segmentMatchMode: one of Fuzzy, Substring; shouldAllowCreate: a boolean; shouldApplyPrefixSuffixWhenNoLinkSelected: a boolean; sourcePathOrFile: a path or a file; suffix: a string; titlePropertyName: a string; updatedPropertyName: a string).';
 

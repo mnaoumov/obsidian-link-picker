@@ -1,15 +1,15 @@
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
+import type { FolderNoteConfig } from '@mnaoumov/obsidian-lib/folder-note';
 import type {
   App,
   TFile,
   TFolder,
   Vault
 } from 'obsidian';
-import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
-import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   beforeEach,
   describe,
@@ -28,12 +28,12 @@ const { resolveFolderNoteConfig } = vi.hoisted(() => ({ resolveFolderNoteConfig:
 const { getFileOrNull } = vi.hoisted(() => ({ getFileOrNull: vi.fn() }));
 const { select } = vi.hoisted(() => ({ select: vi.fn() }));
 
-vi.mock('obsidian-dev-utils/obsidian/folder-note', async (importOriginal) => ({
+vi.mock('@mnaoumov/obsidian-lib/folder-note', async (importOriginal) => ({
   ...await importOriginal<object>(),
   resolveFolderNoteConfig
 }));
 
-vi.mock('obsidian-dev-utils/obsidian/file-system', async (importOriginal) => ({
+vi.mock('@mnaoumov/obsidian-lib/file-system', async (importOriginal) => ({
   ...await importOriginal<object>(),
   getFileOrNull
 }));

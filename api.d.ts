@@ -2,7 +2,7 @@
  * The API this plugin publishes for other plugins and scripts to call.
  *
  * Copy this file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no
- * dependency on this one and none on `obsidian-dev-utils`. That is why {@link PathOrFile},
+ * dependency on this one and none on `@mnaoumov/obsidian-lib`. That is why {@link PathOrFile},
  * {@link FolderNoteConfig} and {@link FolderNoteLocation} — which the plugin itself takes from that
  * library — and {@link SegmentMatchMode}, which is its own, are all inlined below as plain structural
  * types rather than imported. They carry the same runtime values the plugin uses.
@@ -10,7 +10,7 @@
  * The API is reached through the cross-plugin API registry, keyed by the plugin id and version-negotiated
  * against {@link LinkPickerApi}'s CONTRACT version, which moves independently of the plugin's own
  * `manifest.version`. The README's `For plugin developers` section shows both routes: `watchPluginApi` for
- * a consumer that already has `obsidian-dev-utils`, and the library-free registry read for one that does
+ * a consumer that already has `@mnaoumov/obsidian-lib`, and the library-free registry read for one that does
  * not.
  */
 

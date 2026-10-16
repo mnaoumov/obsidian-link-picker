@@ -1,3 +1,4 @@
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 import type {
   App as AppOriginal,
   Plugin,
@@ -7,18 +8,17 @@ import type {
   SettingDefinitionPage,
   SettingGroup
 } from 'obsidian';
-import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 
+import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
+import { PluginSettingsTabBase } from '@mnaoumov/obsidian-lib/plugin/plugin-settings-tab';
+import { SettingEx } from '@mnaoumov/obsidian-lib/setting-ex';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   enableAsyncOperationTracking,
   waitForAllAsyncOperations
-} from 'obsidian-dev-utils/async';
-import { noopAsync } from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+} from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,

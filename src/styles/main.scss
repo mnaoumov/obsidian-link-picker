@@ -1,6 +1,6 @@
 /**
- * See default library styles: https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/styles/main.scss
- * See available library css classes: https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/CssClass.ts
+ * See default library styles: https://github.com/mnaoumov/obsidian-lib/blob/main/src/styles/main.scss
+ * See available library css classes: https://github.com/mnaoumov/obsidian-lib/blob/main/src/css-class.ts
  */
 
 .link-picker.obsidian-dev-utils {
@@ -10,9 +10,10 @@
 /*
  * The strip along the bottom of the picker carries no rules of its own.
  *
- * It is the `ModalCommandBuilder` from `obsidian-dev-utils` in `Buttons` render mode, so its
+ * It is the `ModalCommandBuilder` from `@mnaoumov/obsidian-lib` in `Buttons` render mode, so its
  * `.modal-commands` / `.modal-command` / `.modal-command-hotkey` rules are the library's and reach the
  * plugin through the styles it injects at runtime. This file held a copy of them until the two converged.
+ * The library still tags its elements with the `obsidian-dev-utils` class, which is why the selector above keeps it.
  *
  * Those were the last rules that emitted anything, and the comments above do not survive the build — so
  * without the banner below `dist/build/styles.css` comes out ZERO BYTES, and GitHub's upload API rejects
@@ -20,4 +21,4 @@
  * kept through minification, which is exactly the guard wanted here.
  */
 
-/*! `Link Picker` styles its strip through obsidian-dev-utils; see src/styles/main.scss. */
+/*! `Link Picker` styles its strip through @mnaoumov/obsidian-lib; see src/styles/main.scss. */

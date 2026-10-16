@@ -46,10 +46,10 @@ Without the hook the plugin creates an empty note and gets out of the way.
 
 ## How a plugin consumes it
 
-The demo script above reads the registry record directly, because a script in a vault has no bundler and no copy of `obsidian-dev-utils`. A **plugin** has both, and uses the consumer function instead:
+The demo script above reads the registry record directly, because a script in a vault has no bundler and no copy of `@mnaoumov/obsidian-lib`. A **plugin** has both, and uses the consumer function instead:
 
 ```typescript
-import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import { watchPluginApi } from '@mnaoumov/obsidian-lib/plugin/plugin-api';
 
 const ref = watchPluginApi<LinkPickerApi>({
   apiVersionRange: '^1',

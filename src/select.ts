@@ -1,9 +1,9 @@
+import type { PathOrFile } from '@mnaoumov/obsidian-lib/file-system';
+import type { FolderNoteConfig } from '@mnaoumov/obsidian-lib/folder-note';
 import type {
   App,
   TFile
 } from 'obsidian';
-import type { PathOrFile } from 'obsidian-dev-utils/obsidian/file-system';
-import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
 import type { LinkPickerApiSelectParams } from '../api.d.ts';
 import type { SegmentMatchMode } from './item.ts';
@@ -18,7 +18,7 @@ import { LinkPickerModal } from './link-picker-modal.ts';
  * type is what stops the published file drifting from the code it describes.
  *
  * It is therefore spelled in the published vocabulary — `folderNoteConfig.location` and
- * `segmentMatchMode` are plain string unions here, not the `obsidian-dev-utils` and `item.ts` enums the
+ * `segmentMatchMode` are plain string unions here, not the `@mnaoumov/obsidian-lib` and `item.ts` enums the
  * internals use, because `api.d.ts` may not import either. {@link SelectParams} is where that becomes
  * concrete, and `link-picker-component.ts` owns the conversion.
  */

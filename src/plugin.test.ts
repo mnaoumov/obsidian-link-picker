@@ -1,16 +1,16 @@
+import type { PluginApiDeclaration } from '@mnaoumov/obsidian-lib/plugin/plugin-api';
+import type { PluginLifecycleEventPayload } from '@mnaoumov/obsidian-lib/plugin/plugin-lifecycle-events';
 import type {
   App,
   PluginManifest
 } from 'obsidian';
-import type { PluginApiDeclaration } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
-import type { PluginLifecycleEventPayload } from 'obsidian-dev-utils/obsidian/plugin/plugin-lifecycle-events';
 
+import { CommandHandlerComponent } from '@mnaoumov/obsidian-lib/command-handlers/command-handler-component';
+import { PluginSettingsTabComponent } from '@mnaoumov/obsidian-lib/components/plugin-settings-tab-component';
+import { watchPluginApi } from '@mnaoumov/obsidian-lib/plugin/plugin-api';
+import { PLUGIN_LOADED_EVENT_NAME } from '@mnaoumov/obsidian-lib/plugin/plugin-lifecycle-events';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { Component as ComponentCls } from 'obsidian';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { CommandHandlerComponent } from 'obsidian-dev-utils/obsidian/command-handlers/command-handler-component';
-import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
-import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
-import { PLUGIN_LOADED_EVENT_NAME } from 'obsidian-dev-utils/obsidian/plugin/plugin-lifecycle-events';
 import { App as AppCls } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -147,7 +147,7 @@ describe('Plugin', () => {
   });
 
   it('should name the contract version in the plugin-loaded broadcast, so a library-free consumer sees it', async () => {
-    // The broadcast is a wire contract for third parties who will never install `obsidian-dev-utils`.
+    // The broadcast is a wire contract for third parties who will never install `@mnaoumov/obsidian-lib`.
     // Its `apiVersions` is derived from `getPluginApis()` alone, so a hand-published API reads as no API at all on the one route those consumers are told to take.
     // Asserted on the payload rather than on the override, because the override is only the means.
     const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();

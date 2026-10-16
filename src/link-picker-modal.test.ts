@@ -1,13 +1,13 @@
+import type { FolderNoteConfig } from '@mnaoumov/obsidian-lib/folder-note';
 import type {
   App as AppOriginal,
   KeymapEventHandler,
   TFile,
   TFolder
 } from 'obsidian';
-import type { FolderNoteConfig } from 'obsidian-dev-utils/obsidian/folder-note';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { FolderNoteLocation } from 'obsidian-dev-utils/obsidian/folder-note';
+import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   App,
   Platform,
@@ -36,14 +36,14 @@ const {
 
 // Stubbed to skip the plugin-context initialization, but it still ADDS the classes: the control strip is
 // addressed by them, so a no-op mock would make every assertion about it vacuous.
-vi.mock('obsidian-dev-utils/obsidian/plugin/plugin-context', () => ({
+vi.mock('@mnaoumov/obsidian-lib/plugin/plugin-context', () => ({
   addPluginCssClasses: (el: HTMLElement, cssClasses?: string | string[]): void => {
     el.addClass(...(typeof cssClasses === 'string' ? [cssClasses] : cssClasses ?? []));
   }
 }));
-vi.mock('obsidian-dev-utils/obsidian/link', () => ({ generateMarkdownLink }));
-vi.mock('obsidian-dev-utils/obsidian/modals/prompt', () => ({ prompt }));
-vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => ({
+vi.mock('@mnaoumov/obsidian-lib/link', () => ({ generateMarkdownLink }));
+vi.mock('@mnaoumov/obsidian-lib/modals/prompt', () => ({ prompt }));
+vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => ({
   ...await importOriginal<object>(),
   getFrontmatterSafe
 }));

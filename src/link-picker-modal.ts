@@ -1,35 +1,35 @@
+import type { ModalCommands } from '@mnaoumov/obsidian-lib/modals/modal-command-builder';
 import type {
   FrontMatterCache,
   TAbstractFile,
   TFile
 } from 'obsidian';
-import type { ModalCommands } from 'obsidian-dev-utils/obsidian/modals/modal-command-builder';
 
+import {
+  asFile,
+  getFolder,
+  isFile,
+  isFolder
+} from '@mnaoumov/obsidian-lib/file-system';
+import { resolveFolderNote } from '@mnaoumov/obsidian-lib/folder-note';
+import { applySpellcheckMode } from '@mnaoumov/obsidian-lib/html-element';
+import { generateMarkdownLink } from '@mnaoumov/obsidian-lib/link';
+import { getFrontmatterSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
+import {
+  ModalCommandBuilder,
+  ModalCommandsRenderMode
+} from '@mnaoumov/obsidian-lib/modals/modal-command-builder';
+import { prompt } from '@mnaoumov/obsidian-lib/modals/prompt';
+import { SpellcheckMode } from '@mnaoumov/obsidian-lib/obsidian-settings';
+import { addPluginCssClasses } from '@mnaoumov/obsidian-lib/plugin/plugin-context';
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import {
   getIcon,
   parseFrontMatterAliases,
   SuggestModal,
   Vault
 } from 'obsidian';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
-import {
-  asFile,
-  getFolder,
-  isFile,
-  isFolder
-} from 'obsidian-dev-utils/obsidian/file-system';
-import { resolveFolderNote } from 'obsidian-dev-utils/obsidian/folder-note';
-import { applySpellcheckMode } from 'obsidian-dev-utils/obsidian/html-element';
-import { generateMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
-import { getFrontmatterSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
-import {
-  ModalCommandBuilder,
-  ModalCommandsRenderMode
-} from 'obsidian-dev-utils/obsidian/modals/modal-command-builder';
-import { prompt } from 'obsidian-dev-utils/obsidian/modals/prompt';
-import { SpellcheckMode } from 'obsidian-dev-utils/obsidian/obsidian-settings';
-import { addPluginCssClasses } from 'obsidian-dev-utils/obsidian/plugin/plugin-context';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 import type { Item } from './item.ts';
 import type { SelectParams } from './select.ts';

@@ -1,4 +1,4 @@
-import type { PluginApiContract } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import type { ApiContract } from '@mnaoumov/typescript-lib/api-contract';
 
 import type {
   LinkPickerApi as LinkPickerApiDeclaration,
@@ -25,7 +25,7 @@ export const LINK_PICKER_API_VERSION = '1.1.0';
  * against one definition. Assigning it here is also what checks that the hand-written schemas are Standard
  * Schemas the registry accepts.
  */
-export const LINK_PICKER_API_CONTRACT: PluginApiContract = COPYABLE_LINK_PICKER_API_CONTRACT;
+export const LINK_PICKER_API_CONTRACT: ApiContract<LinkPickerApiDeclaration> = COPYABLE_LINK_PICKER_API_CONTRACT;
 
 /**
  * What the plugin publishes for other plugins and scripts to call.
@@ -33,7 +33,7 @@ export const LINK_PICKER_API_CONTRACT: PluginApiContract = COPYABLE_LINK_PICKER_
  * @remarks
  * The shape is declared ONCE, in the repo-root `api.d.ts`, which this implements. That file imports from
  * `obsidian` and nothing else, so a consumer can copy it whole without acquiring a dependency on this
- * plugin or on `obsidian-dev-utils` — which is the point of it, the plugin not being published to npm.
+ * plugin or on `@mnaoumov/obsidian-lib` — which is the point of it, the plugin not being published to npm.
  * {@link LINK_PICKER_API_CONTRACT} is what actually checks the two sides agree at runtime.
  *
  * A thin delegate rather than the {@link LinkPickerComponent} itself, because publishing the component

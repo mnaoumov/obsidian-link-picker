@@ -110,18 +110,18 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 
 The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a `Templater` template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
 
-The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `obsidian-dev-utils`.
+The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `@mnaoumov/obsidian-lib`.
 
 Beside it, [`api-contract.ts`](./api-contract.ts) holds the published API's contract, `LINK_PICKER_API_CONTRACT`: for `select`, a schema over its arguments and a schema over what it resolves to. It is the constant this plugin publishes with the API, so copy it next to `api.d.ts` and pass it as the `contract`, and both sides check the same definition. It needs one package beside `obsidian`: [`@mnaoumov/typescript-lib`](https://www.npmjs.com/package/@mnaoumov/typescript-lib), whose `api-contract` subpath supplies the contract type and the [Standard Schema](https://standardschema.dev) builders, so the file itself is only this plugin's checks and the constant. Install it (`npm install @mnaoumov/typescript-lib`) when you copy the file. `api.d.ts` still needs nothing. (It is not named `api.ts`: TypeScript would read `api.d.ts` as that file's own declarations.)
 
 The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.1.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
 
-If your plugin already uses [`obsidian-dev-utils`](https://mnaoumov.dev/obsidian-dev-utils/guides/cross-plugin-apis/), `watchPluginApi` is the whole of it:
+If your plugin already uses [`@mnaoumov/obsidian-lib`](https://mnaoumov.dev/obsidian-lib/guides/cross-plugin-apis/), `watchPluginApi` is the whole of it:
 
 ```typescript
 import type { LinkPickerApi } from './api.d.ts';
 
-import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
+import { watchPluginApi } from '@mnaoumov/obsidian-lib/plugin/plugin-api';
 
 import { LINK_PICKER_API_CONTRACT } from './api-contract.ts';
 
@@ -139,7 +139,7 @@ const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 // → 'Person: [[Ada Lovelace|Ada]]'
 ```
 
-If it does not — and is not going to — you still need no dependency on anything. The registry, and the two events a plugin announces itself through, are a documented wire protocol reachable with the `obsidian` module alone; [Plugin API protocol](https://mnaoumov.dev/obsidian-dev-utils/guides/plugin-api-protocol/) is that route written out, and `api.d.ts` types it just as well, since nothing in that file imports the library either.
+If it does not — and is not going to — you still need no dependency on anything. The registry, and the two events a plugin announces itself through, are a documented wire protocol reachable with the `obsidian` module alone; [Plugin API protocol](https://mnaoumov.dev/obsidian-lib/guides/plugin-api-protocol/) is that route written out, and `api.d.ts` types it just as well, since nothing in that file imports the library either.
 
 `select` resolves with the link text and **rejects** when the picker is dismissed — dismissing is the caller's cue that the user backed out, which is different from the empty string that `No link` returns. Every option is optional and anything omitted falls back to the settings above; three are worth knowing before you design around the API:
 
@@ -171,7 +171,7 @@ To show them, run the following command in the `DevTools Console`:
 window.DEBUG.enable('link-picker');
 ```
 
-For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
+For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-lib/guides/debugging/).
 
 ## Changelog
 
