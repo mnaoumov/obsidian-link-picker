@@ -31,7 +31,7 @@ import {
 
 const selectContract = castTo<ApiMethodContract>(LINK_PICKER_API_CONTRACT.select);
 
-const SELECT_OPTIONS_MESSAGE = 'Expected select options, each of its declared type (createNote: a function; excludedPathPatterns: an array of strings; folderNoteConfig: a folder-note config; folderPath: a string; includeSubfolders: a boolean; initialQuery: a string; placeholder: a string; prefix: a string; segmentMatchMode: one of Fuzzy, Substring; shouldAllowCreate: a boolean; shouldApplyPrefixSuffixWhenNoLinkSelected: a boolean; sourcePathOrFile: a path or a file; suffix: a string; titlePropertyName: a string; updatedPropertyName: a string).';
+const SELECT_OPTIONS_MESSAGE = 'Expected select options: { createNote?: a function; excludedPathPatterns?: an array of strings; folderNoteConfig?: a folder-note config; folderPath?: a string; includeSubfolders?: a boolean; initialQuery?: a string; placeholder?: a string; prefix?: a string; segmentMatchMode?: one of \'Fuzzy\', \'Substring\'; shouldAllowCreate?: a boolean; shouldApplyPrefixSuffixWhenNoLinkSelected?: a boolean; sourcePathOrFile?: a path or a file; suffix?: a string; titlePropertyName?: a string; updatedPropertyName?: a string }.';
 
 describe('LINK_PICKER_API_VERSION', () => {
   it('should be a semver version, because a consumer pins a range against it', () => {
@@ -150,9 +150,9 @@ describe('LINK_PICKER_API_CONTRACT', () => {
       expect(validateInput([{ excludedPathPatterns: 'x', folderPath: 42, segmentMatchMode: 'Substringish' }])).toEqual([
         { message: SELECT_OPTIONS_MESSAGE, path: [0] }
       ]);
-      expect(SELECT_OPTIONS_MESSAGE).toContain('excludedPathPatterns: an array of strings');
-      expect(SELECT_OPTIONS_MESSAGE).toContain('folderNoteConfig: a folder-note config');
-      expect(SELECT_OPTIONS_MESSAGE).toContain('segmentMatchMode: one of Fuzzy, Substring');
+      expect(SELECT_OPTIONS_MESSAGE).toContain('excludedPathPatterns?: an array of strings');
+      expect(SELECT_OPTIONS_MESSAGE).toContain('folderNoteConfig?: a folder-note config');
+      expect(SELECT_OPTIONS_MESSAGE).toContain('segmentMatchMode?: one of \'Fuzzy\', \'Substring\'');
     });
 
     it('should hand a valid argument list back unchanged', () => {

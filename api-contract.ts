@@ -26,8 +26,7 @@
  * It is not named `api.ts` because TypeScript would read `api.d.ts` as that file's own declarations.
  */
 
-import type { ExpectedTypeGuard } from '@mnaoumov/typescript-lib/api-contract';
-import type { PropertyTypeGuards } from '@mnaoumov/typescript-lib/type-guards';
+import type { OptionGuards } from '@mnaoumov/typescript-lib/api-contract';
 
 import { isPathOrFile } from '@mnaoumov/obsidian-lib/file-system';
 import {
@@ -35,17 +34,17 @@ import {
   createApiContractSchemaBuilders,
   createExpectedTypeGuard,
   defineApiContract,
+  literalGuard,
+  optionsGuard,
   STRING_ARRAY_GUARD,
   STRING_GUARD
 } from '@mnaoumov/typescript-lib/api-contract';
-import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   functionTypeGuard,
   isBoolean,
   isStringArray,
   literalTypeGuard,
-  objectTypeGuard,
-  optionalTypeGuard
+  objectTypeGuard
 } from '@mnaoumov/typescript-lib/type-guards';
 
 import type {
@@ -75,7 +74,7 @@ const isFolderNoteConfig = objectTypeGuard<FolderNoteConfig>({
  * version has never heard of, and rejecting the whole call for it would make every additive change to the
  * API a breaking one.
  */
-const SELECT_OPTIONS: Readonly<Record<string, ExpectedTypeGuard<unknown>>> = {
+const SELECT_OPTIONS: OptionGuards<LinkPickerApiSelectParams> = {
   // A cross-plugin call carries the function itself across the boundary, so all that can be said about it is that it is callable.
   // That is still worth saying, because a non-function here fails deep inside the picker rather than at the call that made the mistake.
   createNote: createExpectedTypeGuard('a function', functionTypeGuard<NonNullable<LinkPickerApiSelectParams['createNote']>>()),
@@ -86,20 +85,14 @@ const SELECT_OPTIONS: Readonly<Record<string, ExpectedTypeGuard<unknown>>> = {
   initialQuery: STRING_GUARD,
   placeholder: STRING_GUARD,
   prefix: STRING_GUARD,
-  segmentMatchMode: createExpectedTypeGuard(`one of ${Object.keys(SEGMENT_MATCH_MODES).join(', ')}`, literalTypeGuard(SEGMENT_MATCH_MODES)),
+  segmentMatchMode: literalGuard(SEGMENT_MATCH_MODES),
   shouldAllowCreate: BOOLEAN_GUARD,
   shouldApplyPrefixSuffixWhenNoLinkSelected: BOOLEAN_GUARD,
   sourcePathOrFile: createExpectedTypeGuard('a path or a file', isPathOrFile),
   suffix: STRING_GUARD,
   titlePropertyName: STRING_GUARD,
   updatedPropertyName: STRING_GUARD
-} satisfies Record<keyof LinkPickerApiSelectParams, ExpectedTypeGuard<unknown>>;
-
-// Every option is optional, so each table guard is widened to accept the `undefined` an absent option reads as.
-// The table is typed loosely so its `expected` texts can be listed, hence the cast back to the declared shape.
-const isSelectParams = objectTypeGuard<LinkPickerApiSelectParams>(castTo<PropertyTypeGuards<LinkPickerApiSelectParams>>(Object.fromEntries(
-  Object.entries(SELECT_OPTIONS).map(([optionName, option]) => [optionName, optionalTypeGuard(option.typeGuard)])
-)));
+};
 
 /**
  * The contract this plugin publishes with {@link LinkPickerApi}, for a consumer to pass as the `contract`
@@ -107,11 +100,7 @@ const isSelectParams = objectTypeGuard<LinkPickerApiSelectParams>(castTo<Propert
  */
 export const LINK_PICKER_API_CONTRACT = defineApiContract<LinkPickerApi>({
   select: {
-    input: createArgumentsSchema([createExpectedTypeGuard(`select options, each of its declared type (${getSelectOptionsDescription()})`, isSelectParams)]),
+    input: createArgumentsSchema([optionsGuard<LinkPickerApiSelectParams>(SELECT_OPTIONS, { description: 'select options' })]),
     output: createTypeGuardSchema({ ...STRING_GUARD, expected: 'the link text' })
   }
 });
-
-function getSelectOptionsDescription(): string {
-  return Object.entries(SELECT_OPTIONS).map(([optionName, option]) => `${optionName}: ${option.expected}`).join('; ');
-}
