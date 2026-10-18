@@ -15,7 +15,7 @@ await require('/demoSetup.ts').openScratchNote(app);
 
 Manual equivalent: open any note and click into its text.
 
-Now run **Link Picker: Insert link...** from the Command Palette, type `Ada`, and press `Enter`.
+Now run **`Link Picker`: Insert link...** from the Command Palette, type `Ada`, and press `Enter`.
 
 ## What comes back
 

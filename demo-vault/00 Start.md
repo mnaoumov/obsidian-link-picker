@@ -20,7 +20,7 @@ await require('/demoSetup.ts').openScratchNote(app);
 Manual equivalent: open any note and click into its text.
 
 1. Press the button above. It opens `Scratch.md` in edit mode, because the picker writes at the cursor and a note in reading view has none.
-2. Open the Command Palette and run **Link Picker: Insert link...**.
+2. Open the Command Palette and run **`Link Picker`: Insert link...**.
 3. Type `People` and press `Enter`. The picker does not link to the folder — it opens it.
 4. Type `Ada` and press `Enter`. A link to `Ada Lovelace` lands where your cursor was.
 
@@ -50,4 +50,4 @@ caption: Remove the scratch note and the demo picker
 await require('/demoSetup.ts').resetDemo(app);
 ```
 
-Manual equivalent: delete `Scratch.md`, and delete the picker in **Settings → Link Picker**.
+Manual equivalent: delete `Scratch.md`, and delete the picker in **Settings → `Link Picker`**.

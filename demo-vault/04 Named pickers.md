@@ -11,7 +11,7 @@ caption: Add an "Insert person" picker scoped to the People folder
 await require('/demoSetup.ts').addPersonPicker(app);
 ```
 
-Manual equivalent: open **Settings → Link Picker**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `"Person: "`.
+Manual equivalent: open **Settings → `Link Picker`**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `"Person: "`.
 
 ```code-button
 ---
@@ -22,7 +22,7 @@ await require('/demoSetup.ts').openScratchNote(app);
 
 Manual equivalent: open any note and click into its text.
 
-Now open the Command Palette. Alongside **Link Picker: Insert link...** there is **Link Picker: Insert person**. Run it: the picker opens already inside `People`, with `Who?` as its placeholder, and what it writes is prefixed:
+Now open the Command Palette. Alongside **`Link Picker`: Insert link...** there is **`Link Picker`: Insert person**. Run it: the picker opens already inside `People`, with `Who?` as its placeholder, and what it writes is prefixed:
 
 ```markdown
 Person: [[Ada Lovelace|Ada]]
@@ -70,7 +70,7 @@ caption: Remove the scratch note and the demo picker
 await require('/demoSetup.ts').resetDemo(app);
 ```
 
-Manual equivalent: delete `Scratch.md`, and delete the picker in **Settings → Link Picker**.
+Manual equivalent: delete `Scratch.md`, and delete the picker in **Settings → `Link Picker`**.
 
 ## Where next
 

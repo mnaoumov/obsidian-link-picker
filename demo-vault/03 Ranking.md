@@ -13,7 +13,7 @@ await require('/demoSetup.ts').openScratchNote(app);
 
 Manual equivalent: open any note and click into its text.
 
-Run **Link Picker: Insert link...**, navigate into `Materials`, then `03 Ranking`, and type `court`.
+Run **`Link Picker`: Insert link...**, navigate into `Materials`, then `03 Ranking`, and type `court`.
 
 The four notes come back in three groups:
 

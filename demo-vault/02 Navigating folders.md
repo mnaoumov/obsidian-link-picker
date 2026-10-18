@@ -13,7 +13,7 @@ await require('/demoSetup.ts').openScratchNote(app);
 
 Manual equivalent: open any note and click into its text.
 
-Run **Link Picker: Insert link...**, then:
+Run **`Link Picker`: Insert link...**, then:
 
 1. Type `Legal` and press `Enter`. The picker reopens rooted inside [Legal](<./Materials/02 Navigating folders/Legal/Legal.md>) — the rows are now that folder's own contents: [Retainer](<./Materials/02 Navigating folders/Legal/Retainer.md>) and the two subfolders.
 2. The first row is `..`. Press `Enter` on it and you are back where you were.
