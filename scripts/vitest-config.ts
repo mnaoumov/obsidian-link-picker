@@ -36,7 +36,7 @@ const SCREENSHOTS_CAPTURE_ANDROID_TEST_FILES = 'src/**/screenshots.android-captu
  * suites already carry. It no longer buys anything else: the suffix used to exempt a file from
  * `no-untrusted-input-events` on the grounds that the trusted-input helpers were built on
  * `window.electron`, and both halves of that are gone — `obsidian-integration-testing` injects trusted
- * mobile input over CDP, and from `obsidian-dev-utils` 103.0.0 the shared config holds these files to the
+ * mobile input over CDP, and the shared config holds these files to the
  * rule like every other integration test. This repo is the only one with TWO Android capture projects, so
  * the two globs name the FILE rather than the bare suffix — routing both projects off
  * `*.android-capture.` would hand each

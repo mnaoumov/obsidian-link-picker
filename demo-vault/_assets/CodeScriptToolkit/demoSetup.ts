@@ -65,7 +65,7 @@ interface ApiRegistry {
 }
 
 interface StateBagWindow {
-  __obsidianDevUtils?: Record<string, undefined | { value?: ApiRegistry }>;
+  __obsidianLib?: Record<string, undefined | { value?: ApiRegistry }>;
 }
 
 /**
@@ -181,7 +181,7 @@ function getApi(): LinkPickerApi | null {
 }
 
 function getRecord(): PublishedApiRecord | undefined {
-  const registry = (window as StateBagWindow).__obsidianDevUtils?.[PLUGIN_API_REGISTRY_STATE_KEY]?.value;
+  const registry = (window as StateBagWindow).__obsidianLib?.[PLUGIN_API_REGISTRY_STATE_KEY]?.value;
   return registry?.records[PLUGIN_ID]?.find((candidate) => !candidate.isRevoked);
 }
 
