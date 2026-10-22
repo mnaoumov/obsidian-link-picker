@@ -118,7 +118,7 @@ interface SelectParamsLike {
 }
 
 interface StateBagWindow {
-  readonly __obsidianDevUtils?: Record<string, StateEntryLike | undefined>;
+  readonly __obsidianLib?: Record<string, StateEntryLike | undefined>;
 }
 
 interface StateEntryLike {
@@ -319,7 +319,7 @@ async function pollApiPublished(): Promise<void> {
     poll({ pluginId }): boolean {
       // `window`, not `globalThis`, only because a lint rule forbids the latter.
       // In the renderer they are the same realm global the library writes its shared state onto.
-      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const registry = (window as StateBagWindow).__obsidianLib?.['pluginApiRegistry']?.value;
       return registry?.records[pluginId]?.some((candidate) => !candidate.isRevoked) ?? false;
     },
     timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
@@ -375,7 +375,7 @@ async function pollSelectAnswer(contextId: ContextId<ApiSuiteContext>): Promise<
 async function readApiVersion(): Promise<string> {
   return await evalInObsidian({
     callback({ pluginId }): string {
-      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const registry = (window as StateBagWindow).__obsidianLib?.['pluginApiRegistry']?.value;
       const record = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
       if (!record) {
         throw new TypeError(`No API record was published for "${pluginId}".`);
@@ -406,7 +406,7 @@ async function startSelect(contextId: ContextId<ApiSuiteContext>, params: Select
       return document.querySelector(promptSelector) !== null;
     },
     start({ context, params: selectParams, pluginId }): void {
-      const registry = (window as StateBagWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const registry = (window as StateBagWindow).__obsidianLib?.['pluginApiRegistry']?.value;
       const record = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
       if (!record) {
         throw new TypeError(`No API record was published for "${pluginId}".`);

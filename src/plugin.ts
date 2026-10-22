@@ -23,7 +23,7 @@ export class Plugin extends PluginBase {
   /**
    * Declares the API for the base to publish, once {@link onloadImpl} has built it.
    *
-   * Declared rather than published by hand, so that the `obsidian-dev-utils:plugin-loaded` broadcast carries
+   * Declared rather than published by hand, so that the `obsidian-lib:plugin-loaded` broadcast carries
    * the contract version — the base derives that payload's `apiVersions` from this method alone, so a
    * hand-published API is invisible to the neutral, library-free route a third party is told to take. It also
    * moves revocation from the plugin onto the feature surface, which is where the picker this API delegates

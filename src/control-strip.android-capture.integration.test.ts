@@ -127,7 +127,7 @@ interface ApiLike {
 
 interface CaptureWindow {
   __linkPickerCapture?: LinkBag;
-  readonly __obsidianDevUtils?: Record<string, StateEntryLike | undefined>;
+  readonly __obsidianLib?: Record<string, StateEntryLike | undefined>;
 }
 
 interface ControlSnapshot {
@@ -322,7 +322,7 @@ async function openPicker(): Promise<void> {
   await pollInObsidian({
     input: { pluginId: PLUGIN_ID },
     poll({ pluginId }): boolean {
-      const registry = (window as CaptureWindow).__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const registry = (window as CaptureWindow).__obsidianLib?.['pluginApiRegistry']?.value;
       return registry?.records[pluginId]?.some((candidate) => !candidate.isRevoked) ?? false;
     },
     timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS,
@@ -342,7 +342,7 @@ async function openPicker(): Promise<void> {
     start({ folderPath, pluginId, prefix }): void {
       const captureWindow = window as CaptureWindow;
 
-      const registry = captureWindow.__obsidianDevUtils?.['pluginApiRegistry']?.value;
+      const registry = captureWindow.__obsidianLib?.['pluginApiRegistry']?.value;
       const record: RecordLike | undefined = registry?.records[pluginId]?.find((candidate) => !candidate.isRevoked);
       if (!record) {
         throw new TypeError(`No API record was published for "${pluginId}".`);
