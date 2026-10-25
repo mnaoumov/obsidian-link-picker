@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.2.0
+
+- feat(api): ship the API contract as a copyable `api-contract.ts` beside `api.d.ts`; copying it needs `@mnaoumov/typescript-lib` 1.5.0 or later and `@mnaoumov/obsidian-lib`
+- build(deps): move to `@mnaoumov/obsidian-lib` 6; a consuming plugin must be on `@mnaoumov/obsidian-lib` 6 too, and imports `watchPluginApi` from `@mnaoumov/obsidian-lib/plugin/plugin-api`
+- refactor: move off obsidian-dev-utils onto the @mnaoumov packages
+- refactor(api): build api-contract.ts on @mnaoumov/typescript-lib/api-contract
+- refactor(api-contract): build the select options guard with optionsGuard and literalGuard
+- build(deps): float brace-expansion, sharp and fast-uri past their advisories
+- docs(readme): lead the Debugging section with `Advanced Debug Mode`
+- docs: mark plugin names as code in prose and comments
+- chore(github): point questions to Discussions from the new-issue page
+- ci: attest release assets through the toolkit's reusable workflow
+- test(demo-vault): floor `CodeScript Toolkit` at 15.0.0
+
 ## 1.1.0
 
 - test(screenshots): merge the harness-owned desktop theme
