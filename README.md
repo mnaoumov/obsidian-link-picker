@@ -106,6 +106,17 @@ Where that note lives is read from the installed [`folder-notes`](https://github
 - **Updated property** — the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time.
 - **Title property** — the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
 
+## Similar plugins
+
+- [`Another Quick Switcher`](https://community.obsidian.md/plugins/obsidian-another-quick-switcher) — a family of configurable quick switchers, with fuzzy search, previews, multi-select, a current-directory filter and an insert-to-editor hotkey; this plugin is one picker that walks folders with `..`, ranks in fixed tiers, and answers a script with the link as a string.
+- [`Linkr`](https://community.obsidian.md/plugins/linkr) — a link builder that picks a file, then a heading or block, with display text and an embed toggle; this plugin links whole notes only, and adds folder navigation, named pickers rooted in a folder, and a callable API.
+- [`Journal Utils`](https://community.obsidian.md/plugins/journal-utils) — mobile-only pickers that insert people, group and location links and keep `people:` and `locations:` frontmatter lists up to date; this plugin is a general picker for any folder, on desktop and mobile, and leaves the frontmatter to the caller.
+- [`Path Picker`](https://community.obsidian.md/plugins/path-picker) — fuzzy-finds a file or directory under a root, which can sit outside the vault, with a preview, and inserts its filesystem path or opens it; this plugin inserts an Obsidian link to a vault note.
+- [`Auto Link Suggester`](https://community.obsidian.md/plugins/auto-link-suggester) — suggests links inline as you type a note name from the folders you configure, with no `[[` needed; this plugin opens a picker from a command or a script instead of completing words as you type.
+- [`Alias Quick Switcher`](https://community.obsidian.md/plugins/alias-quick-switcher) — a quick switcher that opens notes and matches each path segment against names and aliases, folder notes' aliases included; this plugin inserts a link rather than opening a note, and moves through the vault by folder.
+
+Last searched for similar plugins on 2026-10-26.
+
 ## For plugin developers
 
 The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a `Templater` template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
