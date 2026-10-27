@@ -55,11 +55,15 @@ const ref = watchPluginApi<LinkPickerApi>({
   apiVersionRange: '^1',
   app: this.app,
   component: this,
+  contract: LINK_PICKER_API_CONTRACT,
   pluginId: 'link-picker'
 });
 
-const link = await ref.whenAvailable();
+const api = await ref.whenAvailable();
+const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
 ```
+
+`LinkPickerApi` and `LINK_PICKER_API_CONTRACT` come from two files you copy from the plugin's repository; the README's [For plugin developers](https://github.com/mnaoumov/obsidian-link-picker#for-plugin-developers) section says which, and links the full API reference.
 
 `ref.value` is `null` until `Link Picker` has loaded and becomes non-`null` on its own, so load order is not something a consumer has to solve. If `Link Picker` is later disabled, the value goes back to `null` rather than leaving a handle pointing into a torn-down plugin.
 
