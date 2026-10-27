@@ -49,14 +49,18 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 Run **`Link Picker`: Insert link...** in an editor. Any selected text seeds the query and is replaced by the link you choose. `Enter` on a folder descends into it, and `Enter` on `..` goes back up.
 
-## Similar plugins
+## See also
 
-- [`Another Quick Switcher`](https://community.obsidian.md/plugins/obsidian-another-quick-switcher) — a family of configurable quick switchers, with fuzzy search, previews, multi-select, a current-directory filter and an insert-to-editor hotkey; this plugin is one picker that walks folders with `..`, ranks in fixed tiers, and answers a script with the link as a string.
-- [`Linkr`](https://community.obsidian.md/plugins/linkr) — a link builder that picks a file, then a heading or block, with display text and an embed toggle; this plugin links whole notes only, and adds folder navigation, named pickers rooted in a folder, and a callable API.
-- [`Journal Utils`](https://community.obsidian.md/plugins/journal-utils) — mobile-only pickers that insert people, group and location links and keep `people:` and `locations:` frontmatter lists up to date; this plugin is a general picker for any folder, on desktop and mobile, and leaves the frontmatter to the caller.
-- [`Path Picker`](https://community.obsidian.md/plugins/path-picker) — fuzzy-finds a file or directory under a root, which can sit outside the vault, with a preview, and inserts its filesystem path or opens it; this plugin inserts an Obsidian link to a vault note.
-- [`Auto Link Suggester`](https://community.obsidian.md/plugins/auto-link-suggester) — suggests links inline as you type a note name from the folders you configure, with no `[[` needed; this plugin opens a picker from a command or a script instead of completing words as you type.
-- [`Alias Quick Switcher`](https://community.obsidian.md/plugins/alias-quick-switcher) — a quick switcher that opens notes and matches each path segment against names and aliases, folder notes' aliases included; this plugin inserts a link rather than opening a note, and moves through the vault by folder.
+[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+
+| Plugin | Features | How `Link Picker` differs |
+| --- | --- | --- |
+| [`Alias Quick Switcher`](https://community.obsidian.md/plugins/alias-quick-switcher) (my plugin) | Opens notes; path-segment alias matching; folder-note aliases | Different action: inserts links; navigates by folder |
+| [`Another Quick Switcher`](https://community.obsidian.md/plugins/obsidian-another-quick-switcher) | Configurable switchers; fuzzy search; preview; multi-select; directory filter; insert hotkey | Overlaps on picking; folder navigation with `..`; fixed ranking; script returns a link string |
+| [`Auto Link Suggester`](https://community.obsidian.md/plugins/auto-link-suggester) | Inline name completion from selected folders; no opening brackets needed | Alternative interaction: command/script picker rather than inline completion |
+| [`Journal Utils`](https://community.obsidian.md/plugins/journal-utils) | Mobile people/group/location pickers; updates related frontmatter lists | Broader targets: any folder; desktop/mobile; leaves properties to the caller |
+| [`Linkr`](https://community.obsidian.md/plugins/linkr) | File/heading/block link builder; display text; embed toggle | Narrower targets: whole notes; adds folder navigation, named rooted pickers and an API |
+| [`Path Picker`](https://community.obsidian.md/plugins/path-picker) | Rooted filesystem path picker; preview; files/directories outside the vault too | Narrower targets: vault notes; inserts Obsidian links rather than filesystem paths |
 
 Last searched for similar plugins on 2026-10-26.
 
@@ -99,10 +103,6 @@ Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set u
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
 
 <!-- markdownlint-enable MD033 -->
-
-## My other Obsidian resources
-
-[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 
