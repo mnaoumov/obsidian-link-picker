@@ -78,7 +78,7 @@ interface GenerateMarkdownLinkParams {
 
 interface HotkeyRegistration {
   readonly key: string;
-  readonly listener: (event: KeyboardEvent, context: never) => unknown;
+  readonly listener: ($event: KeyboardEvent, context: never) => unknown;
   readonly modifier: string;
   readonly scope: unknown;
 }
@@ -100,12 +100,12 @@ interface TestableModal {
   readonly getSuggestions: (query: string) => Item[];
   readonly inputEl: HTMLInputElement;
   readonly modalEl: HTMLElement;
-  readonly onChooseSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
+  readonly onChooseSuggestion: (item: Item, $event: KeyboardEvent | MouseEvent) => void;
   readonly onClose: () => void;
   readonly onOpen: () => void;
   readonly renderSuggestion: (item: Item, el: HTMLElement) => void;
   readonly scope: unknown;
-  readonly selectSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
+  readonly selectSuggestion: (item: Item, $event: KeyboardEvent | MouseEvent) => void;
 }
 
 interface WorkspaceWithRecentFiles {
