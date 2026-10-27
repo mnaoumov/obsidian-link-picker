@@ -13,10 +13,10 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkPickerComponent } from '../link-picker-component.ts';
-import type { SelectOptions } from '../select.ts';
+import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
+import type { SelectOptions } from '../picker/select.ts';
 
-import { createPicker } from '../plugin-settings.ts';
+import { createPicker } from '../settings/plugin-settings.ts';
 import { InsertLinkEditorCommandHandler } from './insert-link-editor-command-handler.ts';
 
 interface TestableHandler {

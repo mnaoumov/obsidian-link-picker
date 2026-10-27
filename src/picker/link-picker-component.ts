@@ -14,7 +14,7 @@ import {
 import { join } from '@mnaoumov/typescript-lib/path';
 import { TFile } from 'obsidian';
 
-import type { PluginSettings } from './plugin-settings.ts';
+import type { PluginSettings } from '../settings/plugin-settings.ts';
 import type {
   SelectOptions,
   SelectParams

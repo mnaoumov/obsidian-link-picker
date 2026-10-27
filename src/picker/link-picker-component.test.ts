@@ -20,9 +20,9 @@ import {
 
 import type { SelectParams } from './select.ts';
 
+import { PluginSettings } from '../settings/plugin-settings.ts';
 import { SegmentMatchMode } from './item.ts';
 import { LinkPickerComponent } from './link-picker-component.ts';
-import { PluginSettings } from './plugin-settings.ts';
 
 const { resolveFolderNoteConfig } = vi.hoisted(() => ({ resolveFolderNoteConfig: vi.fn() }));
 const { getFileOrNull } = vi.hoisted(() => ({ getFileOrNull: vi.fn() }));

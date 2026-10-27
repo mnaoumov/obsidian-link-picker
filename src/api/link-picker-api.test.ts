@@ -18,11 +18,11 @@ import {
 import type {
   LinkPickerApi as LinkPickerApiDeclaration,
   LinkPickerApiSelectParams
-} from '../api.d.ts';
-import type { LinkPickerComponent } from './link-picker-component.ts';
+} from '../../api.d.ts';
+import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
 
-import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '../api-contract.ts';
-import { SegmentMatchMode } from './item.ts';
+import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '../../api-contract.ts';
+import { SegmentMatchMode } from '../picker/item.ts';
 import {
   LINK_PICKER_API_CONTRACT,
   LINK_PICKER_API_VERSION,

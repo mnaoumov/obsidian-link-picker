@@ -13,7 +13,7 @@ import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
 
 import type { PluginSettings } from './plugin-settings.ts';
 
-import { SegmentMatchMode } from './item.ts';
+import { SegmentMatchMode } from '../picker/item.ts';
 import {
   createPicker,
   Picker

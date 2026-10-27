@@ -16,9 +16,9 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkPickerApi } from '../api.d.ts';
+import type { LinkPickerApi } from '../../api.d.ts';
 
-import { LINK_PICKER_API_CONTRACT } from '../api-contract.ts';
+import { LINK_PICKER_API_CONTRACT } from '../../api-contract.ts';
 
 const app = App.createConfigured__();
 const file = TFile.create__(app.vault, 'People/Ada.md').asOriginalType__();

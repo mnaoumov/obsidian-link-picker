@@ -30,17 +30,17 @@ interface PluginApisProbe {
   getPluginApis: () => PluginApiDeclaration[];
 }
 
-vi.mock('./plugin-settings-tab.ts', () => ({
+vi.mock('./settings/plugin-settings-tab.ts', () => ({
   PluginSettingsTab: vi.fn()
 }));
 
-vi.mock('./link-picker-component.ts', async () => {
+vi.mock('./picker/link-picker-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   class LinkPickerComponent extends Component {}
   return { LinkPickerComponent };
 });
 
-vi.mock('./picker-commands-component.ts', async () => {
+vi.mock('./command-handlers/picker-commands-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   class PickerCommandsComponent extends Component {}
   return { PickerCommandsComponent };
@@ -51,15 +51,15 @@ import {
   LINK_PICKER_API_CONTRACT,
   LINK_PICKER_API_VERSION,
   LinkPickerApi
-} from './link-picker-api.ts';
+} from './api/link-picker-api.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { LinkPickerComponent } from './link-picker-component.ts';
+import { PickerCommandsComponent } from './command-handlers/picker-commands-component.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { PickerCommandsComponent } from './picker-commands-component.ts';
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { LinkPickerComponent } from './picker/link-picker-component.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 
 const PLUGIN_MANIFEST: PluginManifest = {
   author: 'mnaoumov',

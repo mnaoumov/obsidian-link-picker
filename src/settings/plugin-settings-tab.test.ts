@@ -30,7 +30,7 @@ import {
 
 import type { Picker } from './plugin-settings.ts';
 
-import { SegmentMatchMode } from './item.ts';
+import { SegmentMatchMode } from '../picker/item.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import {
   createPicker,

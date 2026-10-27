@@ -6,16 +6,16 @@ import { PluginDataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import { PluginBase } from '@mnaoumov/obsidian-lib/plugin/plugin';
 import { PluginEventSourceImpl } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
-import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
 import {
   LINK_PICKER_API_CONTRACT,
   LINK_PICKER_API_VERSION,
   LinkPickerApi
-} from './link-picker-api.ts';
-import { LinkPickerComponent } from './link-picker-component.ts';
-import { PickerCommandsComponent } from './picker-commands-component.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
-import { PluginSettingsTab } from './plugin-settings-tab.ts';
+} from './api/link-picker-api.ts';
+import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
+import { PickerCommandsComponent } from './command-handlers/picker-commands-component.ts';
+import { LinkPickerComponent } from './picker/link-picker-component.ts';
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
+import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
   private linkPickerApi: LinkPickerApi | null = null;
