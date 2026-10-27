@@ -77,10 +77,10 @@ interface GenerateMarkdownLinkParams {
 }
 
 interface HotkeyRegistration {
-  key: string;
-  listener: (event: KeyboardEvent, context: never) => unknown;
-  modifier: string;
-  scope: unknown;
+  readonly key: string;
+  readonly listener: (event: KeyboardEvent, context: never) => unknown;
+  readonly modifier: string;
+  readonly scope: unknown;
 }
 
 type LinkPickerModalReject = (this: void, reason: unknown) => void;
@@ -88,26 +88,28 @@ type LinkPickerModalReject = (this: void, reason: unknown) => void;
 type LinkPickerModalResolve = (this: void, value: string) => void;
 
 interface RecentFileTrackerLike {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The tests replace the recent-file history to exercise ranking changes.
   lastOpenFiles: string[];
 }
 
 interface RecentFileTrackerMock {
-  workspace: WorkspaceWithRecentFiles;
+  readonly workspace: WorkspaceWithRecentFiles;
 }
 
 interface TestableModal {
-  getSuggestions: (query: string) => Item[];
+  readonly getSuggestions: (query: string) => Item[];
   readonly inputEl: HTMLInputElement;
   readonly modalEl: HTMLElement;
-  onChooseSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
-  onClose: () => void;
-  onOpen: () => void;
-  renderSuggestion: (item: Item, el: HTMLElement) => void;
+  readonly onChooseSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
+  readonly onClose: () => void;
+  readonly onOpen: () => void;
+  readonly renderSuggestion: (item: Item, el: HTMLElement) => void;
   readonly scope: unknown;
-  selectSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
+  readonly selectSuggestion: (item: Item, event: KeyboardEvent | MouseEvent) => void;
 }
 
 interface WorkspaceWithRecentFiles {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test setup installs the recent-file tracker on the workspace mock.
   recentFileTracker: RecentFileTrackerLike;
 }
 

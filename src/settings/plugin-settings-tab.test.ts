@@ -44,10 +44,10 @@ import {
  * four members are what a picker row's binding is asserted on.
  */
 interface CapturedBinding {
-  componentToPluginSettingsValueConverter?: (value: unknown) => unknown;
-  pluginSettingsToComponentValueConverter?: (value: unknown) => unknown;
-  propertyName: string;
-  shouldShowValidationMessage?: boolean;
+  readonly componentToPluginSettingsValueConverter?: (value: unknown) => unknown;
+  readonly pluginSettingsToComponentValueConverter?: (value: unknown) => unknown;
+  readonly propertyName: string;
+  readonly shouldShowValidationMessage?: boolean;
 }
 
 const EXPECTED_TOP_LEVEL_PROPERTY_NAMES = [
