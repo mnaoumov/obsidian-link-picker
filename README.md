@@ -41,70 +41,13 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **A ranking you can predict** — an exact name beats a prefix, which beats a path match, which beats a scattered one, so the same query puts the same note first every time. [03 Ranking](<./demo-vault/03 Ranking.md>)
 - **Aliases and folder notes are names too** — a note aliased three ways offers three rows, and a folder's alias lives on its folder note, read from your existing [`folder-notes`](https://github.com/LostPaul/obsidian-folder-notes) setup rather than configured again here. [03 Ranking](<./demo-vault/03 Ranking.md>)
 - **Named pickers** — a folder you link into constantly becomes its own command, already rooted there, with its own prefix, suffix and placeholder. [04 Named pickers](<./demo-vault/04 Named pickers.md>)
+- **A control strip that works on a phone** — **No link**, **Create new** and four view toggles, each a button you tap and a hotkey you press, since a phone has no `Alt` key. [01 Picking a link](<./demo-vault/01 Picking a link.md>)
 - **Callable from a template or a script** — the picker resolves with the link as a **string**, so the answer can drop straight into a property value instead of being typed at a cursor. [06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>)
+- **Settings** — folder-note location, excluded paths, `Fuzzy` segment matching and the frontmatter properties it reads. [05 Settings](<./demo-vault/05 Settings.md>)
 
 ## Picking a link
 
-Run **`Link Picker`: Insert link...** in an editor. Any selected text seeds the query and is replaced by the link you choose.
-
-Inside the picker, `Enter` on a folder descends into it and `Enter` on `..` goes back up.
-
-Everything else lives in the strip along the bottom, as a control you click and a hotkey you can press instead. Both routes run the same thing, and the controls are what make the picker usable on a phone, where there is no `Alt` key at all.
-
-| Control | Key | What it does |
-| --- | --- | --- |
-| **No link** | `Alt + 1` | Choose nothing, and insert an empty link |
-| **Create new** | `Shift + Enter` | Create a note with the name you typed, and link to it |
-| **All files** | `Alt + 2` | Show all files, not only markdown |
-| **Subfolders** | `Alt + 3` | Include subfolder contents |
-| **Folders only** | `Alt + 4` | Show only folders |
-| **By date** | `Alt + 5` | Lead with the most recently updated note (on by default) |
-
-A toggle that is on is filled in, so the strip says what the picker is currently doing. **All files** and **Subfolders** grey out while **Folders only** is on, since between them they would empty the list.
-
-## Ranking
-
-With a query typed, items are ranked in tiers, and only within a tier does anything else break the tie:
-
-1. The name matches exactly
-2. The name starts with the query
-3. The path contains the query (only when the query itself contains a `/`)
-4. Every query term equals some part of the path
-5. Every query term starts some part of the path
-6. Every query term appears somewhere in the path
-7. Every query term's characters appear somewhere in the path in order — only when `Segment matching` is `Fuzzy`
-
-Aliases count as names, so a note with three aliases offers three rows that rank separately. Inside a tier, folders come first; then recently opened files, then updated date, then shallower paths, then alphabetical.
-
-The seventh tier is what `Segment matching` adds, and it is deliberately the weakest: turning it on changes what the picker **finds**, never the order it finds it in. `Brv` reaches `Bravo` without displacing anything you spelled out.
-
-With no query typed, `..` and the current folder's own folder note hold the top two rows, so navigating out never means scrolling.
-
-## Named pickers
-
-If you link into one folder constantly, navigating there every time is the wrong shape. Add a **picker** in the settings and it becomes its own command, already rooted where you wanted to be — a vault that files people under `People` and courts under `Legal` gets two commands rather than one that asks first.
-
-Each picker carries a name, a folder, whether it starts with subfolders included, a prefix and suffix, a placeholder, and whether it offers to create notes. The prefix and suffix wrap the link, so a prefix of `"Person: "` is what makes the result drop straight into a note's property list.
-
-A picker's command is identified by an id minted when the picker is created, not by its name, so renaming a picker keeps whatever hotkey you bound to it.
-
-Anything richer than those fields is code rather than configuration — validating a name, deriving a folder from it, seeding frontmatter. That is what the callable API is for.
-
-## Folder notes
-
-The picker understands folder notes. A folder's note is not offered under its own file name — `Foo/Foo.md` says nothing that the `Foo` row did not already say, and choosing the folder is how you reach it. A folder note's aliases are still offered, so `Foo/Foo.md` aliased `The Foo project` is reachable under that name.
-
-Where that note lives is read from the installed [`folder-notes`](https://github.com/LostPaul/obsidian-folder-notes) plugin by default, so a vault that already has folder notes needs no configuration. `Folder note location` in the settings overrides it.
-
-## Settings
-
-- **Pickers** — the named, preconfigured pickers, each of which becomes its own command.
-- **Folder note location** — `Auto` (read the `folder-notes` plugin), inside the folder, beside the folder, or none.
-- **Folder note name** — what the note is called, when not on `Auto`.
-- **Excluded paths** — substrings; a path containing any of them is hidden. Point this at your attachment folder.
-- **Segment matching** — `Substring` (the default: a query term must appear inside a path part as one unbroken run) or `Fuzzy` (its characters need only appear in order, so `Brv` finds `Bravo`). Finding more, never reordering.
-- **Updated property** — the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time.
-- **Title property** — the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
+Run **`Link Picker`: Insert link...** in an editor. Any selected text seeds the query and is replaced by the link you choose. `Enter` on a folder descends into it, and `Enter` on `..` goes back up.
 
 ## Similar plugins
 
@@ -119,46 +62,9 @@ Last searched for similar plugins on 2026-10-26.
 
 ## For plugin developers
 
-The picker is callable from another plugin or a script, and that is where this plugin came from: it is an extraction of a script whose every consumer was a `Templater` template writing a link into a property value. Those callers want the **string**, not an edit at a cursor, so the API is not an extra bolted onto a command — it is the other half of the plugin.
+The picker is published as a cross-plugin API: `select(options)` resolves with the link as a string and rejects when the user dismisses the picker. Copy [`api.d.ts`](./api.d.ts), which depends on `obsidian` alone, and, to check payloads, [`api-contract.ts`](./api-contract.ts) beside it. The contract version is **`1.1.0`**, and it moves independently of the plugin's.
 
-The types are in [`api.d.ts`](./api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `@mnaoumov/obsidian-lib`.
-
-Beside it, [`api-contract.ts`](./api-contract.ts) holds the published API's contract, `LINK_PICKER_API_CONTRACT`: for `select`, a schema over its arguments and a schema over what it resolves to. It is the constant this plugin publishes with the API, so copy it next to `api.d.ts` and pass it as the `contract`, and both sides check the same definition. It needs two packages beside `obsidian`: [`@mnaoumov/typescript-lib`](https://www.npmjs.com/package/@mnaoumov/typescript-lib), whose `api-contract` and `type-guards` entry points supply the contract type, the [Standard Schema](https://standardschema.dev) builders and the guard builders, and [`@mnaoumov/obsidian-lib`](https://www.npmjs.com/package/@mnaoumov/obsidian-lib), whose `file-system` entry point supplies the path-or-file guard, so the file itself is only this plugin's checks and the constant. Install both (`npm install @mnaoumov/typescript-lib @mnaoumov/obsidian-lib`, typescript-lib `1.5.0` or later) when you copy the file. `api.d.ts` still needs nothing. (It is not named `api.ts`: TypeScript would read `api.d.ts` as that file's own declarations.)
-
-The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.1.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
-
-If your plugin already uses [`@mnaoumov/obsidian-lib`](https://mnaoumov.dev/obsidian-lib/guides/cross-plugin-apis/), `watchPluginApi` is the whole of it:
-
-```typescript
-import type { LinkPickerApi } from './api.d.ts';
-
-import { watchPluginApi } from '@mnaoumov/obsidian-lib/plugin/plugin-api';
-
-import { LINK_PICKER_API_CONTRACT } from './api-contract.ts';
-
-const ref = watchPluginApi<LinkPickerApi>({
-  apiVersionRange: '^1',
-  app: this.app,
-  component: this,
-  contract: LINK_PICKER_API_CONTRACT,
-  pluginId: 'link-picker'
-});
-
-// `ref.value` is `null` until the plugin has loaded, and becomes non-null on its own.
-const api = await ref.whenAvailable();
-const link = await api.select({ folderPath: 'People', prefix: 'Person: ' });
-// → 'Person: [[Ada Lovelace|Ada]]'
-```
-
-If it does not — and is not going to — you still need no dependency on anything. The registry, and the two events a plugin announces itself through, are a documented wire protocol reachable with the `obsidian` module alone; [Plugin API protocol](https://mnaoumov.dev/obsidian-lib/guides/plugin-api-protocol/) is that route written out, and `api.d.ts` types it just as well, since nothing in that file imports the library either.
-
-`select` resolves with the link text and **rejects** when the picker is dismissed — dismissing is the caller's cue that the user backed out, which is different from the empty string that `No link` returns. Every option is optional and anything omitted falls back to the settings above; three are worth knowing before you design around the API:
-
-- **`createNote`** — called when the user picks `Create new`, and given the folder the picker is currently rooted at plus what they typed. This is the hook the whole API exists for: validating a name, deriving a subfolder from it, seeding frontmatter and applying a template are vault conventions, and none of them are expressible in settings. Without it the plugin creates an empty note.
-- **`prefix`** and **`suffix`** wrap the link — a prefix of `"Person: "` produces `Person: [[Ada]]` — and **`shouldApplyPrefixSuffixWhenNoLinkSelected`** decides whether they are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
-- **`sourcePathOrFile`** — the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.
-
-[06 Calling it from a script](<./demo-vault/06 Calling it from a script.md>) in the demo vault has a runnable version of the above.
+[Calling `Link Picker` from a plugin or a script](<./docs/api.md>) covers the files to copy, consuming it with or without `@mnaoumov/obsidian-lib`, and the options worth knowing before you design around it.
 
 ## Installation
 

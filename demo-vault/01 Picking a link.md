@@ -1,6 +1,6 @@
 # Picking a link
 
-The **Insert link...** command opens the picker over the whole vault. What you choose is written at the cursor as a link, replacing whatever was selected.
+The **Insert link...** command opens the picker over the whole vault. What you choose is written at the cursor as a link, replacing whatever was selected — and the selected text seeds the picker's query, so selecting a name before running the command searches for it.
 
 ## Try it
 

@@ -46,7 +46,11 @@ The other two controls are actions rather than state: **No link** and **Create n
 
 `Legal` has a folder note — `Legal.md`, the note that describes the folder itself. The picker knows about it, and it comes from the `Folder Notes` plugin's own configuration rather than from a convention this plugin invents, so a vault that already has folder notes needs no setting here at all.
 
-The folder note is not offered under its own file name. `Legal/Legal.md` says nothing that `Legal` did not already say, and the folder row is how you reach it.
+The folder note is not offered under its own file name. `Legal/Legal.md` says nothing that `Legal` did not already say, and the folder row is how you reach it. A folder note's aliases are still offered, each as a row of its own, so it stays reachable under any name it is known by.
+
+With no query typed inside a folder, `..` and that folder's own folder note hold the top two rows, so navigating out never means scrolling.
+
+Where the folder note lives can be overridden in the settings — see `folderNoteLocation` in [05 Settings](<./05 Settings.md>).
 
 ## Where next
 
