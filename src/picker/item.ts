@@ -64,35 +64,39 @@ export interface Item {
   /**
    * The aliases this row represents. Empty for the row representing the note's own name.
    */
-  aliases: string[];
+  readonly aliases: string[];
 
-  file: TAbstractFile;
-  isFolder: boolean;
+  readonly file: TAbstractFile;
+  readonly isFolder: boolean;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- fillLowerCaseFields computes this field in place after item construction.
   lowerCaseExtension: string;
 
   /**
    * {@link lowerCaseRelativePath} split on `/`, plus each alias — the units a space/slash-separated query
    * term is matched against.
    */
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- fillLowerCaseFields replaces the path segments before adding aliases.
   lowerCasePathParts: string[];
 
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- fillLowerCaseFields computes this field in place after item construction.
   lowerCaseRelativePath: string;
 
   /**
    * The names this row answers to: the file's name (or basename, for a folder note) plus its aliases.
    */
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- fillLowerCaseFields replaces the titles before adding aliases.
   lowerCaseTitles: string[];
 
   /**
    * The path relative to the folder the picker is currently rooted at.
    */
-  relativePath: string;
+  readonly relativePath: string;
 
   /**
    * The last-updated stamp used by the sort-by-updated ordering, as a string that sorts lexicographically
    * (an ISO timestamp does; so does a zero-padded epoch). Empty means unknown, which sorts last.
    */
-  updated: string;
+  readonly updated: string;
 }
 
 /**
@@ -103,20 +107,20 @@ export interface Item {
  * note's exact name puts it first, and a fuzzy score cannot promise that.
  */
 export interface QueryItem {
-  isEqualToEveryTerm: boolean;
-  isExactMatch: boolean;
-  isIncludeEveryTerm: boolean;
-  isMatch: boolean;
-  isPathInclude: boolean;
-  isStartFrom: boolean;
-  isStartFromEveryTerm: boolean;
+  readonly isEqualToEveryTerm: boolean;
+  readonly isExactMatch: boolean;
+  readonly isIncludeEveryTerm: boolean;
+  readonly isMatch: boolean;
+  readonly isPathInclude: boolean;
+  readonly isStartFrom: boolean;
+  readonly isStartFromEveryTerm: boolean;
 
   /**
    * Only ever true under {@link SegmentMatchMode.Fuzzy}, where it is the weakest tier of all.
    */
-  isSubsequenceEveryTerm: boolean;
+  readonly isSubsequenceEveryTerm: boolean;
 
-  item: Item;
+  readonly item: Item;
 }
 
 /**

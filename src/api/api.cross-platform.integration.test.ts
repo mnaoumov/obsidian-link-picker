@@ -71,7 +71,7 @@ const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 const TEST_TIMEOUT_IN_MILLISECONDS = 300_000;
 
 interface ApiLike {
-  select: (params: SelectParamsLike) => Promise<string>;
+  readonly select: (params: SelectParamsLike) => Promise<string>;
 }
 
 /**
@@ -81,8 +81,11 @@ interface ApiLike {
  * polled for from Node once a row or a control has ended the picker.
  */
 interface ApiSuiteContext {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The pending selection callbacks update the shared settlement flag.
   isSettled?: boolean;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The pending selection callbacks store the answer for the host to poll.
   link?: null | string;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Each selection replaces the promise held across host round trips.
   pending?: Promise<void>;
 }
 

@@ -21,13 +21,13 @@ import {
 } from 'vitest';
 
 interface ComponentModuleActual {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 // `getPluginApis` is protected on the base — the declaration is for the library, not for callers — so a test
 // reads it through a probe rather than widening the plugin's own surface.
 interface PluginApisProbe {
-  getPluginApis: () => PluginApiDeclaration[];
+  readonly getPluginApis: () => PluginApiDeclaration[];
 }
 
 vi.mock('./settings/plugin-settings-tab.ts', () => ({

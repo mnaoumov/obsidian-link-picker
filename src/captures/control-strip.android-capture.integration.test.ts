@@ -122,10 +122,11 @@ const FOLDER_PATH = 'People';
  * closure needs still has to arrive through `input`.
  */
 interface ApiLike {
-  select: (params: Record<string, unknown>) => Promise<string>;
+  readonly select: (params: Record<string, unknown>) => Promise<string>;
 }
 
 interface CaptureWindow {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- Each capture installs its selection state on the page window.
   __linkPickerCapture?: LinkBag;
   readonly __obsidianLib?: Record<string, StateEntryLike | undefined>;
 }
@@ -143,7 +144,9 @@ interface ControlSnapshot {
  * returned to the host, so the string is stashed on the page and read back once a control has ended it.
  */
 interface LinkBag {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The selection callbacks replace the answer after a control ends the picker.
   link: null | string;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The capture stores its pending selection after installing the state bag.
   pending?: Promise<void>;
 }
 
