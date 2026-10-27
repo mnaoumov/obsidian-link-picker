@@ -5,7 +5,7 @@ import type {
   TFile
 } from 'obsidian';
 
-import type { LinkPickerApiSelectParams } from '../api.d.ts';
+import type { LinkPickerApiSelectParams } from '../../api.d.ts';
 import type { SegmentMatchMode } from './item.ts';
 
 import { LinkPickerModal } from './link-picker-modal.ts';

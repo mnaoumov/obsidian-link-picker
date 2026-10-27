@@ -13,17 +13,17 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkPickerComponent } from './link-picker-component.ts';
+import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
 import type {
   Picker,
   PluginSettings
-} from './plugin-settings.ts';
+} from '../settings/plugin-settings.ts';
 
-import { PickerCommandsComponent } from './picker-commands-component.ts';
 import {
   createPicker,
   PluginSettings as PluginSettingsClass
-} from './plugin-settings.ts';
+} from '../settings/plugin-settings.ts';
+import { PickerCommandsComponent } from './picker-commands-component.ts';
 
 type SaveSettingsListener = () => Promise<void>;
 

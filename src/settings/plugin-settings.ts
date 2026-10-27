@@ -1,6 +1,6 @@
 import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
 
-import { SegmentMatchMode } from './item.ts';
+import { SegmentMatchMode } from '../picker/item.ts';
 
 /**
  * A named, preconfigured picker.

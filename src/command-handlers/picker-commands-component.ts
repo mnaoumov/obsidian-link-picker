@@ -6,13 +6,13 @@ import { registerAsyncEvent } from '@mnaoumov/obsidian-lib/components/async-even
 import { ComponentEx } from '@mnaoumov/obsidian-lib/components/component-ex';
 import { isDeepEqual } from '@mnaoumov/typescript-lib/object-utils';
 
-import type { LinkPickerComponent } from './link-picker-component.ts';
+import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
 import type {
   Picker,
   PluginSettings
-} from './plugin-settings.ts';
+} from '../settings/plugin-settings.ts';
 
-import { InsertLinkEditorCommandHandler } from './command-handlers/insert-link-editor-command-handler.ts';
+import { InsertLinkEditorCommandHandler } from './insert-link-editor-command-handler.ts';
 
 interface PickerCommandsComponentConstructorParams {
   readonly commandHandlerComponent: CommandHandlerComponent;

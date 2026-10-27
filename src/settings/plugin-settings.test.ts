@@ -5,7 +5,7 @@ import {
   it
 } from 'vitest';
 
-import { SegmentMatchMode } from './item.ts';
+import { SegmentMatchMode } from '../picker/item.ts';
 import {
   createPicker,
   Picker,

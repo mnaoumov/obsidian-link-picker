@@ -5,8 +5,8 @@ import type {
 
 import { EditorCommandHandler } from '@mnaoumov/obsidian-lib/command-handlers/editor-command-handler';
 
-import type { LinkPickerComponent } from '../link-picker-component.ts';
-import type { Picker } from '../plugin-settings.ts';
+import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
+import type { Picker } from '../settings/plugin-settings.ts';
 
 interface InsertLinkEditorCommandHandlerConstructorParams {
   readonly linkPickerComponent: LinkPickerComponent;
