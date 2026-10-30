@@ -160,7 +160,7 @@ describe('Plugin', () => {
     plugin.unload();
   });
 
-  it('should register the generic insert command and the demo-vault command itself', async () => {
+  it('should register the generic insert command, the report-bug command and the demo-vault command itself', async () => {
     const registerCommandHandlers = vi.spyOn(CommandHandlerComponent.prototype, 'registerCommandHandlers');
     const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
 
@@ -168,7 +168,7 @@ describe('Plugin', () => {
 
     // The base class registers its own commands first, so the plugin's own batch is the last one.
     const factory = registerCommandHandlers.mock.calls.at(-1)?.[0];
-    expect(factory?.().map((handler) => handler.buildCommand().id)).toEqual(['insert-link', 'open-demo-vault']);
+    expect(factory?.().map((handler) => handler.buildCommand().id)).toEqual(['insert-link', 'report-bug', 'open-demo-vault']);
     plugin.unload();
   });
 });
