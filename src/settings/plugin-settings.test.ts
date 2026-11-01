@@ -24,6 +24,7 @@ describe('Picker', () => {
     expect(picker.prefix).toBe('');
     expect(picker.shouldAllowCreate).toBe(true);
     expect(picker.shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
+    expect(picker.shouldUseSelectionAsDisplayText).toBe(false);
     expect(picker.suffix).toBe('');
   });
 });
@@ -47,6 +48,7 @@ describe('createPicker', () => {
     expect(picker.prefix).toBe('');
     expect(picker.shouldAllowCreate).toBe(true);
     expect(picker.shouldApplyPrefixSuffixWhenNoLinkSelected).toBe(false);
+    expect(picker.shouldUseSelectionAsDisplayText).toBe(false);
     expect(picker.suffix).toBe('');
   });
 });
@@ -66,6 +68,7 @@ describe('PluginSettings', () => {
     expect(settings.excludedPathPatterns).toEqual([]);
     expect(settings.folderNoteName).toBe('');
     expect(settings.pickers).toEqual([]);
+    expect(settings.shouldUseSelectionAsDisplayText).toBe(false);
     expect(settings.titlePropertyName).toBe('');
     expect(settings.updatedPropertyName).toBe('');
   });

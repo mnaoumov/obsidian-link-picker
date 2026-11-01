@@ -71,7 +71,8 @@ export class PickerCommandsComponent extends ComponentEx {
       pickers.map((picker) =>
         new InsertLinkEditorCommandHandler({
           linkPickerComponent: this.linkPickerComponent,
-          picker
+          picker,
+          pluginSettingsComponent: this.pluginSettingsComponent
         })
       )
     );

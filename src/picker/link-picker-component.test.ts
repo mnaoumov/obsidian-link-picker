@@ -103,6 +103,7 @@ describe('LinkPickerComponent', () => {
       expect(lastParams().folderPath).toBe('');
       expect(lastParams().includeSubfolders).toBe(false);
       expect(lastParams().initialQuery).toBe('');
+      expect(lastParams().linkDisplayText).toBe('');
       expect(lastParams().placeholder).toBe('');
       expect(lastParams().prefix).toBe('');
       expect(lastParams().suffix).toBe('');
@@ -132,6 +133,12 @@ describe('LinkPickerComponent', () => {
       });
 
       expect(lastParams().sourcePathOrFile).toBe('');
+    });
+
+    it('should pass a command\'s display text through to the picker', async () => {
+      await createComponent().select({ linkDisplayText: 'Ada' });
+
+      expect(lastParams().linkDisplayText).toBe('Ada');
     });
 
     it('should return whatever the picker resolved with', async () => {

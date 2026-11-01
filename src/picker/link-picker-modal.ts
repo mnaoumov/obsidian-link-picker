@@ -397,10 +397,13 @@ export class LinkPickerModal extends SuggestModal<Item> {
    * {@link onChooseSuggestion} — so the folder-to-folder-note path the original script carried here could
    * never run, and neither could the folder-name fallback for a row with no alias: a folder note is only
    * ever listed under an alias it actually has, so a row without one is never a folder note.
+   *
+   * A non-empty {@link SelectParams.linkDisplayText} wins over the row's alias: it is the text the user
+   * selected before opening the picker, and keeping it is what they asked for.
    */
   private generateLink(item: Item): string {
     return generateMarkdownLink({
-      alias: item.aliases[0] ?? '',
+      alias: this.options.linkDisplayText || (item.aliases[0] ?? ''),
       app: this.app,
       sourcePathOrFile: this.options.sourcePathOrFile,
       targetPathOrFile: asFile(item.file)

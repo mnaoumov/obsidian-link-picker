@@ -544,6 +544,23 @@ describe('LinkPickerModal', () => {
       expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md|Lovelace]]');
     });
 
+    it('should use the given display text in place of the picked alias', () => {
+      appMock.metadataCache.setCache__('Notes/Ada.md', { frontmatter: { aliases: ['Lovelace'] } });
+      const modal = openModal({ folderPath: 'Notes', linkDisplayText: 'the countess' });
+
+      modal.onChooseSuggestion(aliasItemFor(modal, 'Ada.md', 'Lovelace'), mouseEvent());
+
+      expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md|the countess]]');
+    });
+
+    it('should use the given display text for a row with no alias', () => {
+      const modal = openModal({ folderPath: 'Notes', linkDisplayText: 'Ada' });
+
+      modal.onChooseSuggestion(itemFor(modal, 'Ada.md'), mouseEvent());
+
+      expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md|Ada]]');
+    });
+
     it('should navigate into a folder even while showing only folders, rather than linking to it', () => {
       const modal = openModal({ folderPath: 'Notes' });
 
@@ -967,6 +984,7 @@ function createModal(options: Partial<SelectParams>): TestableModal {
         folderPath: '',
         includeSubfolders: false,
         initialQuery: '',
+        linkDisplayText: '',
         placeholder: '',
         prefix: '',
         segmentMatchMode: SegmentMatchMode.Substring,

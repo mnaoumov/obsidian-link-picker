@@ -35,6 +35,14 @@ import { select } from './select.ts';
  */
 export interface LinkPickerComponentSelectParams extends SelectOptions {
   /**
+   * The display text of the picked link, in place of the row's alias. Empty or absent keeps the alias.
+   *
+   * Not part of the published options: an API caller already holds the text it would pass and the link
+   * string the call returns.
+   */
+  readonly linkDisplayText?: string;
+
+  /**
    * The note creator a configured picker names. Empty or absent falls back to
    * {@link PluginSettings.noteCreatorName}.
    *
@@ -219,6 +227,7 @@ export class LinkPickerComponent extends ComponentEx {
       folderPath: params.folderPath ?? '',
       includeSubfolders: params.includeSubfolders ?? false,
       initialQuery: params.initialQuery ?? '',
+      linkDisplayText: params.linkDisplayText ?? '',
       placeholder: params.placeholder ?? '',
       prefix: params.prefix ?? '',
       segmentMatchMode: params.segmentMatchMode ? SEGMENT_MATCH_MODES[params.segmentMatchMode] : settings.segmentMatchMode,

@@ -170,6 +170,15 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           });
         }
       }),
+      this.settingEx({
+        desc: 'Whether `Insert link...` keeps the selected text as the display text of the link it inserts, rather than replacing it. Each picker has its own.',
+        name: 'Use selection as display text',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({ propertyName: 'shouldUseSelectionAsDisplayText', valueComponent: toggle });
+          });
+        }
+      }),
       {
         desc: 'Each picker becomes its own command, preconfigured with a folder and an inline field — so a vault that picks people out of `People` and courts out of `Legal` gets two commands rather than one that asks first.',
         name: 'Pickers'
@@ -306,6 +315,19 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               this.bindPickerProperty({
                 index,
                 pickerPropertyName: 'shouldApplyPrefixSuffixWhenNoLinkSelected',
+                valueComponent: toggle
+              });
+            });
+          }
+        }),
+        this.settingEx({
+          desc: 'Whether the selected text is kept as the display text of the inserted link, rather than replaced by it. The selection seeds the query either way.',
+          name: 'Use selection as display text',
+          render: (setting) => {
+            setting.addToggle((toggle) => {
+              this.bindPickerProperty({
+                index,
+                pickerPropertyName: 'shouldUseSelectionAsDisplayText',
                 valueComponent: toggle
               });
             });
