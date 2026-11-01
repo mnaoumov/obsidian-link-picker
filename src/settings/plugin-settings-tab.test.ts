@@ -57,7 +57,8 @@ const EXPECTED_TOP_LEVEL_PROPERTY_NAMES = [
   'updatedPropertyName',
   'segmentMatchMode',
   'titlePropertyName',
-  'noteCreatorName'
+  'noteCreatorName',
+  'shouldUseSelectionAsDisplayText'
 ];
 
 let app: AppOriginal;
@@ -190,6 +191,7 @@ describe('PluginSettingsTab', () => {
         'Prefix',
         'Suffix',
         'Apply prefix and suffix when no link is selected',
+        'Use selection as display text',
         'Placeholder',
         'Allow creating notes',
         'Note creator'
@@ -461,6 +463,7 @@ const PICKER_ROW_ORDER: (keyof Picker)[] = [
   'prefix',
   'suffix',
   'shouldApplyPrefixSuffixWhenNoLinkSelected',
+  'shouldUseSelectionAsDisplayText',
   'placeholder',
   'shouldAllowCreate',
   'noteCreatorName'

@@ -46,6 +46,8 @@ Each picker is a page under **Pickers** in the settings tab, with the native `+`
   - emitted immediately after the link.
 - `shouldApplyPrefixSuffixWhenNoLinkSelected`
   - whether the prefix and suffix are still emitted when you press **No link**. Off by default, so declining writes nothing at all rather than a `"Person: "` with nothing after it.
+- `shouldUseSelectionAsDisplayText`
+  - whether the text you selected before running the command is kept as the link's display text — select `the countess`, pick `Ada Lovelace`, get `[[Ada Lovelace|the countess]]` — rather than replaced by the link. Off by default. The selection seeds the query either way.
 - `placeholder`
   - the picker's placeholder text.
 - `shouldAllowCreate`

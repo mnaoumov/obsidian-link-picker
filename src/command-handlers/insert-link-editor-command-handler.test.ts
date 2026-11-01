@@ -1,3 +1,4 @@
+import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 import type {
   Editor,
   MarkdownFileInfo,
@@ -18,7 +19,10 @@ import type {
   LinkPickerComponentSelectParams
 } from '../picker/link-picker-component.ts';
 
-import { createPicker } from '../settings/plugin-settings.ts';
+import {
+  createPicker,
+  PluginSettings
+} from '../settings/plugin-settings.ts';
 import { InsertLinkEditorCommandHandler } from './insert-link-editor-command-handler.ts';
 
 interface TestableHandler {
@@ -123,6 +127,42 @@ describe('InsertLinkEditorCommandHandler', () => {
     expect(vi.mocked(editor.replaceSelection)).toHaveBeenCalledWith('[[Ada]]');
   });
 
+  describe('the selection as display text', () => {
+    it('should not pass the selection as the display text while the setting is off', async () => {
+      const select = vi.fn(() => Promise.resolve('[[Ada]]'));
+
+      await createHandler(null, select).executeEditor(createEditor('Ada'), createContext());
+
+      expect(lastOptions(select).linkDisplayText).toBe('');
+    });
+
+    it('should pass the selection as the display text of the generic command when the top-level setting is on', async () => {
+      const select = vi.fn(() => Promise.resolve('[[Ada Lovelace|Ada]]'));
+      const settings = new PluginSettings();
+      settings.shouldUseSelectionAsDisplayText = true;
+
+      await createHandler(null, select, settings).executeEditor(createEditor('Ada'), createContext());
+
+      expect(lastOptions(select).linkDisplayText).toBe('Ada');
+      expect(lastOptions(select).initialQuery).toBe('Ada');
+    });
+
+    it('should follow the picker\'s own field, not the top-level setting, for a configured picker', async () => {
+      const settings = new PluginSettings();
+      settings.shouldUseSelectionAsDisplayText = true;
+      const offPicker = createPicker();
+      const onPicker = createPicker();
+      onPicker.shouldUseSelectionAsDisplayText = true;
+      const select = vi.fn(() => Promise.resolve('[[Ada]]'));
+
+      await createHandler(offPicker, select, settings).executeEditor(createEditor('Ada'), createContext());
+      expect(lastOptions(select).linkDisplayText).toBe('');
+
+      await createHandler(onPicker, select, new PluginSettings()).executeEditor(createEditor('Ada'), createContext());
+      expect(lastOptions(select).linkDisplayText).toBe('Ada');
+    });
+  });
+
   it('should leave the note untouched when the picker is dismissed, since that is the user declining', async () => {
     const editor = createEditor('Ada');
 
@@ -143,11 +183,16 @@ function createEditor(selection: string): Editor {
   });
 }
 
-function createHandler(picker: null | ReturnType<typeof createPicker>, select = vi.fn(() => Promise.resolve(''))): TestableHandler {
+function createHandler(
+  picker: null | ReturnType<typeof createPicker>,
+  select = vi.fn(() => Promise.resolve('')),
+  settings = new PluginSettings()
+): TestableHandler {
   return castTo<TestableHandler>(
     new InsertLinkEditorCommandHandler({
       linkPickerComponent: strictProxy<LinkPickerComponent>({ select }),
-      picker
+      picker,
+      pluginSettingsComponent: strictProxy<PluginSettingsComponentBase<PluginSettings>>({ settings })
     })
   );
 }

@@ -72,6 +72,12 @@ export class Picker {
   public shouldApplyPrefixSuffixWhenNoLinkSelected = false;
 
   /**
+   * Whether the selection becomes the inserted link's display text, `[[Ada Lovelace|Ada]]`, rather than
+   * being replaced by the bare link. Off by default, which keeps the selection as the query alone.
+   */
+  public shouldUseSelectionAsDisplayText = false;
+
+  /**
    * Emitted immediately after the picked link. Empty means the link alone.
    */
   public suffix = '';
@@ -118,6 +124,12 @@ export class PluginSettings {
    * one that makes the same query put the same note first today and next month.
    */
   public segmentMatchMode: SegmentMatchMode = SegmentMatchMode.Substring;
+
+  /**
+   * {@link Picker.shouldUseSelectionAsDisplayText} for the generic `Insert link...`. Each picker carries
+   * its own, since a boolean has no "unset" to fall back from.
+   */
+  public shouldUseSelectionAsDisplayText = false;
 
   /**
    * Frontmatter property holding a note's display title, used as the alias of a note the picker creates.

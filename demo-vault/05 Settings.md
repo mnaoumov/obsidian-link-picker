@@ -25,6 +25,8 @@ Every setting the plugin stores, named by the key it appears under in `data.json
   - the frontmatter property holding a note's last-updated timestamp, used by the sort-by-updated ordering. Empty falls back to the file's modification time, which every vault has.
 - `titlePropertyName`
   - the frontmatter property holding a note's display title, used as the alias of a note the picker creates. Empty falls back to the file name.
+- `shouldUseSelectionAsDisplayText`
+  - whether `Insert link...` keeps the text you selected before running it as the display text of the link it inserts — `[[Ada Lovelace|the countess]]` — rather than replacing it with the bare link. Off by default. Each picker has its own field of the same name.
 
 ## Pickers
 

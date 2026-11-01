@@ -35,6 +35,12 @@ export interface SelectParams {
   readonly folderPath: string;
   readonly includeSubfolders: boolean;
   readonly initialQuery: string;
+
+  /**
+   * The picked link's display text in place of the row's alias. Empty keeps the alias.
+   */
+  readonly linkDisplayText: string;
+
   readonly placeholder: string;
   readonly prefix: string;
   readonly segmentMatchMode: SegmentMatchMode;

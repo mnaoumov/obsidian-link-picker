@@ -81,7 +81,8 @@ export class Plugin extends PluginBase {
     await this.commandHandlerComponent.registerCommandHandlers(() => [
       new InsertLinkEditorCommandHandler({
         linkPickerComponent,
-        picker: null
+        picker: null,
+        pluginSettingsComponent
       }),
       new OpenBugReportCommandHandler({
         app: this.app,
