@@ -28,6 +28,11 @@ Every setting the plugin stores, named by the key it appears under in `data.json
 - `shouldUseSelectionAsDisplayText`
   - whether `Insert link...` keeps the text you selected before running it as the display text of the link it inserts — `[[Ada Lovelace|the countess]]` — rather than replacing it with the bare link. Off by default. Each picker has its own field of the same name.
 
+## Creating notes
+
+- `noteCreatorName`
+  - the name of a note creator a vault script registered through the plugin's API (`registerNoteCreator`), which `Insert link...` and every picker naming none of its own then create missing notes through. Empty means the built-in, which creates an empty note. A name nobody has registered refuses the creation with a notice rather than falling back to an empty note. Each picker has its own field of the same name, which wins when it is set. See [06 Calling it from a script](<./06 Calling it from a script.md>).
+
 ## Pickers
 
 - `pickers`

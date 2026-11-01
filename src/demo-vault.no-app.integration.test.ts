@@ -9,13 +9,13 @@ import process from 'node:process';
 // status bar, modals, editor extensions, and views) are demonstrated in the notes;
 // Only the PluginSettings config class is reflected here.
 registerDemoVaultCoverageSuite({
-  configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/plugin-settings.ts' }],
+  configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/settings/plugin-settings.ts' }],
   interfaces: [],
   nonTrivialGuard: {
     expectDemoNote: '05 Settings.md',
     expectMember: 'excludedPathPatterns',
     interfaceName: 'PluginSettings',
-    sourcePath: 'src/plugin-settings.ts'
+    sourcePath: 'src/settings/plugin-settings.ts'
   },
   rootFolder: getRootFolder() ?? process.cwd()
 });
