@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 1.3.0
+
+- test(demo-vault): fix the coverage suite's settings path and document noteCreatorName
+- feat: keep the selection as the inserted link's display text
+- feat(api): named note creators for the picker commands
+- docs(readme): point bug reports at the Report a bug command
+- feat: add a Report a bug command
+- docs: add issue-filing instructions for AI agents
+- chore(github): give the bug form the field ids bug-report links prefill
+- build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
+- build(deps): bump typescript-dev-toolkit to ^5.2.0
+- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
+- chore: adopt shared keyword identifier lint rule
+- refactor: adopt readonly interface members
+- docs(readme): combine related resources and plugin comparisons
+- refactor: group src files into subject folders
+- docs(readme): cut the README to a landing page, detail moved into the demo vault and docs/api.md
+- docs(readme): add a Similar plugins section
+
 ## 1.2.0
 
 - feat(api): ship the API contract as a copyable `api-contract.ts` beside `api.d.ts`; copying it needs `@mnaoumov/typescript-lib` 1.5.0 or later and `@mnaoumov/obsidian-lib`
