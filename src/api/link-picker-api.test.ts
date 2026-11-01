@@ -1,4 +1,5 @@
 import type { ApiMethodContract } from '@mnaoumov/typescript-lib/api-contract';
+import type { DisposableEx } from '@mnaoumov/typescript-lib/disposable';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type { TFile } from 'obsidian';
 
@@ -50,6 +51,17 @@ describe('LinkPickerApi', () => {
 
     expect(await api.select(params)).toBe('Person: [[Ada]]');
     expect(select).toHaveBeenCalledExactlyOnceWith(params);
+  });
+
+  it('should delegate a note creator registration to the picker and hand its disposable back', () => {
+    const registration = castTo<DisposableEx>({ dispose: vi.fn() });
+    const registerNoteCreator = vi.fn(() => registration);
+    const createNote = vi.fn();
+
+    const api: LinkPickerApiDeclaration = new LinkPickerApi(strictProxy<LinkPickerComponent>({ registerNoteCreator }));
+
+    expect(api.registerNoteCreator('person', createNote)).toBe(registration);
+    expect(registerNoteCreator).toHaveBeenCalledExactlyOnceWith('person', createNote);
   });
 });
 
@@ -178,7 +190,7 @@ describe('LINK_PICKER_API_CONTRACT', () => {
 
   it('should be the copyable root constant, so the provider and its consumers check one definition', () => {
     expect(LINK_PICKER_API_CONTRACT).toBe(COPYABLE_LINK_PICKER_API_CONTRACT);
-    expect(Object.keys(LINK_PICKER_API_CONTRACT)).toEqual(['select']);
+    expect(Object.keys(LINK_PICKER_API_CONTRACT)).toEqual(['registerNoteCreator', 'select']);
     expect(castTo<StandardSchemaV1>(selectContract.input)['~standard']).toMatchObject({ vendor: 'link-picker', version: 1 });
     expect(castTo<StandardSchemaV1>(selectContract.output)['~standard']).toMatchObject({ vendor: 'link-picker', version: 1 });
   });

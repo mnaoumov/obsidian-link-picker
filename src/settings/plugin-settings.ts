@@ -9,8 +9,8 @@ import { SegmentMatchMode } from '../picker/item.ts';
  * `Legal/Суд` gets two commands rather than one command that asks which folder first.
  *
  * Anything richer than these fields — validating a name, routing a new note to a folder derived from it,
- * seeding frontmatter — is not expressible here and is not meant to be. That is what
- * {@link SelectOptions.createNote} is for, reached through the plugin's API.
+ * seeding frontmatter — is not expressible here and is not meant to be. A picker reaches it through
+ * {@link noteCreatorName}, which names a function a vault script registered through the plugin's API.
  */
 export class Picker {
   /**
@@ -38,6 +38,12 @@ export class Picker {
    * The command name, and the picker's identity in settings.
    */
   public name = '';
+
+  /**
+   * The note creator this picker's `Create new` goes through, by the name a script registered it
+   * under. Empty falls back to {@link PluginSettings.noteCreatorName}.
+   */
+  public noteCreatorName = '';
 
   /**
    * The modal's placeholder text. Empty falls back to a generic prompt.
@@ -93,6 +99,12 @@ export class PluginSettings {
    * {@link FolderNoteLocation.Auto}. Empty means the folder's own name.
    */
   public folderNoteName = '';
+
+  /**
+   * The note creator `Insert link...` — and every picker naming none — goes through, by the name a
+   * script registered it under. Empty means the built-in, which creates an empty note.
+   */
+  public noteCreatorName = '';
 
   /**
    * The configured pickers. Each becomes a command.

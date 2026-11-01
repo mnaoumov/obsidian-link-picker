@@ -56,7 +56,8 @@ const EXPECTED_TOP_LEVEL_PROPERTY_NAMES = [
   'excludedPathPatterns',
   'updatedPropertyName',
   'segmentMatchMode',
-  'titlePropertyName'
+  'titlePropertyName',
+  'noteCreatorName'
 ];
 
 let app: AppOriginal;
@@ -190,8 +191,21 @@ describe('PluginSettingsTab', () => {
         'Suffix',
         'Apply prefix and suffix when no link is selected',
         'Placeholder',
-        'Allow creating notes'
+        'Allow creating notes',
+        'Note creator'
       ]);
+    });
+
+    it('should show a picker\'s note creator only while the picker offers to create notes', () => {
+      const picker = namedPicker('People');
+      inputValues.pickers = [picker];
+      const row = pickerRow(createTab(), 'Note creator');
+
+      expect(isRowVisible(row)).toBe(true);
+
+      picker.shouldAllowCreate = false;
+
+      expect(isRowVisible(row)).toBe(false);
     });
   });
 
@@ -369,6 +383,16 @@ function pickerPages(tab: PluginSettingsTab): SettingDefinitionPage[] {
   return castTo<SettingDefinitionPage[]>(pickersList(tab).items ?? []);
 }
 
+function pickerRow(tab: PluginSettingsTab, name: string): SettingDefinition {
+  const row = castTo<SettingDefinition[]>(pickerPages(tab)[0]?.items ?? []).find((candidate) => candidate.name === name);
+
+  if (!row) {
+    throw new Error(`No picker row named ${name}.`);
+  }
+
+  return row;
+}
+
 function pickerRowNames(tab: PluginSettingsTab): string[] {
   return castTo<SettingDefinitionItem[]>(pickerPages(tab)[0]?.items ?? []).map((item) => castTo<SettingDefinition>(item).name);
 }
@@ -438,7 +462,8 @@ const PICKER_ROW_ORDER: (keyof Picker)[] = [
   'suffix',
   'shouldApplyPrefixSuffixWhenNoLinkSelected',
   'placeholder',
-  'shouldAllowCreate'
+  'shouldAllowCreate',
+  'noteCreatorName'
 ];
 
 const PICKER_ROW_COUNT = PICKER_ROW_ORDER.length;

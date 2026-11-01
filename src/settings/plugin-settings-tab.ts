@@ -160,6 +160,16 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           });
         }
       }),
+      this.settingEx({
+        desc: 'The name of a note creator a script registered through the plugin API. `Insert link...`, and every picker naming none, then creates missing notes through it. Leave empty to create an empty note.',
+        name: 'Note creator',
+        render: (setting) => {
+          setting.addText((text) => {
+            this.bind({ propertyName: 'noteCreatorName', valueComponent: text })
+              .setPlaceholder('An empty note');
+          });
+        }
+      }),
       {
         desc: 'Each picker becomes its own command, preconfigured with a folder and an inline field — so a vault that picks people out of `People` and courts out of `Legal` gets two commands rather than one that asks first.',
         name: 'Pickers'
@@ -327,6 +337,21 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
               });
             });
           }
+        }),
+        this.settingEx({
+          desc: 'The name of a note creator a script registered through the plugin API, which creates this picker\'s new notes. Leave empty to use the top-level `Note creator`.',
+          name: 'Note creator',
+          render: (setting) => {
+            setting.addText((text) => {
+              this.bindPickerProperty({
+                index,
+                pickerPropertyName: 'noteCreatorName',
+                valueComponent: text
+              });
+              text.setPlaceholder('The top-level note creator');
+            });
+          },
+          visible: () => getPicker(this.getPickers(), index).shouldAllowCreate
         })
       ],
       name: picker.name || 'Unnamed picker',

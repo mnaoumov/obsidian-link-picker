@@ -50,6 +50,7 @@ export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
         folderPath: this.picker?.folderPath ?? '',
         includeSubfolders: this.picker?.includeSubfolders ?? false,
         initialQuery: editor.getSelection(),
+        noteCreatorName: this.picker?.noteCreatorName ?? '',
         placeholder: this.picker?.placeholder ?? '',
         prefix: this.picker?.prefix ?? '',
         shouldAllowCreate: this.picker?.shouldAllowCreate ?? true,

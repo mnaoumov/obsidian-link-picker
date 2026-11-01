@@ -13,8 +13,10 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
-import type { SelectOptions } from '../picker/select.ts';
+import type {
+  LinkPickerComponent,
+  LinkPickerComponentSelectParams
+} from '../picker/link-picker-component.ts';
 
 import { createPicker } from '../settings/plugin-settings.ts';
 import { InsertLinkEditorCommandHandler } from './insert-link-editor-command-handler.ts';
@@ -41,6 +43,7 @@ describe('InsertLinkEditorCommandHandler', () => {
 
       await createHandler(null, select).executeEditor(createEditor(''), createContext());
 
+      expect(lastOptions(select).noteCreatorName).toBe('');
       expect(lastOptions(select).folderPath).toBe('');
       expect(lastOptions(select).includeSubfolders).toBe(false);
       expect(lastOptions(select).placeholder).toBe('');
@@ -64,6 +67,7 @@ describe('InsertLinkEditorCommandHandler', () => {
 
     it('should open the picker preconfigured the way its settings say', async () => {
       const picker = createPicker();
+      picker.noteCreatorName = 'person';
       picker.folderPath = 'People';
       picker.includeSubfolders = true;
       picker.placeholder = 'Who?';
@@ -75,6 +79,7 @@ describe('InsertLinkEditorCommandHandler', () => {
 
       await createHandler(picker, select).executeEditor(createEditor(''), createContext());
 
+      expect(lastOptions(select).noteCreatorName).toBe('person');
       expect(lastOptions(select).folderPath).toBe('People');
       expect(lastOptions(select).includeSubfolders).toBe(true);
       expect(lastOptions(select).placeholder).toBe('Who?');
@@ -147,12 +152,12 @@ function createHandler(picker: null | ReturnType<typeof createPicker>, select = 
   );
 }
 
-function lastOptions(select: ReturnType<typeof vi.fn>): SelectOptions {
+function lastOptions(select: ReturnType<typeof vi.fn>): LinkPickerComponentSelectParams {
   const call = select.mock.calls.at(-1);
 
   if (!call) {
     throw new Error('The picker was never opened.');
   }
 
-  return castTo<SelectOptions>(call[0]);
+  return castTo<LinkPickerComponentSelectParams>(call[0]);
 }

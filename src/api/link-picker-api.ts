@@ -8,6 +8,9 @@ import type { LinkPickerComponent } from '../picker/link-picker-component.ts';
 
 import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '../../api-contract.ts';
 
+// Spelled through the declaration rather than by importing its two types beside the aliased one: dprint and perfectionist disagree on how to order such a list.
+type RegisterNoteCreator = LinkPickerApiDeclaration['registerNoteCreator'];
+
 /**
  * The version of the API {@link LINK_PICKER_API_CONTRACT} describes.
  *
@@ -15,7 +18,7 @@ import { LINK_PICKER_API_CONTRACT as COPYABLE_LINK_PICKER_API_CONTRACT } from '.
  * may reach `2.0.0` while still exposing this API unchanged, and this may reach `2.0.0` while the plugin
  * does not. Consumers pin a range against this one, not against the plugin.
  */
-export const LINK_PICKER_API_VERSION = '1.1.0';
+export const LINK_PICKER_API_VERSION = '1.2.0';
 
 /**
  * The contract {@link LINK_PICKER_API_VERSION} of the API satisfies.
@@ -42,6 +45,17 @@ export const LINK_PICKER_API_CONTRACT: ApiContract<LinkPickerApiDeclaration> = C
  */
 export class LinkPickerApi implements LinkPickerApiDeclaration {
   public constructor(private readonly linkPickerComponent: LinkPickerComponent) {}
+
+  /**
+   * Registers how a missing note is created, under a name the plugin's settings can refer to.
+   *
+   * @param name - The note creator's name. Must not be blank.
+   * @param createNote - Creates the note.
+   * @returns The registration, to dispose when the note creator should go away.
+   */
+  public registerNoteCreator(name: string, createNote: Parameters<RegisterNoteCreator>[1]): ReturnType<RegisterNoteCreator> {
+    return this.linkPickerComponent.registerNoteCreator(name, createNote);
+  }
 
   /**
    * Opens the picker and resolves with the chosen link text.
