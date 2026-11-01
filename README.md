@@ -66,7 +66,7 @@ Last searched for similar plugins on 2026-10-26.
 
 ## For plugin developers
 
-The picker is published as a cross-plugin API: `select(options)` resolves with the link as a string and rejects when the user dismisses the picker. Copy [`api.d.ts`](./api.d.ts), which depends on `obsidian` alone, and, to check payloads, [`api-contract.ts`](./api-contract.ts) beside it. The contract version is **`1.1.0`**, and it moves independently of the plugin's.
+The picker is published as a cross-plugin API: `select(options)` resolves with the link as a string and rejects when the user dismisses the picker, and `registerNoteCreator(name, createNote)` lets a vault script decide how the plugin's own commands create a missing note. Copy [`api.d.ts`](./api.d.ts), which depends on `obsidian` alone, and, to check payloads, [`api-contract.ts`](./api-contract.ts) beside it. The contract version is **`1.2.0`**, and it moves independently of the plugin's.
 
 [Calling `Link Picker` from a plugin or a script](<./docs/api.md>) covers the files to copy, consuming it with or without `@mnaoumov/obsidian-lib`, and the options worth knowing before you design around it.
 

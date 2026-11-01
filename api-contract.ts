@@ -35,6 +35,7 @@ import {
   createExpectedTypeGuard,
   defineApiContract,
   literalGuard,
+  objectGuard,
   optionsGuard,
   STRING_ARRAY_GUARD,
   STRING_GUARD
@@ -50,6 +51,8 @@ import {
 import type {
   FolderNoteConfig,
   LinkPickerApi,
+  LinkPickerApiCreateNote,
+  LinkPickerApiRegistration,
   LinkPickerApiSelectParams,
   SegmentMatchMode
 } from './api.d.ts';
@@ -58,6 +61,12 @@ const { createArgumentsSchema, createTypeGuardSchema } = createApiContractSchema
 
 // Records rather than arrays, so a member added to either union in `api.d.ts` and not here fails to compile.
 const SEGMENT_MATCH_MODES: Readonly<Record<SegmentMatchMode, true>> = { Fuzzy: true, Substring: true };
+
+const CREATE_NOTE_GUARD = createExpectedTypeGuard('a function', functionTypeGuard<LinkPickerApiCreateNote>());
+
+const REGISTRATION_GUARD = objectGuard<LinkPickerApiRegistration>({
+  dispose: createExpectedTypeGuard('a function', functionTypeGuard<LinkPickerApiRegistration['dispose']>())
+}, { description: 'the registration' });
 
 const isFolderNoteConfig = objectTypeGuard<FolderNoteConfig>({
   extensions: isStringArray,
@@ -77,7 +86,7 @@ const isFolderNoteConfig = objectTypeGuard<FolderNoteConfig>({
 const SELECT_OPTIONS: OptionGuards<LinkPickerApiSelectParams> = {
   // A cross-plugin call carries the function itself across the boundary, so all that can be said about it is that it is callable.
   // That is still worth saying, because a non-function here fails deep inside the picker rather than at the call that made the mistake.
-  createNote: createExpectedTypeGuard('a function', functionTypeGuard<NonNullable<LinkPickerApiSelectParams['createNote']>>()),
+  createNote: CREATE_NOTE_GUARD,
   excludedPathPatterns: STRING_ARRAY_GUARD,
   folderNoteConfig: createExpectedTypeGuard('a folder-note config', isFolderNoteConfig),
   folderPath: STRING_GUARD,
@@ -99,6 +108,10 @@ const SELECT_OPTIONS: OptionGuards<LinkPickerApiSelectParams> = {
  * when it looks the API up.
  */
 export const LINK_PICKER_API_CONTRACT = defineApiContract<LinkPickerApi>({
+  registerNoteCreator: {
+    input: createArgumentsSchema([{ ...STRING_GUARD, expected: 'the note creator name' }, CREATE_NOTE_GUARD]),
+    output: createTypeGuardSchema(REGISTRATION_GUARD)
+  },
   select: {
     input: createArgumentsSchema([optionsGuard<LinkPickerApiSelectParams>(SELECT_OPTIONS, { description: 'select options' })]),
     output: createTypeGuardSchema({ ...STRING_GUARD, expected: 'the link text' })

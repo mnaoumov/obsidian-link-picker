@@ -84,13 +84,10 @@ export interface LinkPickerApiSelectParams {
    *
    * This is the hook the whole API exists for: note creation is where vault conventions live — validating
    * the name, deriving a subfolder from it, seeding frontmatter, applying a template — and none of that is
-   * expressible in settings. Without it the plugin creates an empty note.
-   *
-   * @param folderPath - The folder the picker is currently rooted at.
-   * @param newNoteTitle - What the user typed.
-   * @returns The created note.
+   * expressible in settings. Without it the plugin uses the note creator its settings name (see
+   * {@link LinkPickerApi.registerNoteCreator}), or creates an empty note when they name none.
    */
-  readonly createNote?: (this: void, folderPath: string, newNoteTitle: string) => Promise<TFile>;
+  readonly createNote?: LinkPickerApiCreateNote;
 
   /**
    * Paths matching any of these are hidden. Overrides the setting.
@@ -178,6 +175,29 @@ export interface LinkPickerApiSelectParams {
 }
 
 /**
+ * Creates a note the user asked for by picking `Create new`.
+ *
+ * @param folderPath - The folder the picker is currently rooted at.
+ * @param newNoteTitle - What the user typed.
+ * @returns The created note.
+ */
+export type LinkPickerApiCreateNote = (this: void, folderPath: string, newNoteTitle: string) => Promise<TFile>;
+
+/**
+ * What {@link LinkPickerApi.registerNoteCreator} returns.
+ *
+ * Structurally a `Disposable`'s `dispose`, without the `Symbol.dispose` member, so a consumer whose
+ * TypeScript `lib` predates explicit resource management can still hold one.
+ */
+export interface LinkPickerApiRegistration {
+  /**
+   * Removes the registration. Calling it again, or after a newer registration under the same name has
+   * replaced this one, does nothing.
+   */
+  dispose(): void;
+}
+
+/**
  * What the registry hands a consumer.
  *
  * @remarks
@@ -185,6 +205,23 @@ export interface LinkPickerApiSelectParams {
  * it, so a member that appears here and nowhere in the plugin — or the reverse — fails the plugin's build.
  */
 export interface LinkPickerApi {
+  /**
+   * Registers how a missing note is created, under a name the plugin's settings can refer to.
+   *
+   * This is how the plugin's own COMMANDS reach vault conventions, which {@link LinkPickerApiSelectParams.createNote}
+   * cannot: a configured picker whose `Note creator` setting names this note creator creates its notes
+   * through it, and so does `Insert link...` — and every picker naming none — when the top-level setting of
+   * the same name does. A vault script registers it once at startup and disposes it on cleanup.
+   *
+   * Registering a name that is already registered replaces the older one. A setting naming a note creator
+   * nobody registered refuses the creation with a notice rather than creating an empty note.
+   *
+   * @param name - The note creator's name, as typed into the settings. Must not be blank.
+   * @param createNote - Creates the note.
+   * @returns The registration, to dispose when the note creator should go away.
+   */
+  registerNoteCreator(name: string, createNote: LinkPickerApiCreateNote): LinkPickerApiRegistration;
+
   /**
    * Opens the picker and resolves with the chosen link text.
    *

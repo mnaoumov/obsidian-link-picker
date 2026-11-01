@@ -1,5 +1,6 @@
 import type { PluginSettingsComponentBase } from '@mnaoumov/obsidian-lib/components/plugin-settings-component';
 import type { FolderNoteConfig } from '@mnaoumov/obsidian-lib/folder-note';
+import type { DisposableEx } from '@mnaoumov/typescript-lib/disposable';
 import type {
   App,
   TFolder
@@ -11,9 +12,14 @@ import {
   FolderNoteLocation,
   resolveFolderNoteConfig
 } from '@mnaoumov/obsidian-lib/folder-note';
+import { CallbackDisposable } from '@mnaoumov/typescript-lib/disposable';
 import { join } from '@mnaoumov/typescript-lib/path';
-import { TFile } from 'obsidian';
+import {
+  Notice,
+  TFile
+} from 'obsidian';
 
+import type { LinkPickerApiCreateNote } from '../../api.d.ts';
 import type { PluginSettings } from '../settings/plugin-settings.ts';
 import type {
   SelectOptions,
@@ -24,16 +30,36 @@ import { SegmentMatchMode } from './item.ts';
 import { select } from './select.ts';
 
 /**
- * What {@link LinkPickerComponent.select} accepts — the plugin's public picker options.
+ * What {@link LinkPickerComponent.select} accepts — the plugin's public picker options, plus the one
+ * option only the plugin's own commands pass.
  */
-export type LinkPickerComponentSelectParams = SelectOptions;
+export interface LinkPickerComponentSelectParams extends SelectOptions {
+  /**
+   * The note creator a configured picker names. Empty or absent falls back to
+   * {@link PluginSettings.noteCreatorName}.
+   *
+   * Not part of the published options: an API caller holds the function itself and passes
+   * {@link SelectOptions.createNote}.
+   */
+  readonly noteCreatorName?: string;
+}
 
 interface LinkPickerComponentConstructorParams {
   readonly app: App;
   readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
 }
 
-type LinkPickerComponentResolveOptionsParams = SelectOptions;
+type LinkPickerComponentResolveOptionsParams = LinkPickerComponentSelectParams;
+
+/**
+ * One registration of a note creator.
+ *
+ * An object rather than the bare function, so a disposal can tell its own registration from a newer one
+ * under the same name even when both registered the very same function.
+ */
+interface NoteCreatorEntry {
+  readonly createNote: LinkPickerApiCreateNote;
+}
 
 /**
  * The folder-note locations that can still be seen once `Auto` has been resolved away.
@@ -71,12 +97,42 @@ const SEGMENT_MATCH_MODES: Record<`${SegmentMatchMode}`, SegmentMatchMode> = {
  */
 export class LinkPickerComponent extends ComponentEx {
   private readonly app: App;
+  private readonly noteCreators = new Map<string, NoteCreatorEntry>();
   private readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
 
   public constructor(params: LinkPickerComponentConstructorParams) {
     super();
     this.app = params.app;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
+  }
+
+  /**
+   * Registers how a missing note is created, under a name the settings can refer to.
+   *
+   * A second registration under a live name REPLACES the first rather than failing: a vault startup script
+   * that re-runs without having run its cleanup must not break the plugin's commands, and the newest
+   * registration is the one its author means.
+   *
+   * @param name - The note creator's name. Must not be blank.
+   * @param createNote - Creates the note.
+   * @returns A disposable removing this registration — and only this one, so disposing a superseded
+   * registration leaves its replacement in place.
+   */
+  public registerNoteCreator(name: string, createNote: LinkPickerApiCreateNote): DisposableEx {
+    if (!name.trim()) {
+      throw new Error('A note creator needs a name: it is what a picker\'s setting refers to.');
+    }
+
+    const entry: NoteCreatorEntry = { createNote };
+    this.noteCreators.set(name, entry);
+
+    return new CallbackDisposable({
+      callback: (): void => {
+        if (this.noteCreators.get(name) === entry) {
+          this.noteCreators.delete(name);
+        }
+      }
+    });
   }
 
   /**
@@ -110,6 +166,34 @@ export class LinkPickerComponent extends ComponentEx {
     return await this.app.vault.create(notePath, '');
   }
 
+  /**
+   * Picks the function that creates a missing note when the caller passed none.
+   *
+   * The note creator is looked up when the note is CREATED, not when the picker opens, so one a startup
+   * script registers after the command was bound still serves it.
+   *
+   * @param noteCreatorName - The note creator the picker or the settings name; empty means the built-in.
+   * @returns The function.
+   */
+  private resolveCreateNote(noteCreatorName: string): LinkPickerApiCreateNote {
+    if (!noteCreatorName) {
+      return async (folderPath: string, newNoteTitle: string): Promise<TFile> => await this.createNote(folderPath, newNoteTitle);
+    }
+
+    return async (folderPath: string, newNoteTitle: string): Promise<TFile> => {
+      const entry = this.noteCreators.get(noteCreatorName);
+
+      // Refused rather than handed to the built-in: an empty note under the raw name is exactly what the named note creator exists to prevent, and a startup script that has not registered yet would otherwise produce one silently.
+      if (!entry) {
+        const message = `The note creator "${noteCreatorName}" is not registered. A script registers it through the Link Picker API.`;
+        new Notice(message);
+        throw new Error(message);
+      }
+
+      return await entry.createNote(folderPath, newNoteTitle);
+    };
+  }
+
   private resolveFolderNoteConfig(): ReturnType<typeof resolveFolderNoteConfig> {
     const settings = this.pluginSettingsComponent.settings;
 
@@ -129,7 +213,7 @@ export class LinkPickerComponent extends ComponentEx {
 
     return {
       app: this.app,
-      createNote: params.createNote ?? (async (folderPath: string, newNoteTitle: string): Promise<TFile> => await this.createNote(folderPath, newNoteTitle)),
+      createNote: params.createNote ?? this.resolveCreateNote(resolveNoteCreatorName(params.noteCreatorName, settings.noteCreatorName)),
       excludedPathPatterns: params.excludedPathPatterns ?? settings.excludedPathPatterns,
       folderNoteConfig: params.folderNoteConfig ? toFolderNoteConfig(params.folderNoteConfig) : this.resolveFolderNoteConfig(),
       folderPath: params.folderPath ?? '',
@@ -149,6 +233,21 @@ export class LinkPickerComponent extends ComponentEx {
       updatedPropertyName: params.updatedPropertyName ?? settings.updatedPropertyName
     };
   }
+}
+
+/**
+ * Picks the note creator a call goes through.
+ *
+ * An EMPTY picker name falls back as well as an absent one: it is what a picker whose `Note creator` row
+ * was left blank stores, and it means "whatever the top-level setting says".
+ *
+ * @param pickerNoteCreatorName - What the configured picker names, if anything.
+ * @param settingsNoteCreatorName - What the top-level setting names.
+ * @returns The name to look up; empty means the built-in.
+ */
+function resolveNoteCreatorName(pickerNoteCreatorName: string | undefined, settingsNoteCreatorName: string): string {
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- An empty name must fall back too, which `??` would not do.
+  return pickerNoteCreatorName || settingsNoteCreatorName;
 }
 
 /**

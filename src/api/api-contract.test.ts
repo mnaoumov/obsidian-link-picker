@@ -29,6 +29,24 @@ const INHERITED_WRONG_FOLDER_PATH: unknown = Object.create({ folderPath: 42 });
 const FOLDER_NOTE_CONFIG = { extensions: ['md'], isHidden: false, location: 'InsideFolder', resolveName: vi.fn(() => '') };
 
 const CASES: Record<keyof LinkPickerApi, ApiMethodCases> = {
+  registerNoteCreator: {
+    input: {
+      invalid: [
+        [],
+        ['person'],
+        [vi.fn()],
+        [1, vi.fn()],
+        ['person', 'People/Ada.md'],
+        ['person', vi.fn(), {}],
+        { name: 'person' }
+      ],
+      valid: [['person', vi.fn()]]
+    },
+    output: {
+      invalid: [null, undefined, vi.fn(), {}, { dispose: true }],
+      valid: [{ dispose: vi.fn() }]
+    }
+  },
   select: {
     input: {
       invalid: [

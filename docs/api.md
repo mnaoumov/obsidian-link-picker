@@ -8,7 +8,7 @@ The picker is callable from another plugin or a script, and that is where this p
 
 The types are in [`api.d.ts`](../api.d.ts) at the root of this repository, where every option is documented member by member. Copy that file into your own plugin: it imports from `obsidian` and nothing else, so it costs you no dependency on this plugin and none on `@mnaoumov/obsidian-lib`.
 
-Beside it, [`api-contract.ts`](../api-contract.ts) holds the published API's contract, `LINK_PICKER_API_CONTRACT`: for `select`, a schema over its arguments and a schema over what it resolves to. It is the constant this plugin publishes with the API, so copy it next to `api.d.ts` and pass it as the `contract`, and both sides check the same definition.
+Beside it, [`api-contract.ts`](../api-contract.ts) holds the published API's contract, `LINK_PICKER_API_CONTRACT`: for each method, a schema over its arguments and a schema over what it resolves to. It is the constant this plugin publishes with the API, so copy it next to `api.d.ts` and pass it as the `contract`, and both sides check the same definition.
 
 It needs two packages beside `obsidian`:
 
@@ -19,7 +19,7 @@ So the file itself is only this plugin's checks and the constant. Install both (
 
 ## Versioning
 
-The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.1.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
+The API is published through a cross-plugin API registry, keyed by the plugin id, version-negotiated, and revoked automatically when the plugin is disabled. The contract version is **`1.2.0`**, and it moves independently of the plugin's own version — pin a range against the contract, not against a release.
 
 ## Consuming it
 
@@ -58,3 +58,25 @@ If it does not — and is not going to — you still need no dependency on anyth
   - wrap the link — a prefix of `"Person: "` produces `Person: [[Ada]]` — and **`shouldApplyPrefixSuffixWhenNoLinkSelected`** decides whether they are still emitted when the user presses `No link`. Off by default, so declining returns `''` rather than a `"Person: "` with nothing after it.
 - **`sourcePathOrFile`**
   - the note the link is written INTO, which decides whether it comes out relative or absolute. Defaults to the active file, and worth passing explicitly when the note being written to is not the one Obsidian considers active — which is the case while a template renders a brand-new note.
+
+## What `registerNoteCreator` does
+
+`createNote` serves a caller that opens the picker itself. The plugin's own commands — `Insert link...` and one command per configured picker — are opened by a hotkey, with nobody to hand them a function, so they reach your conventions by NAME instead:
+
+```typescript
+// In a startup script, e.g. a `CodeScript Toolkit` one.
+const registration = api.registerNoteCreator('person', async (folderPath, newNoteTitle) => {
+  const [first, ...rest] = newNoteTitle.split(' ');
+  const last = rest.join(' ');
+  return await app.vault.create(`${folderPath}/${last} ${first}.md`, `---\ntitle: ${newNoteTitle}\n---\n`);
+});
+
+// On cleanup.
+registration.dispose();
+```
+
+Then type `person` into a picker's `Note creator` setting, and that picker's `Create new` goes through it. The top-level `Note creator` setting does the same for `Insert link...`, for every picker that names none, and for an API call that passes no `createNote`.
+
+- The note creator is looked up when the note is created, not when the picker opens, so a script that registers late still serves a command bound earlier.
+- A setting naming a note creator nobody has registered **refuses** the creation with a notice, rather than falling back to an empty note under the raw name — which is what a script that has not started yet would otherwise produce, silently.
+- Registering a name that is already registered replaces the older function, so a script that re-runs without its cleanup does not fail. Disposing a registration that has since been replaced does nothing.

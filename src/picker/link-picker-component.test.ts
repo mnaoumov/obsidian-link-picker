@@ -239,6 +239,107 @@ describe('LinkPickerComponent', () => {
       expect(lastParams().createNote).toBe(createNote);
     });
   });
+
+  describe('note creators', () => {
+    it('should create through the note creator a configured picker names', async () => {
+      const created = fileAt('People/L/Lovelace Ada.md');
+      const createNote = vi.fn(() => Promise.resolve(created));
+      const component = createComponent();
+      component.registerNoteCreator('person', createNote);
+
+      await component.select({ noteCreatorName: 'person' });
+
+      expect(await lastParams().createNote('People', 'Ada Lovelace')).toBe(created);
+      expect(createNote).toHaveBeenCalledExactlyOnceWith('People', 'Ada Lovelace');
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to the note creator the settings name when the picker names none', async () => {
+      settings.noteCreatorName = 'note';
+      const createNote = vi.fn(() => Promise.resolve(fileAt('Ada.md')));
+      const component = createComponent();
+      component.registerNoteCreator('note', createNote);
+
+      await component.select({ noteCreatorName: '' });
+      await lastParams().createNote('', 'Ada');
+
+      expect(createNote).toHaveBeenCalledOnce();
+    });
+
+    it('should apply the settings note creator to an API call that passes no function of its own', async () => {
+      settings.noteCreatorName = 'note';
+      const createNote = vi.fn(() => Promise.resolve(fileAt('Ada.md')));
+      const component = createComponent();
+      component.registerNoteCreator('note', createNote);
+
+      await component.select({});
+      await lastParams().createNote('', 'Ada');
+
+      expect(createNote).toHaveBeenCalledOnce();
+    });
+
+    it('should prefer the picker\'s note creator over the settings one', async () => {
+      settings.noteCreatorName = 'note';
+      const noteHandler = vi.fn(() => Promise.resolve(fileAt('Ada.md')));
+      const personHandler = vi.fn(() => Promise.resolve(fileAt('People/Ada.md')));
+      const component = createComponent();
+      component.registerNoteCreator('note', noteHandler);
+      component.registerNoteCreator('person', personHandler);
+
+      await component.select({ noteCreatorName: 'person' });
+      await lastParams().createNote('People', 'Ada');
+
+      expect(personHandler).toHaveBeenCalledOnce();
+      expect(noteHandler).not.toHaveBeenCalled();
+    });
+
+    it('should look the note creator up when the note is created, so a late registration still serves an open picker', async () => {
+      const createNote = vi.fn(() => Promise.resolve(fileAt('Ada.md')));
+      const component = createComponent();
+
+      await component.select({ noteCreatorName: 'person' });
+      component.registerNoteCreator('person', createNote);
+      await lastParams().createNote('', 'Ada');
+
+      expect(createNote).toHaveBeenCalledOnce();
+    });
+
+    it('should refuse rather than create an empty note when the named note creator is not registered', async () => {
+      await createComponent().select({ noteCreatorName: 'person' });
+
+      await expect(lastParams().createNote('', 'Ada')).rejects.toThrow('The note creator "person" is not registered.');
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('should stop using a note creator once its registration is disposed', async () => {
+      const component = createComponent();
+      const registration = component.registerNoteCreator('person', vi.fn());
+
+      registration.dispose();
+      await component.select({ noteCreatorName: 'person' });
+
+      await expect(lastParams().createNote('', 'Ada')).rejects.toThrow('is not registered');
+    });
+
+    it('should let a newer registration replace an older one, and survive the older one being disposed', async () => {
+      const older = vi.fn(() => Promise.resolve(fileAt('Old.md')));
+      const newer = vi.fn(() => Promise.resolve(fileAt('New.md')));
+      const component = createComponent();
+      const olderRegistration = component.registerNoteCreator('person', older);
+      component.registerNoteCreator('person', newer);
+
+      olderRegistration.dispose();
+      await component.select({ noteCreatorName: 'person' });
+      await lastParams().createNote('', 'Ada');
+
+      expect(newer).toHaveBeenCalledOnce();
+      expect(older).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a blank name, which no setting could refer to', () => {
+      expect(() => createComponent().registerNoteCreator(' ', vi.fn())).toThrow('A note creator needs a name');
+    });
+  });
 });
 
 function createApp(): App {
