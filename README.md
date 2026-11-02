@@ -51,7 +51,7 @@ Run **`Link Picker`: Insert link...** in an editor. Any selected text seeds the 
 
 ## See also
 
-[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+[My other Obsidian resources](https://mnaoumov.dev/obsidian/)
 
 | Plugin | Features | How `Link Picker` differs |
 | --- | --- | --- |
