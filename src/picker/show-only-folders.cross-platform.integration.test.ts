@@ -84,7 +84,7 @@ describe('The `Folders only` control', () => {
     await pollRows('the folder never opened', (rows: string[]): boolean => rows.some((text) => text.includes('Note-')));
     const rowsBeforeToggle = await readRows();
 
-    await clickControl('Folders only');
+    await clickFoldersOnlyControl();
 
     // The absence is HALF the predicate, never the whole of it.
     // Polling for something that is already gone accepts before the thing being waited for has had a chance to happen.
@@ -95,7 +95,7 @@ describe('The `Folders only` control', () => {
     );
     const rowsAfterToggle = await readRows();
 
-    await clickControl('Folders only');
+    await clickFoldersOnlyControl();
     await pollRows('the notes never came back', (rows: string[]): boolean => rows.some((text) => text.includes('Note-')));
     await chooseRow('Note-');
     await pollPickerClosed('the picker never closed on the pick');
@@ -144,14 +144,12 @@ async function chooseRow(text: string): Promise<void> {
 }
 
 /**
- * Focuses the search box and clicks a control, in ONE closure.
+ * Focuses the search box and clicks the `Folders only` control, in ONE closure.
  *
  * The focus is what the control's `mousedown` `preventDefault` exists to protect, so it belongs in the
  * same round trip as the click rather than in one the picker can re-render between.
- *
- * @param label - The control's visible label.
  */
-async function clickControl(label: string): Promise<void> {
+async function clickFoldersOnlyControl(): Promise<void> {
   await evalInObsidian({
     callback({ controlSelector, inputSelector, label: controlLabel }): void {
       const input = document.querySelector(inputSelector);
@@ -169,7 +167,7 @@ async function clickControl(label: string): Promise<void> {
 
       buttonEl.click();
     },
-    input: { controlSelector: CONTROL_SELECTOR, inputSelector: INPUT_SELECTOR, label }
+    input: { controlSelector: CONTROL_SELECTOR, inputSelector: INPUT_SELECTOR, label: 'Folders only' }
   });
 }
 

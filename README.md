@@ -27,7 +27,7 @@ It is also callable. The picker returns a **string**, so a template or a script 
 
 **The documentation is a demo vault.** Every feature has a note that explains what it does and how to try it.
 
-**[Start reading here](<./demo-vault/00 Start.md>)** — it is plain markdown, so it works on GitHub with nothing installed.
+**[Start reading here](<./demo-vault/00 Start.md>)** — it is plain markdown, so it works on `GitHub` with nothing installed.
 
 A copy of the vault ships with every release. You can access it via any of the following:
 
