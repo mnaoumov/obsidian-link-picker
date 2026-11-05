@@ -228,7 +228,7 @@ describe('PluginSettingsTab', () => {
       const tab = createTab();
 
       renderRows(tab);
-      const written = writePickerBinding(1, 'name', 'Tribunals');
+      const written = writePickerName(1, 'Tribunals');
 
       expect(written.map((picker) => picker.name)).toEqual(['People', 'Tribunals']);
     });
@@ -241,7 +241,7 @@ describe('PluginSettingsTab', () => {
       const tab = createTab();
 
       renderRows(tab);
-      const written = writePickerBinding(0, 'name', 'Humans');
+      const written = writePickerName(0, 'Humans');
 
       expect(written[0]?.folderPath).toBe('People');
       expect(written[0]?.prefix).toBe('Person: ');
@@ -448,8 +448,8 @@ function renderRows(tab: PluginSettingsTab): void {
   }
 }
 
-function writePickerBinding(index: number, pickerPropertyName: keyof Picker, value: unknown): Picker[] {
-  return castTo<Picker[]>(pickerBindingOptions(index, pickerPropertyName).componentToPluginSettingsValueConverter?.(value));
+function writePickerName(index: number, value: unknown): Picker[] {
+  return castTo<Picker[]>(pickerBindingOptions(index, 'name').componentToPluginSettingsValueConverter?.(value));
 }
 
 /**

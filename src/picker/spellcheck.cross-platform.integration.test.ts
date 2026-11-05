@@ -103,10 +103,10 @@ describe('spell checking the picker box', () => {
       await openPicker();
       const whenSettingOn = await readSpellcheck();
 
-      await clickControl('Folders only');
+      await clickFoldersOnlyControl();
       const whenFoldersOnly = await readSpellcheck();
 
-      await clickControl('Folders only');
+      await clickFoldersOnlyControl();
       const whenToggledBack = await readSpellcheck();
 
       await closePicker();
@@ -129,11 +129,9 @@ describe('spell checking the picker box', () => {
 });
 
 /**
- * Clicks a control on the strip.
- *
- * @param label - The control's visible label.
+ * Clicks the `Folders only` control on the strip.
  */
-async function clickControl(label: string): Promise<void> {
+async function clickFoldersOnlyControl(): Promise<void> {
   await evalInObsidian({
     callback({ controlSelector, label: controlLabel }): void {
       const buttonEl = [...document.querySelectorAll(controlSelector)]
@@ -144,7 +142,7 @@ async function clickControl(label: string): Promise<void> {
 
       buttonEl.click();
     },
-    input: { controlSelector: CONTROL_SELECTOR, label }
+    input: { controlSelector: CONTROL_SELECTOR, label: 'Folders only' }
   });
 }
 

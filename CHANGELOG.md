@@ -10,7 +10,7 @@
 - docs: add issue-filing instructions for AI agents
 - chore(github): give the bug form the field ids bug-report links prefill
 - build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
-- build(deps): bump typescript-dev-toolkit to ^5.2.0
+- build(deps): bump `typescript-dev-toolkit` to ^5.2.0
 - build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
 - chore: adopt shared keyword identifier lint rule
 - refactor: adopt readonly interface members
@@ -23,7 +23,7 @@
 
 - feat(api): ship the API contract as a copyable `api-contract.ts` beside `api.d.ts`; copying it needs `@mnaoumov/typescript-lib` 1.5.0 or later and `@mnaoumov/obsidian-lib`
 - build(deps): move to `@mnaoumov/obsidian-lib` 6; a consuming plugin must be on `@mnaoumov/obsidian-lib` 6 too, and imports `watchPluginApi` from `@mnaoumov/obsidian-lib/plugin/plugin-api`
-- refactor: move off obsidian-dev-utils onto the @mnaoumov packages
+- refactor: move off `obsidian-dev-utils` onto the @mnaoumov packages
 - refactor(api): build api-contract.ts on @mnaoumov/typescript-lib/api-contract
 - refactor(api-contract): build the select options guard with optionsGuard and literalGuard
 - build(deps): float brace-expansion, sharp and fast-uri past their advisories
@@ -40,20 +40,20 @@
 - refactor(screenshots): merge the harness-owned caret hiding
 - fix(screenshots): merge the caret-free desktop capture and its re-shot frames
 - refactor(screenshots): merge the harness-owned status-bar paint and touch emptying
-- chore(deps): merge the obsidian-integration-testing 17 float
-- chore(deps): merge the obsidian-test-mocks 7 float
+- chore(deps): merge the `obsidian-integration-testing` 17 float
+- chore(deps): merge the `obsidian-test-mocks` 7 float
 - style(comments): stop capitalizing the middle of a wrapped comment
 - fix(test): merge the headless demo-vault toolkit install
 - fix(deps): restore the lockfile's missing resolved and integrity fields
 - docs(agents): name the published api.d.ts in the release-notes checklist
 - docs(api): publish the surface as a root api.d.ts and a For plugin developers section
 - style(screenshots): silence the sharp no-named-as-default warning, with why the named import breaks
-- build(markdownlint): turn on no-soft-break-in-paragraph
+- build(`markdownlint`): turn on no-soft-break-in-paragraph
 - docs: name the API declaration change in the unreleased list, so the release notes carry it
 - fix: declare the API for the base to publish, so the load broadcast names its contract version
 - test: drive the control-strip pass with the harness's trusted mobile input
 - test: make the mobile store shots byte-reproducible
-- test: move the picker suites' waiting to Node, and raise obsidian-dev-utils to 103.2.0
+- test: move the picker suites' waiting to Node, and raise `obsidian-dev-utils` to 103.2.0
 - fix(deps): float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
 - chore(deps): drop the two dead dedupe overrides
 - chore(deps): drop the dead markdown-it override
@@ -64,7 +64,7 @@
 - docs: point the soft-keyboard notes at the harness that now owns them
 - refactor(android): take the soft-keyboard recipe from the harness
 - refactor(android): drive the picker's controls with trusted taps
-- chore: adopt the npm run gate branch gate
+- chore: adopt the `npm run gate` branch gate
 - docs(agents): record where the picker's spellcheck rule now lives
 - feat(picker): spell-check the box while it can name the note being created
 - docs: name the unversioned demo-vault asset and the folder it unzips into
@@ -74,13 +74,13 @@
 - feat(matching): add a configurable segment match rule
 - docs(agents): drop the unreleased-commit count, which goes stale on the next commit
 - test(integration): raise the soft keyboard for the mobile listing shots
-- refactor(modal): converge the control strip onto obsidian-dev-utils' command builder
+- refactor(modal): converge the control strip onto `obsidian-dev-utils`' command builder
 - fix(build): wire build:compile to buildCompile and drop the duplicate leaf script
 
 ## 1.0.1
 
 - chore(deps): sweep caret-ranged dependencies to latest
-- fix(deps): move to obsidian-integration-testing 11 and obsidian-dev-utils 96.5.2
+- fix(deps): move to `obsidian-integration-testing` 11 and `obsidian-dev-utils` 96.5.2
 - fix(deps): drop the brace-expansion file: override that breaks a clean install
 - docs(screenshots): add the mobile half of the listing set
 

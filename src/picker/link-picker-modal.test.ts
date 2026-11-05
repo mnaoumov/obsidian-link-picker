@@ -83,10 +83,6 @@ interface HotkeyRegistration {
   readonly scope: unknown;
 }
 
-type LinkPickerModalReject = (this: void, reason: unknown) => void;
-
-type LinkPickerModalResolve = (this: void, value: string) => void;
-
 interface RecentFileTrackerLike {
   // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The tests replace the recent-file history to exercise ranking changes.
   lastOpenFiles: string[];
@@ -539,7 +535,7 @@ describe('LinkPickerModal', () => {
       appMock.metadataCache.setCache__('Notes/Ada.md', { frontmatter: { aliases: ['Lovelace'] } });
       const modal = openModal({ folderPath: 'Notes' });
 
-      modal.onChooseSuggestion(aliasItemFor(modal, 'Ada.md', 'Lovelace'), mouseEvent());
+      modal.onChooseSuggestion(lovelaceAliasRowOfAda(modal), mouseEvent());
 
       expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md|Lovelace]]');
     });
@@ -548,7 +544,7 @@ describe('LinkPickerModal', () => {
       appMock.metadataCache.setCache__('Notes/Ada.md', { frontmatter: { aliases: ['Lovelace'] } });
       const modal = openModal({ folderPath: 'Notes', linkDisplayText: 'the countess' });
 
-      modal.onChooseSuggestion(aliasItemFor(modal, 'Ada.md', 'Lovelace'), mouseEvent());
+      modal.onChooseSuggestion(lovelaceAliasRowOfAda(modal), mouseEvent());
 
       expect(resolve).toHaveBeenCalledWith('[[Notes/Ada.md|the countess]]');
     });
@@ -784,7 +780,7 @@ describe('LinkPickerModal', () => {
       const modal = openModal({ folderPath: 'Notes' });
       const el = createDiv();
 
-      modal.renderSuggestion(aliasItemFor(modal, 'Ada.md', 'Lovelace'), el);
+      modal.renderSuggestion(lovelaceAliasRowOfAda(modal), el);
 
       expect(el.querySelectorAll('div')).toHaveLength(1);
     });
@@ -907,16 +903,6 @@ function aliasesOf(items: Item[], relativePath: string): string[][] {
   return items.filter((item) => item.relativePath === relativePath).map((item) => item.aliases);
 }
 
-function aliasItemFor(modal: TestableModal, relativePath: string, alias: string): Item {
-  const item = modal.getSuggestions('').find((candidate) => candidate.relativePath === relativePath && candidate.aliases[0] === alias);
-
-  if (!item) {
-    throw new Error(`No row for ${relativePath} aliased ${alias}.`);
-  }
-
-  return item;
-}
-
 /**
  * Builds the vault every test reads.
  *
@@ -996,8 +982,8 @@ function createModal(options: Partial<SelectParams>): TestableModal {
         updatedPropertyName: '',
         ...options
       },
-      reject: castTo<LinkPickerModalReject>(reject),
-      resolve: castTo<LinkPickerModalResolve>(resolve)
+      reject: castTo<(this: void, reason: unknown) => void>(reject),
+      resolve: castTo<(this: void, value: string) => void>(resolve)
     })
   );
 }
@@ -1011,6 +997,16 @@ function itemFor(modal: TestableModal, relativePath: string): Item {
 
   if (!item) {
     throw new Error(`No row for ${relativePath}.`);
+  }
+
+  return item;
+}
+
+function lovelaceAliasRowOfAda(modal: TestableModal): Item {
+  const item = modal.getSuggestions('').find((candidate) => candidate.relativePath === 'Ada.md' && candidate.aliases[0] === 'Lovelace');
+
+  if (!item) {
+    throw new Error('No row for Ada.md aliased Lovelace.');
   }
 
   return item;

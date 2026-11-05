@@ -369,7 +369,7 @@ async function openPicker(): Promise<void> {
     until: (isOpen: boolean): boolean => isOpen
   });
 
-  await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
+  await settleOnHost();
 }
 
 /**
@@ -450,11 +450,9 @@ async function seedVault(): Promise<void> {
  * in NODE, and the Obsidian lint rule that rewrites a bare `setTimeout` into `window.setTimeout` for
  * popout-window compatibility does not know that. Its fix typechecks and then throws `window is not
  * defined`.
- *
- * @param milliseconds - How long to wait.
  */
-async function sleepOnHost(milliseconds: number): Promise<void> {
-  await delay(milliseconds);
+async function settleOnHost(): Promise<void> {
+  await delay(SETTLE_DELAY_IN_MILLISECONDS);
 }
 
 /**
@@ -484,7 +482,7 @@ async function tapControl(label: string): Promise<void> {
     }
   });
 
-  await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
+  await settleOnHost();
 }
 
 /**
@@ -510,5 +508,5 @@ async function typeQuery(text: string): Promise<void> {
     input: { text }
   });
 
-  await sleepOnHost(SETTLE_DELAY_IN_MILLISECONDS);
+  await settleOnHost();
 }
