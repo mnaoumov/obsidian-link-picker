@@ -2,87 +2,80 @@
 
 ## 1.3.0
 
-- test(demo-vault): fix the coverage suite's settings path and document noteCreatorName
-- feat: keep the selection as the inserted link's display text
-- feat(api): named note creators for the picker commands
-- docs(readme): point bug reports at the Report a bug command
-- feat: add a Report a bug command
-- docs: add issue-filing instructions for AI agents
-- chore(github): give the bug form the field ids bug-report links prefill
-- build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
-- build(deps): bump `typescript-dev-toolkit` to ^5.2.0
-- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
-- chore: adopt shared keyword identifier lint rule
-- refactor: adopt readonly interface members
-- docs(readme): combine related resources and plugin comparisons
-- refactor: group src files into subject folders
-- docs(readme): cut the README to a landing page, detail moved into the demo vault and docs/api.md
-- docs(readme): add a Similar plugins section
+This release has 3 new features and 5 documentation changes. 8 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### New
+
+- keep the selection as the inserted link's display text
+- **api:** named note creators for the picker commands
+- add a Report a bug command
+
+### Documentation
+
+- **readme:** point bug reports at the Report a bug command
+- add issue-filing instructions for AI agents
+- **readme:** combine related resources and plugin comparisons
+- **readme:** cut the README to a landing page, detail moved into the demo vault and docs/api.md
+- **readme:** add a Similar plugins section
 
 ## 1.2.0
 
-- feat(api): ship the API contract as a copyable `api-contract.ts` beside `api.d.ts`; copying it needs `@mnaoumov/typescript-lib` 1.5.0 or later and `@mnaoumov/obsidian-lib`
-- build(deps): move to `@mnaoumov/obsidian-lib` 6; a consuming plugin must be on `@mnaoumov/obsidian-lib` 6 too, and imports `watchPluginApi` from `@mnaoumov/obsidian-lib/plugin/plugin-api`
-- refactor: move off `obsidian-dev-utils` onto the @mnaoumov packages
-- refactor(api): build api-contract.ts on @mnaoumov/typescript-lib/api-contract
-- refactor(api-contract): build the select options guard with optionsGuard and literalGuard
-- build(deps): float brace-expansion, sharp and fast-uri past their advisories
-- docs(readme): lead the Debugging section with `Advanced Debug Mode`
-- docs: mark plugin names as code in prose and comments
-- chore(github): point questions to Discussions from the new-issue page
-- ci: attest release assets through the toolkit's reusable workflow
-- test(demo-vault): floor `CodeScript Toolkit` at 15.0.0
+This release has 1 new feature and 2 documentation changes. 8 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### New
+
+- **api:** ship the API contract as a copyable `api-contract.ts` beside `api.d.ts`; copying it needs `@mnaoumov/typescript-lib` 1.5.0 or later and `@mnaoumov/obsidian-lib`
+
+### Documentation
+
+- **readme:** lead the Debugging section with `Advanced Debug Mode`
+- mark plugin names as code in prose and comments
 
 ## 1.1.0
 
-- test(screenshots): merge the harness-owned desktop theme
-- docs(agents): merge the on-device check of the converted control-strip pass
-- refactor(screenshots): merge the harness-owned caret hiding
-- fix(screenshots): merge the caret-free desktop capture and its re-shot frames
-- refactor(screenshots): merge the harness-owned status-bar paint and touch emptying
-- chore(deps): merge the `obsidian-integration-testing` 17 float
-- chore(deps): merge the `obsidian-test-mocks` 7 float
-- style(comments): stop capitalizing the middle of a wrapped comment
-- fix(test): merge the headless demo-vault toolkit install
-- fix(deps): restore the lockfile's missing resolved and integrity fields
-- docs(agents): name the published api.d.ts in the release-notes checklist
-- docs(api): publish the surface as a root api.d.ts and a For plugin developers section
-- style(screenshots): silence the sharp no-named-as-default warning, with why the named import breaks
-- build(`markdownlint`): turn on no-soft-break-in-paragraph
-- docs: name the API declaration change in the unreleased list, so the release notes carry it
-- fix: declare the API for the base to publish, so the load broadcast names its contract version
-- test: drive the control-strip pass with the harness's trusted mobile input
-- test: make the mobile store shots byte-reproducible
-- test: move the picker suites' waiting to Node, and raise `obsidian-dev-utils` to 103.2.0
-- fix(deps): float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
-- chore(deps): drop the two dead dedupe overrides
-- chore(deps): drop the dead markdown-it override
-- chore(deps): drop the dead js-yaml override
-- docs: replace the private rule-id citations with what they assert
-- docs: name the library and the sibling plugins so a reader can resolve them
-- docs: replace the private tracker references with what they pointed at
-- docs: point the soft-keyboard notes at the harness that now owns them
-- refactor(android): take the soft-keyboard recipe from the harness
-- refactor(android): drive the picker's controls with trusted taps
-- chore: adopt the `npm run gate` branch gate
-- docs(agents): record where the picker's spellcheck rule now lives
-- feat(picker): spell-check the box while it can name the note being created
-- docs: name the unversioned demo-vault asset and the folder it unzips into
-- chore: make the LICENSE copyright line checkable by the linter and guard it against the year roll-over
-- test(test-mocks): await the trusted-input helpers, and drop the app.plugins stub
-- docs(agents): record segmentMatchMode and the 1.1.0 contract as unreleased on main
-- feat(matching): add a configurable segment match rule
-- docs(agents): drop the unreleased-commit count, which goes stale on the next commit
-- test(integration): raise the soft keyboard for the mobile listing shots
-- refactor(modal): converge the control strip onto `obsidian-dev-utils`' command builder
-- fix(build): wire build:compile to buildCompile and drop the duplicate leaf script
+This release has 2 new features, 6 fixes and 12 documentation changes. 21 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### New
+
+- **picker:** spell-check the box while it can name the note being created
+- **matching:** add a configurable segment match rule
+
+### Fixed
+
+- **screenshots:** merge the caret-free desktop capture and its re-shot frames
+- **test:** merge the headless demo-vault toolkit install
+- **deps:** restore the lockfile's missing resolved and integrity fields
+- declare the API for the base to publish, so the load broadcast names its contract version
+- **deps:** float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
+- **build:** wire build:compile to buildCompile and drop the duplicate leaf script
+
+### Documentation
+
+- **agents:** merge the on-device check of the converted control-strip pass
+- **agents:** name the published api.d.ts in the release-notes checklist
+- **api:** publish the surface as a root api.d.ts and a For plugin developers section
+- name the API declaration change in the unreleased list, so the release notes carry it
+- replace the private rule-id citations with what they assert
+- name the library and the sibling plugins so a reader can resolve them
+- replace the private tracker references with what they pointed at
+- point the soft-keyboard notes at the harness that now owns them
+- **agents:** record where the picker's spellcheck rule now lives
+- name the unversioned demo-vault asset and the folder it unzips into
+- **agents:** record segmentMatchMode and the 1.1.0 contract as unreleased on main
+- **agents:** drop the unreleased-commit count, which goes stale on the next commit
 
 ## 1.0.1
 
-- chore(deps): sweep caret-ranged dependencies to latest
-- fix(deps): move to `obsidian-integration-testing` 11 and `obsidian-dev-utils` 96.5.2
-- fix(deps): drop the brace-expansion file: override that breaks a clean install
-- docs(screenshots): add the mobile half of the listing set
+This release has 2 fixes and 1 documentation change. 1 maintenance commit (tests, build, CI, refactoring, dependencies) is not listed.
+
+### Fixed
+
+- **deps:** move to `obsidian-integration-testing` 11 and `obsidian-dev-utils` 96.5.2
+- **deps:** drop the brace-expansion file: override that breaks a clean install
+
+### Documentation
+
+- **screenshots:** add the mobile half of the listing set
 
 ## 1.0.0
 
