@@ -93,4 +93,14 @@ This release has 2 fixes and 1 documentation change. 1 maintenance commit (tests
 
 ## 1.0.0
 
-- Initial implementations
+The first release.
+
+### Added
+
+- **`Link Picker: Insert link...`:** a link picker you navigate by folder. `Enter` on a folder descends into it and `Enter` on `..` goes back up. Selected text seeds the query and is replaced by the link.
+- **ranking:** a deterministic, tiered order instead of a fuzzy one. An exact name beats a prefix, which beats a path match, which beats a scattered word match, and a note's aliases rank as names.
+- **control strip:** `No link`, `Create new`, `All files`, `Subfolders`, `Folders only` and `By date`, each a control you click and a hotkey you press, so the picker works on a phone too.
+- **named pickers:** a picker configured in the settings becomes its own command, rooted in its folder, with its own prefix, suffix, placeholder and note creation. Renaming one keeps its hotkey.
+- **folder notes:** a folder's note is reached through its folder rather than listed twice, and its aliases are still offered.
+- **API:** templates and scripts can call the picker and get the link back as a string.
+- **demo vault:** the documentation as a vault, opened with `Link Picker: Open demo vault` or downloaded with the release.
