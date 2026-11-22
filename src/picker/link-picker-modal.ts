@@ -39,6 +39,12 @@ import {
   PARENT_RELATIVE_PATH,
   sortItems
 } from './item.ts';
+import { NotePreviewComponent } from './note-preview-component.ts';
+
+/**
+ * The class Obsidian puts on the highlighted row, whichever way it came to be highlighted.
+ */
+const SELECTED_ROW_SELECTOR = '.suggestion-item.is-selected';
 
 /**
  * How many recently-opened files to rank above the rest. Obsidian's own list is longer than the ten it
@@ -61,11 +67,15 @@ export class LinkPickerModal extends SuggestModal<Item> {
   private items: Item[] = [];
   private readonly lastOpenFileIndexMap = new Map<string, number>();
   private readonly modalCommands: ModalCommands;
+  private readonly notePreviewComponent: NotePreviewComponent;
   private readonly options: SelectParams;
   private readonly reject: (this: void, reason: unknown) => void;
   private readonly resolve: (this: void, value: string) => void;
+  private readonly rowItems = new WeakMap<Element, Item>();
+  private selectionObserver: MutationObserver | null = null;
   private shouldIncludeAllFiles = false;
   private shouldShowOnlyFolders = false;
+  private shouldShowPreview = false;
   private shouldSortByUpdatedDate = true;
 
   public constructor(params: LinkPickerModalConstructorParams) {
@@ -80,6 +90,13 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     addPluginCssClasses(this.containerEl, 'link-picker-modal');
     this.setPlaceholder(this.options.placeholder || 'Select note file to link');
+
+    this.notePreviewComponent = new NotePreviewComponent({
+      app: this.app,
+      resolveFolderNote: (folder): null | TFile => resolveFolderNote({ app: this.app, config: this.options.folderNoteConfig, folder })
+    });
+    this.resultContainerEl.insertAdjacentElement('afterend', this.notePreviewComponent.el);
+    this.notePreviewComponent.el.hide();
 
     // Last, because `build` states every control immediately and the state it reads is the fields above.
     this.modalCommands = this.buildModalCommands();
@@ -104,6 +121,9 @@ export class LinkPickerModal extends SuggestModal<Item> {
     }
 
     this.isClosed = true;
+    this.selectionObserver?.disconnect();
+    this.selectionObserver = null;
+    this.notePreviewComponent.unload();
 
     if (!this.isSelected) {
       this.reject(new Error('No link selected'));
@@ -120,10 +140,26 @@ export class LinkPickerModal extends SuggestModal<Item> {
       }
     }
 
+    this.notePreviewComponent.load();
+
+    // The highlight moves by arrow key, by pointer and by every re-render of the list, all inside
+    // Obsidian's own chooser. The one thing all three have in common is the class they leave on the row,
+    // so the preview follows THAT rather than each route into it.
+    this.selectionObserver = new MutationObserver(() => {
+      this.refreshPreview();
+    });
+    this.selectionObserver.observe(this.resultContainerEl, {
+      attributeFilter: ['class'],
+      attributes: true,
+      childList: true,
+      subtree: true
+    });
+
     this.update();
   }
 
   public renderSuggestion(item: Item, el: HTMLElement): void {
+    this.rowItems.set(el, item);
     el.empty();
     const fragment = createFragment();
     if (item.isFolder) {
@@ -297,6 +333,17 @@ export class LinkPickerModal extends SuggestModal<Item> {
         },
         onKey: (): boolean => this.toggleSortByUpdatedDate(),
         purpose: 'By date'
+      })
+      .addKeyboardCommand({
+        checkIsAvailable: (): boolean => true,
+        checkIsOn: (): boolean => this.shouldShowPreview,
+        key: '6',
+        modifiers: ['Alt'],
+        onActivate: (): void => {
+          this.togglePreview();
+        },
+        onKey: (): boolean => this.togglePreview(),
+        purpose: 'Preview'
       })
       .build(this, { renderMode: ModalCommandsRenderMode.Buttons });
   }
@@ -478,6 +525,22 @@ export class LinkPickerModal extends SuggestModal<Item> {
   }
 
   /**
+   * Shows the highlighted row's file in the preview pane, while the pane is on.
+   *
+   * Reads the highlight off the DOM: Obsidian's chooser owns it, and the row element is the one thing every
+   * way of moving it touches.
+   */
+  private refreshPreview(): void {
+    if (!this.shouldShowPreview) {
+      return;
+    }
+
+    const selectedRowEl = this.resultContainerEl.querySelector(SELECTED_ROW_SELECTOR);
+    const item = selectedRowEl ? this.rowItems.get(selectedRowEl) : undefined;
+    invokeAsyncSafely(() => this.notePreviewComponent.show(item?.file ?? null));
+  }
+
+  /**
    * Spell-checks the box while — and only while — it can NAME a note.
    *
    * The box doubles as the new note's title: `createNewAsync` takes `inputEl.value` verbatim when it is
@@ -515,6 +578,21 @@ export class LinkPickerModal extends SuggestModal<Item> {
 
     this.includeSubfolders = !this.includeSubfolders;
     this.update();
+    return false;
+  }
+
+  private togglePreview(): boolean {
+    this.shouldShowPreview = !this.shouldShowPreview;
+    this.notePreviewComponent.el.toggle(this.shouldShowPreview);
+
+    if (this.shouldShowPreview) {
+      this.refreshPreview();
+    } else {
+      // Dropped rather than kept, so a note edited meanwhile is not shown stale when the pane comes back.
+      this.notePreviewComponent.clear();
+    }
+
+    this.modalCommands.refresh();
     return false;
   }
 

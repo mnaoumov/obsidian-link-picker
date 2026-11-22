@@ -104,9 +104,9 @@ const SETTLE_DELAY_IN_MILLISECONDS = 900;
 const WAIT_TIMEOUT_IN_MILLISECONDS = 60_000;
 
 /**
- * The six labels, in the order `buildControls` declares them: the two actions, then the four toggles.
+ * The seven labels, in the order `buildControls` declares them: the two actions, then the five toggles.
  */
-const CONTROL_LABELS = ['No link', 'Create new', 'All files', 'Subfolders', 'Folders only', 'By date'];
+const CONTROL_LABELS = ['No link', 'Create new', 'All files', 'Subfolders', 'Folders only', 'By date', 'Preview'];
 
 const PREFIX = 'Person: ';
 

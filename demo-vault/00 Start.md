@@ -31,7 +31,7 @@ That is the whole idea. The notes below take it apart.
 | Note | What it covers |
 | --- | --- |
 | [01 Picking a link](<./01 Picking a link.md>) | the command, the picker, and what comes back |
-| [02 Navigating folders](<./02 Navigating folders.md>) | drilling in and out, and the four view toggles |
+| [02 Navigating folders](<./02 Navigating folders.md>) | drilling in and out, the view toggles and the preview pane |
 | [03 Ranking](<./03 Ranking.md>) | why the same query always puts the same note first |
 | [04 Named pickers](<./04 Named pickers.md>) | one preconfigured command per folder you link into |
 | [05 Settings](<./05 Settings.md>) | every setting, by the key it is stored under |

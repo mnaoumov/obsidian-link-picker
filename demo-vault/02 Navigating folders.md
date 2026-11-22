@@ -23,9 +23,9 @@ The other subfolder, `Filings`, holds [Statement of claim](<./Materials/02 Navig
 
 The `..` row is pinned to the top and is not something you can type your way to — it is a way out, not a name.
 
-## The four view toggles
+## The view toggles
 
-The strip along the bottom of the picker holds six controls. Click one, or press the hotkey shown on it — they are two ways into the same thing. On a phone the controls are the only way in, since there is no `Alt` key to press, which is why they are there rather than a list of keystrokes.
+The strip along the bottom of the picker holds seven controls. Click one, or press the hotkey shown on it — they are two ways into the same thing. On a phone the controls are the only way in, since there is no `Alt` key to press, which is why they are there rather than a list of keystrokes.
 
 A toggle that is on is filled in, so the strip always says what the picker is currently doing.
 
@@ -37,6 +37,8 @@ A toggle that is on is filled in, so the strip always says what the picker is cu
   - hides everything that is not a folder, so a deep folder can be reached without reading past the notes on the way. The `..` row survives it — a mode you cannot leave would be a trap.
 - **By date** (`Alt + 5`)
   - on by default. Leads with the most recently updated note; turn it off for a plain path ordering.
+- **Preview** (`Alt + 6`)
+  - opens a pane under the list showing the highlighted row's note, so two notes with similar names can be told apart before you link one. It follows the highlight as you move through the list, and a folder shows its folder note. Off by default.
 
 **All files** and **Subfolders** grey out while **Folders only** is on, because between them they would empty the list. They are greyed rather than removed so the strip does not move under your finger.
 
