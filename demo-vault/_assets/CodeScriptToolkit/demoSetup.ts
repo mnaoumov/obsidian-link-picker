@@ -1,8 +1,13 @@
 import type { App, TFile } from 'obsidian';
 
+import {
+  asCodeBlock,
+  createFragmentWithCodeBlocks
+} from '@mnaoumov/obsidian-lib/html-element';
 import { Notice } from 'obsidian';
 
 const PLUGIN_ID = 'link-picker';
+const PLUGIN_NAME = 'Link Picker';
 
 const SCRATCH_NOTE_PATH = 'Materials/01 Picking a link/Scratch.md';
 const PEOPLE_FOLDER_PATH = 'Materials/01 Picking a link/People';
@@ -29,56 +34,65 @@ const PERSON_PICKER = {
   suffix: ''
 };
 
-interface PickerSettings {
-  pickers: unknown[];
+interface ApiRegistry {
+  readonly records: Record<string, PublishedApiRecord[] | undefined>;
 }
 
-interface SettingsComponent {
-  editAndSave(editor: (settings: PickerSettings) => void): Promise<void>;
+interface ApiRegistryState {
+  readonly value?: ApiRegistry;
 }
 
-interface PluginWithSettings {
-  pluginSettingsComponent: SettingsComponent;
+interface DemoPicker {
+  readonly id?: string;
 }
 
 interface LinkPickerApi {
-  select(params: LinkPickerApiSelectParams): Promise<string>;
+  readonly select: (params: LinkPickerApiSelectParams) => Promise<string>;
 }
 
 interface LinkPickerApiSelectParams {
-  createNote?(folderPath: string, newNoteTitle: string): Promise<TFile>;
-  folderPath?: string;
-  includeSubfolders?: boolean;
-  placeholder?: string;
-  prefix?: string;
-  suffix?: string;
+  readonly createNote?: (folderPath: string, newNoteTitle: string) => Promise<TFile>;
+  readonly folderPath?: string;
+  readonly includeSubfolders?: boolean;
+  readonly placeholder?: string;
+  readonly prefix?: string;
+  readonly suffix?: string;
+}
+
+interface PickerSettings {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- `editAndSave` hands over the live settings object, and the demo replaces its picker list in place.
+  pickers: unknown[];
+}
+
+interface PluginWithSettings {
+  readonly pluginSettingsComponent: SettingsComponent;
 }
 
 interface PublishedApiRecord {
-  api: LinkPickerApi;
-  apiVersion: string;
-  isRevoked: boolean;
+  readonly api: LinkPickerApi;
+  readonly apiVersion: string;
+  readonly isRevoked: boolean;
 }
 
-interface ApiRegistry {
-  records: Record<string, PublishedApiRecord[] | undefined>;
+interface SettingsComponent {
+  readonly editAndSave: (editor: (settings: PickerSettings) => void) => Promise<void>;
 }
 
 interface StateBagWindow {
-  __obsidianLib?: Record<string, undefined | { value?: ApiRegistry }>;
+  readonly __obsidianLib?: Record<string, ApiRegistryState | undefined>;
 }
 
 /**
  * Configures a named picker scoped to the `People` folder, which becomes its own command.
  *
- * Manual equivalent: open **Settings → Link Picker**, press `+` beside **Pickers**, and fill the page
+ * Manual equivalent: open **Settings → `Link Picker`**, press `+` beside **Pickers**, and fill the page
  * in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `Person: `.
  */
 export async function addPersonPicker(app: App): Promise<void> {
   await editSettings(app, (settings) => {
-    settings.pickers = [...settings.pickers.filter(isNotDemoPicker), PERSON_PICKER];
+    settings.pickers = [...settings.pickers.filter((picker) => isNotDemoPicker(picker)), PERSON_PICKER];
   });
-  new Notice('Added the "Insert person" picker. Look for it in the Command Palette.');
+  new Notice(createFragmentWithCodeBlocks(`Added the person picker. Look for ${asCodeBlock(`${PLUGIN_NAME}: Insert person`)} in the command palette.`));
 }
 
 /**
@@ -113,10 +127,25 @@ export function askApiForALink(app: App): void {
       new Notice(`The API returned:\n${link || '(the empty string — you chose "No link")'}`);
     })
     .catch(() => {
-      new Notice('The API rejected — that is what dismissing the picker does, and it is different from choosing "No link".');
+      new Notice('The API rejected. Dismissing the picker does that, which is different from choosing no link.');
     });
 
   new Notice('The picker is open. What you pick comes back to the script as a string.');
+}
+
+/**
+ * Opens a scratch note in edit mode, so there is a cursor for a link to be inserted at.
+ *
+ * The picker writes at the cursor, so it needs a note being EDITED — a note in reading view has no
+ * cursor, and the command is unavailable there.
+ *
+ * Manual equivalent: open any note and click into its text.
+ */
+export async function openScratchNote(app: App): Promise<void> {
+  const existingFile = app.vault.getFileByPath(SCRATCH_NOTE_PATH);
+  const file = existingFile ?? await app.vault.create(SCRATCH_NOTE_PATH, '# Scratch\n\nPut the cursor below and insert a link.\n\n');
+  await app.workspace.getLeaf(false).openFile(file, { state: { mode: 'source' } });
+  new Notice(createFragmentWithCodeBlocks(`Opened Scratch.md in edit mode. Run ${asCodeBlock(`${PLUGIN_NAME}: Insert link...`)} from the command palette.`));
 }
 
 /**
@@ -138,35 +167,30 @@ export function reportApi(): void {
 }
 
 /**
- * Opens a scratch note in edit mode, so there is a cursor for a link to be inserted at.
- *
- * The picker writes at the cursor, so it needs a note being EDITED — a note in reading view has no
- * cursor, and the command is unavailable there.
- *
- * Manual equivalent: open any note and click into its text.
- */
-export async function openScratchNote(app: App): Promise<void> {
-  const existingFile = app.vault.getFileByPath(SCRATCH_NOTE_PATH);
-  const file = existingFile ?? await app.vault.create(SCRATCH_NOTE_PATH, '# Scratch\n\nPut the cursor below and insert a link.\n\n');
-  await app.workspace.getLeaf(false).openFile(file, { state: { mode: 'source' } });
-  new Notice('Opened Scratch.md in edit mode. Run "Link Picker: Insert link..." from the Command Palette.');
-}
-
-/**
  * Puts the vault back: the scratch note is deleted and the demo picker removed.
  *
- * Manual equivalent: delete `Scratch.md`, and delete the picker from **Settings → Link Picker**.
+ * Manual equivalent: delete `Scratch.md`, and delete the picker from **Settings → `Link Picker`**.
  */
 export async function resetDemo(app: App): Promise<void> {
   const scratchNote = app.vault.getFileByPath(SCRATCH_NOTE_PATH);
   if (scratchNote) {
-    await app.vault.delete(scratchNote);
+    await app.fileManager.trashFile(scratchNote);
   }
 
   await editSettings(app, (settings) => {
-    settings.pickers = settings.pickers.filter(isNotDemoPicker);
+    settings.pickers = settings.pickers.filter((picker) => isNotDemoPicker(picker));
   });
   new Notice('Removed the scratch note and the demo picker.');
+}
+
+async function editSettings(app: App, editor: (settings: PickerSettings) => void): Promise<void> {
+  const plugin: unknown = app.plugins.plugins[PLUGIN_ID];
+  if (!isPluginWithSettings(plugin)) {
+    new Notice(`The ${PLUGIN_ID} plugin is not enabled.`);
+    return;
+  }
+
+  await plugin.pluginSettingsComponent.editAndSave(editor);
 }
 
 function getApi(): LinkPickerApi | null {
@@ -180,21 +204,16 @@ function getApi(): LinkPickerApi | null {
   return record.api;
 }
 
-function getRecord(): PublishedApiRecord | undefined {
-  const registry = (window as StateBagWindow).__obsidianLib?.[PLUGIN_API_REGISTRY_STATE_KEY]?.value;
-  return registry?.records[PLUGIN_ID]?.find((candidate) => !candidate.isRevoked);
-}
-
-async function editSettings(app: App, editor: (settings: PickerSettings) => void): Promise<void> {
-  const plugin = app.plugins.plugins[PLUGIN_ID] as unknown as PluginWithSettings | undefined;
-  if (!plugin) {
-    new Notice(`The ${PLUGIN_ID} plugin is not enabled.`);
-    return;
-  }
-
-  await plugin.pluginSettingsComponent.editAndSave(editor);
+function getRecord(): null | PublishedApiRecord {
+  const stateBagWindow = window as StateBagWindow;
+  const registry = stateBagWindow.__obsidianLib?.[PLUGIN_API_REGISTRY_STATE_KEY]?.value;
+  return registry?.records[PLUGIN_ID]?.find((candidate) => !candidate.isRevoked) ?? null;
 }
 
 function isNotDemoPicker(picker: unknown): boolean {
-  return (picker as { id?: string }).id !== PERSON_PICKER.id;
+  return (picker as DemoPicker).id !== PERSON_PICKER.id;
+}
+
+function isPluginWithSettings(plugin: unknown): plugin is PluginWithSettings {
+  return typeof plugin === 'object' && plugin !== null && 'pluginSettingsComponent' in plugin;
 }
