@@ -58,11 +58,15 @@ Run **`Link Picker`: Insert link...** in an editor. Any selected text seeds the 
 | [`Alias Quick Switcher`](https://community.obsidian.md/plugins/alias-quick-switcher) (my plugin) | Opens notes; path-segment alias matching; folder-note aliases | Different action: inserts links; navigates by folder |
 | [`Another Quick Switcher`](https://community.obsidian.md/plugins/obsidian-another-quick-switcher) | Configurable switchers; fuzzy search; preview; multi-select; directory filter; insert hotkey | Overlaps on picking; folder navigation with `..`; fixed ranking; script returns a link string |
 | [`Auto Link Suggester`](https://community.obsidian.md/plugins/auto-link-suggester) | Inline name completion from selected folders; no opening brackets needed | Alternative interaction: command/script picker rather than inline completion |
+| [`Easy Links`](https://community.obsidian.md/plugins/easy-links) | Shows only the file name of folder links; optional `[[` suggester that floats priority folders to the top | Alternative interaction: a command or script picker scoped to one folder rather than a reordered inline popup |
 | [`Journal Utils`](https://community.obsidian.md/plugins/journal-utils) | Mobile people/group/location pickers; updates related frontmatter lists | Broader targets: any folder; desktop/mobile; leaves properties to the caller |
 | [`Linkr`](https://community.obsidian.md/plugins/linkr) | File/heading/block link builder; display text; embed toggle | Narrower targets: whole notes; adds folder navigation, named rooted pickers and an API |
+| [`Note Compass`](https://community.obsidian.md/plugins/note-compass) | Navigation pickers over related notes and filtered lists; trigger characters insert a link while typing; property, form and task pickers | Lists by folder rather than by filters; folder navigation with `..`; fixed ranking; script returns a link string |
+| [`Note Types`](https://community.obsidian.md/plugins/filtered-file-commands) | Typed notes; per-type `Find` picker filtered by frontmatter; create a typed note and insert its link; styled links, relations | Scopes by folder rather than by note type; folder navigation; named pickers with prefix and suffix; script API |
 | [`Path Picker`](https://community.obsidian.md/plugins/path-picker) | Rooted filesystem path picker; preview; files/directories outside the vault too | Narrower targets: vault notes; inserts Obsidian links rather than filesystem paths |
+| [`Suggest Notes`](https://community.obsidian.md/plugins/suggest-notes) | Inline completion of the word being typed, scoped by folders and tags; ranks by recent use and frequency | Alternative interaction: command or script picker; ranking by match strength rather than by use |
 
-Last searched for similar plugins on 2026-10-26.
+Last searched for similar plugins on 2026-11-22.
 
 ## For plugin developers
 
