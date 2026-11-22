@@ -14,10 +14,28 @@
  * `.modal-commands` / `.modal-command` / `.modal-command-hotkey` rules are the library's and reach the
  * plugin through the styles it injects at runtime. This file held a copy of them until the two converged.
  *
- * Those were the last rules that emitted anything, and the comments above do not survive the build — so
- * without the banner below `dist/build/styles.css` comes out ZERO BYTES, and GitHub's upload API rejects
- * an empty asset with `HTTP 400: Bad Content-Length`, rolling the whole release back. A legal comment is
- * kept through minification, which is exactly the guard wanted here.
+ * The comments in this file do not survive the build, and for a while it held no rules at all — so the
+ * banner at the end stays as a guard: without any output `dist/build/styles.css` comes out ZERO BYTES, and
+ * GitHub's upload API rejects an empty asset with `HTTP 400: Bad Content-Length`, rolling the whole
+ * release back. A legal comment is kept through minification, which is exactly the guard wanted here.
  */
+
+/*
+ * The preview pane sits between the list and the strip. Capped and scrolled on its own, so a long note
+ * never pushes the list or the strip out of reach.
+ */
+.link-picker-modal .link-picker-preview {
+  flex-shrink: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: var(--size-4-2) var(--size-4-4);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.link-picker-modal .link-picker-preview-path,
+.link-picker-modal .link-picker-preview-empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
 
 /*! `Link Picker` styles its strip through @mnaoumov/obsidian-lib; see src/styles/main.scss. */

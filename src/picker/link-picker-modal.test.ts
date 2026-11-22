@@ -7,6 +7,7 @@ import type {
 } from 'obsidian';
 
 import { FolderNoteLocation } from '@mnaoumov/obsidian-lib/folder-note';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   App,
@@ -57,9 +58,9 @@ import {
 import { LinkPickerModal } from './link-picker-modal.ts';
 
 /**
- * The two actions plus the four toggles.
+ * The two actions plus the five toggles.
  */
-const CONTROL_COUNT = 6;
+const CONTROL_COUNT = 7;
 
 /**
  * The layout every folder-note plugin supports, and the one the picker is most often pointed at.
@@ -100,6 +101,7 @@ interface TestableModal {
   readonly onClose: () => void;
   readonly onOpen: () => void;
   readonly renderSuggestion: (item: Item, el: HTMLElement) => void;
+  readonly resultContainerEl: HTMLElement;
   readonly scope: unknown;
   readonly selectSuggestion: (item: Item, $event: KeyboardEvent | MouseEvent) => void;
 }
@@ -315,6 +317,7 @@ describe('LinkPickerModal', () => {
       expect(pressHotkey(openModal({}), 'Alt', '3')).toBe(false);
       expect(pressHotkey(openModal({}), 'Alt', '4')).toBe(false);
       expect(pressHotkey(openModal({}), 'Alt', '5')).toBe(false);
+      expect(pressHotkey(openModal({}), 'Alt', '6')).toBe(false);
       expect(pressHotkey(openModal({}), 'Shift', 'Enter')).toBe(false);
     });
 
@@ -339,7 +342,8 @@ describe('LinkPickerModal', () => {
         'All files',
         'Subfolders',
         'Folders only',
-        'By date'
+        'By date',
+        'Preview'
       ]);
     });
 
@@ -447,7 +451,8 @@ describe('LinkPickerModal', () => {
         'alt 2',
         'alt 3',
         'alt 4',
-        'alt 5'
+        'alt 5',
+        'alt 6'
       ]);
     });
 
@@ -852,6 +857,109 @@ describe('LinkPickerModal', () => {
   });
 
   /*
+   * Obsidian's chooser owns the highlight and marks the row with `is-selected`; the mock renders no rows, so
+   * these cases build the rows the way the chooser does — through `renderSuggestion` — and move the class.
+   */
+  describe('the preview pane', () => {
+    it('should stay hidden until asked for', () => {
+      expect(isPreviewShown(openModal({}))).toBe(false);
+    });
+
+    it('should show the highlighted row\'s note once `Preview` is clicked', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+      highlightRow(modal, 'Ada.md');
+
+      clickControl(modal, 'Preview');
+
+      expect(isPreviewShown(modal)).toBe(true);
+      expect(activeControlLabels(modal)).toContain('Preview');
+      await vi.waitFor(() => {
+        expect(previewedPath(modal)).toBe('Notes/Ada.md');
+      });
+    });
+
+    it('should follow the highlight as it moves', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+      highlightRow(modal, 'Ada.md');
+      pressHotkey(modal, 'Alt', '6');
+
+      highlightRow(modal, 'Bob.md');
+
+      await vi.waitFor(() => {
+        expect(previewedPath(modal)).toBe('Notes/Bob.md');
+      });
+    });
+
+    it('should preview a folder row through its folder note', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+      highlightRow(modal, 'Deep');
+
+      pressHotkey(modal, 'Alt', '6');
+
+      await vi.waitFor(() => {
+        expect(previewedPath(modal)).toBe('Notes/Deep/Deep.md');
+      });
+    });
+
+    it('should say there is nothing to preview while no row is highlighted', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+
+      pressHotkey(modal, 'Alt', '6');
+
+      await vi.waitFor(() => {
+        expect(previewElement(modal).textContent).toBe('Nothing to preview.');
+      });
+    });
+
+    it('should ignore the highlight while it is off', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+
+      highlightRow(modal, 'Ada.md');
+      // Lets the observer deliver the change it just queued, which must find the pane off.
+      await noopAsync();
+
+      expect(previewElement(modal).childElementCount).toBe(0);
+    });
+
+    it('should empty and hide the pane when switched back off', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+      highlightRow(modal, 'Ada.md');
+      pressHotkey(modal, 'Alt', '6');
+      await vi.waitFor(() => {
+        expect(previewedPath(modal)).toBe('Notes/Ada.md');
+      });
+
+      pressHotkey(modal, 'Alt', '6');
+
+      expect(isPreviewShown(modal)).toBe(false);
+      expect(previewElement(modal).childElementCount).toBe(0);
+    });
+
+    it('should stop following the highlight once the picker closes', async () => {
+      const modal = openModal({ folderPath: 'Notes' });
+      highlightRow(modal, 'Ada.md');
+      pressHotkey(modal, 'Alt', '6');
+      await vi.waitFor(() => {
+        expect(previewedPath(modal)).toBe('Notes/Ada.md');
+      });
+
+      modal.onClose();
+      highlightRow(modal, 'Bob.md');
+      await noopAsync();
+
+      expect(previewElement(modal).childElementCount).toBe(0);
+    });
+
+    it('should stay available while showing only folders, where a folder note is worth a look', () => {
+      const modal = openModal({});
+
+      pressHotkey(modal, 'Alt', '4');
+
+      expect(disabledControlLabels(modal)).not.toContain('Preview');
+    });
+  });
+
+  /*
    * Obsidian builds every `SuggestModal` input with a hardcoded `spellcheck="false"` and never consults
    * `Editor > Spellcheck`. Right for a box that only FINDS a note; wrong while this one can NAME the note
    * it is about to create, which is what `createNewAsync` does with `inputEl.value`.
@@ -992,6 +1100,27 @@ function disabledControlLabels(modal: TestableModal): string[] {
   return controlElements(modal).filter((buttonEl) => buttonEl.disabled).map((buttonEl) => readControlLabel(buttonEl));
 }
 
+/**
+ * Highlights a row the way Obsidian's chooser does: the row rendered through `renderSuggestion`, then the
+ * `is-selected` class moved onto it.
+ *
+ * @param modal - The picker.
+ * @param relativePath - The row to highlight.
+ */
+function highlightRow(modal: TestableModal, relativePath: string): void {
+  for (const el of modal.resultContainerEl.querySelectorAll('.is-selected')) {
+    el.removeClass('is-selected');
+  }
+
+  const rowEl = modal.resultContainerEl.createDiv('suggestion-item');
+  modal.renderSuggestion(itemFor(modal, relativePath), rowEl);
+  rowEl.addClass('is-selected');
+}
+
+function isPreviewShown(modal: TestableModal): boolean {
+  return previewElement(modal).style.display !== 'none';
+}
+
 function itemFor(modal: TestableModal, relativePath: string): Item {
   const item = modal.getSuggestions('').find((candidate) => candidate.relativePath === relativePath);
 
@@ -1048,6 +1177,20 @@ function pressHotkey(modal: TestableModal, modifier: string, key: string): unkno
   }
 
   return registration.listener(new KeyboardEvent('keydown'), castTo<never>({}));
+}
+
+function previewedPath(modal: TestableModal): string {
+  return previewElement(modal).querySelector('.link-picker-preview-path')?.textContent ?? '';
+}
+
+function previewElement(modal: TestableModal): HTMLElement {
+  const el = modal.modalEl.querySelector('.link-picker-preview');
+
+  if (!el?.instanceOf(HTMLElement)) {
+    throw new Error('No preview pane.');
+  }
+
+  return el;
 }
 
 /**
