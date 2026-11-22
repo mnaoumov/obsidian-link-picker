@@ -10,6 +10,13 @@
     "that is actually present in the declared section; the script reports either mismatch."
   ],
   "pins": {
+    "@mnaoumov/typescript-dev-toolkit": {
+      "section": "devDependencies",
+      "why": "Held on 8.x so the root copy dedupes with the one @mnaoumov/obsidian-dev-toolkit 12.x depends on (^8.0.0). With 9.x at the root, scripts/dev.ts pairs the root wrapCliTask with obsidian-dev-toolkit's dev(), which returns the nested 8.x CliTaskResult, and tsc --build fails with TS2322, the two CliTaskResult types being distinct.",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/@mnaoumov/obsidian-dev-toolkit/package.json','utf8')).dependencies['@mnaoumov/typescript-dev-toolkit'])\"",
+      "expect": "^8.0.0",
+      "manualCheck": "When @mnaoumov/obsidian-dev-toolkit depends on ^9 or later, return to a caret range on the newest major, delete this entry, and run the gate."
+    },
     "@puppeteer/browsers": {
       "section": "overrides",
       "why": "Clears GHSA-jmr9-qjv8-65gv (extract-zip unvalidated symlink path traversal, 8 high advisories) and nothing else. extract-zip is vulnerable at every published version, so there is no patched version to override it to, and the direct dependency cannot be bumped either: obsidian-integration-testing is already latest and pins webdriverio, and even the newest webdriverio still reaches extract-zip through @wdio/utils -> @puppeteer/browsers ^2.x. @puppeteer/browsers@3 replaced extract-zip with modern-tar, so forcing 3.x on @wdio/utils - the only consumer left on 2.x - removes the subtree entirely. It also dedupes: puppeteer-core already brings 3.2.0 into this tree, so the override collapses two copies into one rather than adding anything. The major bump is safe because @wdio/utils imports only install, canDownload, resolveBuildId, detectBrowserPlatform, Browser, ChromeReleaseChannel, computeExecutablePath and the InstallOptions type, all still exported by 3.x with compatible signatures, and both packages are ESM-only. NEVER take the `npm audit fix --force` remedy here: it downgrades obsidian-integration-testing from 10.x to 1.1.2.",
@@ -37,13 +44,6 @@
       "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/micromark-extension-math/package.json','utf8')).dependencies.katex)\"",
       "expect": "^0.16.0",
       "manualCheck": "The check reads the range micromark-extension-math declares, which is what makes the override necessary. When it admits 0.18.2 or later, delete the override and this entry together, then confirm with `npm audit` and `npm run lint:md`."
-    },
-    "moment": {
-      "section": "overrides",
-      "why": "Clears GHSA-4p3w-j4w9-5jqw (moment path traversal via a crafted non-string locale name, 2.29.2 - 2.30.1), patched in 2.31.0. Reached only through @mnaoumov/obsidian-dev-toolkit -> eslint-plugin-obsidianmd -> obsidian 1.12.3, which EXACT-pins moment 2.29.4; eslint-plugin-obsidianmd is on its newest release, so no direct bump gets there. That copy is loaded only by the lint rules, never shipped: at runtime the plugin gets `moment` from Obsidian itself. Never take the `npm audit fix --force` remedy: it downgrades @mnaoumov/obsidian-dev-toolkit.",
-      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/eslint-plugin-obsidianmd/node_modules/obsidian/package.json','utf8')).dependencies.moment)\"",
-      "expect": "2.29.4",
-      "manualCheck": "The check reads the moment pin of the obsidian copy eslint-plugin-obsidianmd brings, which is what makes the override necessary. When eslint-plugin-obsidianmd moves to an obsidian that pins moment 2.31.0 or later, delete the override and this entry."
     },
     "typescript": {
       "section": "overrides",
