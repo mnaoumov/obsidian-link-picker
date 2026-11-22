@@ -56,14 +56,14 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@mnaoumov/obsidian-lib": "^10.12.0",
-    "@mnaoumov/typescript-lib": "^2.0.0"
+    "@mnaoumov/obsidian-lib": "^11.0.0",
+    "@mnaoumov/typescript-lib": "^4.1.0"
   },
   "devDependencies": {
-    "@mnaoumov/obsidian-dev-toolkit": "^8.2.1",
-    "@mnaoumov/typescript-dev-toolkit": "^6.2.0",
-    "@mnaoumov/typescript-test-toolkit": "^1.0.3",
-    "@obsidian-typings/obsidian-public-latest": "^6.50.0",
+    "@mnaoumov/obsidian-dev-toolkit": "^12.2.0",
+    "@mnaoumov/typescript-dev-toolkit": "^8.3.0",
+    "@mnaoumov/typescript-test-toolkit": "^1.1.0",
+    "@obsidian-typings/obsidian-public-latest": "^6.64.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^26.6.5",

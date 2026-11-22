@@ -127,13 +127,13 @@ export class LinkPickerModal extends SuggestModal<Item> {
     el.empty();
     const fragment = createFragment();
     if (item.isFolder) {
-      fragment.append(getIcon('lucide-folder') ?? '', document.createTextNode(' '));
+      fragment.append(getIcon('lucide-folder') ?? '', el.doc.createTextNode(' '));
     }
-    fragment.append(document.createTextNode(item.relativePath));
+    fragment.append(el.doc.createTextNode(item.relativePath));
 
     for (const alias of item.aliases) {
       const aliasEl = createDiv();
-      aliasEl.append(getIcon('lucide-forward') ?? '', document.createTextNode(` ${alias}`));
+      aliasEl.append(getIcon('lucide-forward') ?? '', el.doc.createTextNode(` ${alias}`));
       fragment.append(aliasEl);
     }
 
