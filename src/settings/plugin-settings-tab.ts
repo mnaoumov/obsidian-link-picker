@@ -253,6 +253,20 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
           }
         }),
         this.settingEx({
+          desc: 'Typing this in a note offers the picker, such as `@` for people. Only at the start of a line or after a space, never in code or frontmatter. `Enter` opens the picker with what you typed after it, and the link replaces both; `Space` or `Escape` keeps the text as typed. Leave empty to open the picker only from its command.',
+          name: 'Trigger',
+          render: (setting) => {
+            setting.addText((text) => {
+              this.bindPickerProperty({
+                index,
+                pickerPropertyName: 'trigger',
+                valueComponent: text
+              });
+              text.setPlaceholder('Command only');
+            });
+          }
+        }),
+        this.settingEx({
           desc: 'The folder the picker opens rooted at. Leave empty for the whole vault. It is a starting point, not a fence — `..` still navigates out of it.',
           name: 'Folder',
           render: (setting) => {

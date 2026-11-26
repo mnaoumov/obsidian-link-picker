@@ -60,6 +60,8 @@ import { LinkPickerComponent } from './picker/link-picker-component.ts';
 import { Plugin } from './plugin.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { PickerTriggerEditorSuggest } from './trigger/picker-trigger-editor-suggest.ts';
 
 const PLUGIN_MANIFEST: PluginManifest = {
   author: 'mnaoumov',
@@ -157,6 +159,16 @@ describe('Plugin', () => {
     await plugin.onload();
 
     expect(callback.mock.calls[0]?.[0].apiVersions).toEqual([LINK_PICKER_API_VERSION]);
+    plugin.unload();
+  });
+
+  it('should register the trigger suggest, so typing a picker\'s trigger offers it', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const registerEditorSuggest = vi.spyOn(plugin, 'registerEditorSuggest');
+
+    await plugin.onload();
+
+    expect(registerEditorSuggest).toHaveBeenCalledWith(expect.any(PickerTriggerEditorSuggest));
     plugin.unload();
   });
 

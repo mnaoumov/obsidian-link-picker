@@ -11,7 +11,7 @@ caption: Add an "Insert person" picker scoped to the People folder
 await require('/demoSetup.ts').addPersonPicker(app);
 ```
 
-Manual equivalent: open **Settings → `Link Picker`**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `"Person: "`.
+Manual equivalent: open **Settings → `Link Picker`**, press `+` beside **Pickers**, and fill the page in — name `Insert person`, trigger `@`, folder `Materials/01 Picking a link/People`, prefix `"Person: "`.
 
 ```code-button
 ---
@@ -30,12 +30,31 @@ Person: [[Ada Lovelace|Ada]]
 
 That prefix is the `prefix` setting — a plain string, not a field name, so `"Person: "` gives you `Dataview`'s inline-field shape while `"- "` or `"` give you something else entirely. A `suffix` closes the pair when you need one.
 
+## Typing a trigger
+
+The picker also has a trigger, `@`, so it opens without the Command Palette, which is the long way round on a phone. In the scratch note, type `@ada`. A one-row suggestion appears, `Insert person` with `Search for "ada"` under it. Press `Enter`, or tap the row, and the picker opens inside `People` with `ada` already typed. Pick `Ada Lovelace`, and `@ada` becomes:
+
+```markdown
+Person: [[Ada Lovelace|Ada]]
+```
+
+A trigger stays plain text whenever you did not mean it:
+
+- it counts only at the start of a line or after a space, so `ada@example.com` is left alone;
+- it never counts inside frontmatter, a fenced code block or an inline code span;
+- typing a space after it, or pressing `Escape`, keeps what you typed exactly as typed;
+- dismissing the picker it opened leaves the text alone too.
+
+Each trigger belongs to one picker. Two pickers may have triggers where one starts with the other, such as `@` and `@@`, and then the longer one wins as you type it.
+
 ## What a picker holds
 
 Each picker is a page under **Pickers** in the settings tab, with the native `+`, delete and drag-to-reorder affordances beside the list.
 
 - `name`
   - what its command is called. Two pickers cannot share one.
+- `trigger`
+  - what you type in a note to be offered the picker, such as `@`. Empty means the command alone opens it. Two pickers cannot share one, and it cannot contain a space.
 - `folderPath`
   - where it opens. A starting point, not a fence — `..` still navigates out of it.
 - `includeSubfolders`

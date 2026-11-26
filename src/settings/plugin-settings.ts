@@ -81,6 +81,15 @@ export class Picker {
    * Emitted immediately after the picked link. Empty means the link alone.
    */
   public suffix = '';
+
+  /**
+   * Typing this in a note offers the picker, such as `@` for a `People` picker. Empty means only the command
+   * opens it.
+   *
+   * It counts only at the start of a line or after whitespace, and never inside code or frontmatter. What is typed
+   * after it seeds the query, and the picked link replaces both.
+   */
+  public trigger = '';
 }
 
 export class PluginSettings {
