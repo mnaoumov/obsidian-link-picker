@@ -12,10 +12,10 @@
   "pins": {
     "@mnaoumov/typescript-dev-toolkit": {
       "section": "devDependencies",
-      "why": "Held on 8.x so the root copy dedupes with the one @mnaoumov/obsidian-dev-toolkit 12.x depends on (^8.0.0). With 9.x at the root, scripts/dev.ts pairs the root wrapCliTask with obsidian-dev-toolkit's dev(), which returns the nested 8.x CliTaskResult, and tsc --build fails with TS2322, the two CliTaskResult types being distinct.",
+      "why": "Held on 10.x so the root copy dedupes with the one @mnaoumov/obsidian-dev-toolkit 13.x depends on (^10.0.0). With 11.x at the root, scripts/dev.ts pairs the root wrapCliTask with obsidian-dev-toolkit's dev(), which returns the nested 10.x CliTaskResult, and tsc --build fails with TS2322, the two CliTaskResult types being distinct.",
       "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/@mnaoumov/obsidian-dev-toolkit/package.json','utf8')).dependencies['@mnaoumov/typescript-dev-toolkit'])\"",
-      "expect": "^8.0.0",
-      "manualCheck": "When @mnaoumov/obsidian-dev-toolkit depends on ^9 or later, return to a caret range on the newest major, delete this entry, and run the gate."
+      "expect": "^10.0.0",
+      "manualCheck": "When @mnaoumov/obsidian-dev-toolkit depends on ^11 or later, return to a caret range on the newest major, delete this entry, and run the gate."
     },
     "@puppeteer/browsers": {
       "section": "overrides",

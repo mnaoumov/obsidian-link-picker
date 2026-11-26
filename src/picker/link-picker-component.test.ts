@@ -29,12 +29,12 @@ const { getFileOrNull } = vi.hoisted(() => ({ getFileOrNull: vi.fn() }));
 const { select } = vi.hoisted(() => ({ select: vi.fn() }));
 
 vi.mock('@mnaoumov/obsidian-lib/folder-note', async (importOriginal) => ({
-  ...await importOriginal<object>(),
+  ...(await importOriginal<object>()),
   resolveFolderNoteConfig
 }));
 
 vi.mock('@mnaoumov/obsidian-lib/file-system', async (importOriginal) => ({
-  ...await importOriginal<object>(),
+  ...(await importOriginal<object>()),
   getFileOrNull
 }));
 
