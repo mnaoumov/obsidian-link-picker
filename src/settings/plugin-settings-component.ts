@@ -40,6 +40,7 @@ export class PluginSettingsComponent extends PluginSettingsComponentBase<PluginS
 function validatePickers(pickers: readonly Picker[]): MaybeReturn<string> {
   const seenIds = new Set<string>();
   const seenNames = new Set<string>();
+  const seenTriggers = new Set<string>();
 
   for (const picker of pickers) {
     if (!picker.name) {
@@ -58,7 +59,16 @@ function validatePickers(pickers: readonly Picker[]): MaybeReturn<string> {
       return `Picker "${picker.name}" reuses another picker's id. Ids are what hotkeys are bound to, so they have to differ.`;
     }
 
+    if (/\s/.test(picker.trigger)) {
+      return `Picker "${picker.name}" has a trigger with a space in it. A space is what ends a trigger, so it could never be typed.`;
+    }
+
+    if (picker.trigger && seenTriggers.has(picker.trigger)) {
+      return `Two pickers share the trigger "${picker.trigger}". Each trigger has to open one picker.`;
+    }
+
     seenIds.add(picker.id);
     seenNames.add(picker.name);
+    seenTriggers.add(picker.trigger);
   }
 }

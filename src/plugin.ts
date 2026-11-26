@@ -17,6 +17,7 @@ import { PickerCommandsComponent } from './command-handlers/picker-commands-comp
 import { LinkPickerComponent } from './picker/link-picker-component.ts';
 import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
+import { PickerTriggerEditorSuggest } from './trigger/picker-trigger-editor-suggest.ts';
 
 export class Plugin extends PluginBase {
   private linkPickerApi: LinkPickerApi | null = null;
@@ -102,6 +103,15 @@ export class Plugin extends PluginBase {
     this.addChild(
       new PickerCommandsComponent({
         commandHandlerComponent: this.commandHandlerComponent,
+        linkPickerComponent,
+        pluginSettingsComponent
+      })
+    );
+
+    // Registered once: it reads the picker list each time a key is typed, so it follows the settings without re-registering.
+    this.registerEditorSuggest(
+      new PickerTriggerEditorSuggest({
+        app: this.app,
         linkPickerComponent,
         pluginSettingsComponent
       })

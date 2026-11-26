@@ -186,6 +186,7 @@ describe('PluginSettingsTab', () => {
 
       expect(pickerRowNames(createTab())).toEqual([
         'Name',
+        'Trigger',
         'Folder',
         'Include subfolders',
         'Prefix',
@@ -458,6 +459,7 @@ function writePickerName(index: number, value: unknown): Picker[] {
  */
 const PICKER_ROW_ORDER: (keyof Picker)[] = [
   'name',
+  'trigger',
   'folderPath',
   'includeSubfolders',
   'prefix',

@@ -12,6 +12,8 @@ import type {
   PluginSettings
 } from '../settings/plugin-settings.ts';
 
+import { getPickerSelectParams } from './picker-select-params.ts';
+
 interface InsertLinkEditorCommandHandlerConstructorParams {
   readonly linkPickerComponent: LinkPickerComponent;
 
@@ -56,19 +58,12 @@ export class InsertLinkEditorCommandHandler extends EditorCommandHandler {
     let link: string;
 
     try {
-      link = await this.linkPickerComponent.select({
-        folderPath: this.picker?.folderPath ?? '',
-        includeSubfolders: this.picker?.includeSubfolders ?? false,
+      link = await this.linkPickerComponent.select(getPickerSelectParams({
         initialQuery: selection,
         linkDisplayText: this.getLinkDisplayText(selection),
-        noteCreatorName: this.picker?.noteCreatorName ?? '',
-        placeholder: this.picker?.placeholder ?? '',
-        prefix: this.picker?.prefix ?? '',
-        shouldAllowCreate: this.picker?.shouldAllowCreate ?? true,
-        shouldApplyPrefixSuffixWhenNoLinkSelected: this.picker?.shouldApplyPrefixSuffixWhenNoLinkSelected ?? false,
-        sourcePathOrFile: context.file ?? '',
-        suffix: this.picker?.suffix ?? ''
-      });
+        picker: this.picker,
+        sourcePathOrFile: context.file ?? ''
+      }));
     } catch {
       // Dismissing the picker rejects. That is the user declining, not a failure, so it produces neither a notice nor an edit.
       return;

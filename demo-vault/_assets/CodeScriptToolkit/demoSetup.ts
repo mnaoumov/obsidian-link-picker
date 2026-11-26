@@ -31,7 +31,8 @@ const PERSON_PICKER = {
   prefix: 'Person: ',
   shouldAllowCreate: true,
   shouldApplyPrefixSuffixWhenNoLinkSelected: false,
-  suffix: ''
+  suffix: '',
+  trigger: '@'
 };
 
 interface ApiRegistry {
@@ -86,13 +87,13 @@ interface StateBagWindow {
  * Configures a named picker scoped to the `People` folder, which becomes its own command.
  *
  * Manual equivalent: open **Settings → `Link Picker`**, press `+` beside **Pickers**, and fill the page
- * in — name `Insert person`, folder `Materials/01 Picking a link/People`, prefix `Person: `.
+ * in — name `Insert person`, trigger `@`, folder `Materials/01 Picking a link/People`, prefix `Person: `.
  */
 export async function addPersonPicker(app: App): Promise<void> {
   await editSettings(app, (settings) => {
     settings.pickers = [...settings.pickers.filter((picker) => isNotDemoPicker(picker)), PERSON_PICKER];
   });
-  new Notice(createFragmentWithCodeBlocks(`Added the person picker. Look for ${asCodeBlock(`${PLUGIN_NAME}: Insert person`)} in the command palette.`));
+  new Notice(createFragmentWithCodeBlocks(`Added the person picker. Look for ${asCodeBlock(`${PLUGIN_NAME}: Insert person`)} in the command palette, or type ${asCodeBlock('@')} in a note.`));
 }
 
 /**

@@ -65,6 +65,36 @@ describe('PluginSettingsComponent', () => {
       .toBe('Picker "Courts" reuses another picker\'s id. Ids are what hotkeys are bound to, so they have to differ.');
   });
 
+  it('should accept several pickers with no trigger, and distinct triggers', async () => {
+    const component = await createLoadedComponent();
+    const people = namedPicker('People');
+    people.trigger = '@';
+    const courts = namedPicker('Courts');
+    courts.trigger = '@@';
+
+    expect(await component.setProperty('pickers', [people, courts, namedPicker('Places'), namedPicker('Books')])).toBe('');
+  });
+
+  it('should reject a trigger with a space in it, since a space ends a trigger', async () => {
+    const component = await createLoadedComponent();
+    const picker = namedPicker('People');
+    picker.trigger = '@ p';
+
+    expect(await component.setProperty('pickers', [picker]))
+      .toBe('Picker "People" has a trigger with a space in it. A space is what ends a trigger, so it could never be typed.');
+  });
+
+  it('should reject two pickers sharing a trigger', async () => {
+    const component = await createLoadedComponent();
+    const people = namedPicker('People');
+    people.trigger = '@';
+    const courts = namedPicker('Courts');
+    courts.trigger = '@';
+
+    expect(await component.setProperty('pickers', [people, courts]))
+      .toBe('Two pickers share the trigger "@". Each trigger has to open one picker.');
+  });
+
   it('should fall back to no pickers at all when the list is rejected, rather than registering half of it', async () => {
     const component = await createLoadedComponent();
 
