@@ -49,7 +49,7 @@
     "@microsoft/eslint-plugin-sdl": {
       "eslint-plugin-n": "^17.24.0"
     },
-    "@puppeteer/browsers": "^3.2.7",
+    "@puppeteer/browsers": "^3.3.0",
     "@vitest/coverage-v8": "$@vitest/coverage-v8",
     "deepmerge-ts": "^8.0.2",
     "eslint": "$eslint",
@@ -62,18 +62,18 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@mnaoumov/obsidian-lib": "^11.0.0",
+    "@mnaoumov/obsidian-lib": "^12.0.0",
     "@mnaoumov/typescript-lib": "^4.1.0"
   },
   "devDependencies": {
-    "@mnaoumov/obsidian-dev-toolkit": "^12.2.0",
-    "@mnaoumov/typescript-dev-toolkit": "8.3.0",
+    "@mnaoumov/obsidian-dev-toolkit": "^13.0.0",
+    "@mnaoumov/typescript-dev-toolkit": "10.0.0",
     "@mnaoumov/typescript-test-toolkit": "^1.1.0",
     "@obsidian-typings/obsidian-public-latest": "^6.64.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.9",
-    "@types/node": "^26.6.6",
-    "@vitest/coverage-v8": "^5.1.1",
+    "@types/node": "^26.6.11",
+    "@vitest/coverage-v8": "^5.1.2",
     "better-typescript-lib": "^2.12.0",
     "czg": "^1.14.0",
     "eslint": "^10.15.0",
@@ -85,6 +85,6 @@
     "obsidian-integration-testing": "^18.1.0",
     "obsidian-test-mocks": "^8.1.0",
     "sharp": "^0.35.5",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.2"
   }
 }

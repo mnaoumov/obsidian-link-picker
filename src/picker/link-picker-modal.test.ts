@@ -45,7 +45,7 @@ vi.mock('@mnaoumov/obsidian-lib/plugin/plugin-context', () => ({
 vi.mock('@mnaoumov/obsidian-lib/link', () => ({ generateMarkdownLink }));
 vi.mock('@mnaoumov/obsidian-lib/modals/prompt', () => ({ prompt }));
 vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => ({
-  ...await importOriginal<object>(),
+  ...(await importOriginal<object>()),
   getFrontmatterSafe
 }));
 
